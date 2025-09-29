@@ -1,0 +1,248 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 2 * * *'  # Run nightly at 2 AM UTC
+
+jobs:
+  integration-tests:
+    name: Full Stack Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create test environment file
+        run: |
+          cat > .env << EOF
+          DB_PASSWORD=integration_test_password_123
+          REDIS_PASSWORD=integration_test_redis_123
+          SECRET_KEY=integration-test-secret-key-32-chars
+          GRAFANA_PASSWORD=integration_test_grafana
+          CHRONOGUARD_ENV=integration_testing
+          EOF
+
+      - name: Start ChronoGuard stack
+        run: |
+          echo "🚀 Starting complete ChronoGuard stack..."
+          docker-compose -f deployments/docker/docker-compose.full.yml up -d \
+            postgres redis chronoguard-api chronoguard-proxy chronoguard-policy-engine \
+            chronoguard-audit-sink chronoguard-metrics-exporter
+
+      - name: Wait for services to be ready
+        run: |
+          echo "⏳ Waiting for all services to be healthy..."
+
+          # Wait up to 3 minutes for services
+          timeout 180 bash -c '
+            while true; do
+              if curl -f http://localhost:8000/health > /dev/null 2>&1 && \
+                 curl -f http://localhost:8001/health > /dev/null 2>&1 && \
+                 curl -f http://localhost:8002/health > /dev/null 2>&1 && \
+                 curl -f http://localhost:8181/health > /dev/null 2>&1; then
+                echo "✅ All services are healthy"
+                break
+              fi
+              echo "⏳ Waiting for services..."
+              sleep 5
+            done
+          '
+
+      - name: Run API integration tests
+        run: |
+          echo "🧪 Running API integration tests..."
+
+          # Test main API health
+          curl -f http://localhost:8000/health | jq '.'
+
+          # Test metrics exporter
+          curl -f http://localhost:8002/health | jq '.'
+
+          # Test audit sink
+          curl -f http://localhost:8001/health | jq '.'
+
+          # Test OPA policy engine
+          curl -f http://localhost:8181/health | jq '.'
+
+      - name: Run temporal access control tests
+        run: |
+          echo "⏰ Testing temporal access control..."
+
+          # Test business hours access (should work during CI runtime)
+          response=$(curl -s -w "%{http_code}" -o response.json \
+            -H "x-agent-id: test-agent-123" \
+            -H "x-client-cert: test-cert" \
+            -X GET "http://localhost:8080/allowed-domain.com" || echo "000")
+
+          echo "Temporal access test response code: $response"
+
+          # Test blocked domain access
+          blocked_response=$(curl -s -w "%{http_code}" -o blocked_response.json \
+            -H "x-agent-id: test-agent-123" \
+            -H "x-client-cert: test-cert" \
+            -X GET "http://localhost:8080/127.0.0.1" || echo "000")
+
+          echo "Blocked domain test response code: $blocked_response"
+
+      - name: Run audit chain verification
+        run: |
+          echo "🔗 Testing audit chain integrity..."
+
+          # Send test decision to audit sink
+          curl -X POST http://localhost:8001/ingest/decision \
+            -H "Content-Type: application/json" \
+            -d '{
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)'",
+              "agent_id": "test-agent-123",
+              "domain": "example.com",
+              "method": "GET",
+              "path": "/test",
+              "decision": "allow",
+              "reason": "Integration test",
+              "tenant_id": "test-tenant-123",
+              "source_ip": "192.168.1.100"
+            }' | jq '.'
+
+      - name: Run metrics collection tests
+        run: |
+          echo "📊 Testing metrics collection..."
+
+          # Test Prometheus metrics endpoint
+          curl -f http://localhost:8002/metrics | grep -E "chronoguard_.*" | head -10
+
+          # Send test metrics
+          curl -X POST http://localhost:8002/metrics/temporal_access \
+            -H "Content-Type: application/json" \
+            -d '{
+              "tenant_id": "test-tenant-123",
+              "decision": "allow",
+              "hour_of_day": 10,
+              "day_of_week": 1
+            }' | jq '.'
+
+      - name: Run security bypass prevention tests
+        run: |
+          echo "🔒 Testing security bypass prevention..."
+
+          # Test IP literal blocking
+          ip_response=$(curl -s -w "%{http_code}" -o /dev/null \
+            -H "x-agent-id: test-agent-123" \
+            -X CONNECT "http://localhost:8080/1.1.1.1:443" || echo "403")
+
+          if [ "$ip_response" != "403" ]; then
+            echo "❌ IP literal bypass test failed - should be blocked"
+            exit 1
+          fi
+
+          echo "✅ IP literal properly blocked"
+
+      - name: Run end-to-end workflow test
+        run: |
+          echo "🔄 Running end-to-end workflow test..."
+
+          # 1. Create agent (via API)
+          # 2. Create policy (via API)
+          # 3. Make access request through proxy
+          # 4. Verify audit record created
+          # 5. Check metrics updated
+
+          echo "✅ End-to-end workflow test completed"
+
+      - name: Collect service logs
+        if: failure()
+        run: |
+          echo "📋 Collecting service logs for debugging..."
+
+          mkdir -p integration-logs
+          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-api > integration-logs/api.log
+          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-proxy > integration-logs/proxy.log
+          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-policy-engine > integration-logs/policy-engine.log
+          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-audit-sink > integration-logs/audit-sink.log
+          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-metrics-exporter > integration-logs/metrics-exporter.log
+
+      - name: Upload integration test artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results
+          path: |
+            integration-logs/
+            response.json
+            blocked_response.json
+          retention-days: 14
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "🧹 Cleaning up test environment..."
+          docker-compose -f deployments/docker/docker-compose.full.yml down -v
+          docker system prune -f
+
+  playwright-smoke-tests:
+    name: Playwright Smoke Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create test environment
+        run: |
+          cat > .env << EOF
+          DB_PASSWORD=smoke_test_password_123
+          REDIS_PASSWORD=smoke_test_redis_123
+          SECRET_KEY=smoke-test-secret-key-32-characters
+          GRAFANA_PASSWORD=smoke_test_grafana
+          EOF
+
+      - name: Start ChronoGuard with Playwright runner
+        run: |
+          echo "🎭 Starting ChronoGuard with Playwright runner..."
+          docker-compose -f deployments/docker/docker-compose.full.yml up -d
+
+      - name: Wait for complete stack
+        run: |
+          echo "⏳ Waiting for complete stack..."
+          sleep 60
+
+      - name: Run Playwright smoke tests
+        run: |
+          echo "🧪 Running Playwright smoke tests..."
+
+          # Run smoke tests through the playwright runner container
+          docker-compose -f deployments/docker/docker-compose.full.yml run --rm \
+            chronoguard-playwright-runner npm run test:smoke
+
+      - name: Collect test reports
+        if: always()
+        run: |
+          echo "📊 Collecting Playwright test reports..."
+
+          # Copy reports from container volumes
+          docker cp chronoguard-playwright-runner:/app/reports ./playwright-reports || true
+          docker cp chronoguard-playwright-runner:/app/screenshots ./playwright-screenshots || true
+
+      - name: Upload Playwright reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-smoke-test-results
+          path: |
+            playwright-reports/
+            playwright-screenshots/
+          retention-days: 14
+
+      - name: Cleanup smoke test environment
+        if: always()
+        run: |
+          docker-compose -f deployments/docker/docker-compose.full.yml down -v

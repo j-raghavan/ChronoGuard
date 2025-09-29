@@ -1,0 +1,161 @@
+# Development Docker Compose for ChronoGuard
+version: '3.8'
+
+services:
+  # ChronoGuard Backend API (Development)
+  chronoguard-api:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      target: development
+    image: chronoguard/api:dev
+    container_name: chronoguard-api-dev
+    restart: unless-stopped
+    environment:
+      - CHRONOGUARD_ENV=development
+      - DATABASE_URL=postgresql://chronoguard:devpassword@postgres:5432/chronoguard_dev
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=development-secret-key-not-for-production
+      - DEBUG=true
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chronoguard-dev-network
+    volumes:
+      - ../../backend/src:/app/src
+      - chronoguard-dev-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL for Development
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: chronoguard-postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=chronoguard_dev
+      - POSTGRES_USER=chronoguard
+      - POSTGRES_PASSWORD=devpassword
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    networks:
+      - chronoguard-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chronoguard -d chronoguard_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Development
+  redis:
+    image: redis:7.2-alpine
+    container_name: chronoguard-redis-dev
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    volumes:
+      - redis-dev-data:/data
+    networks:
+      - chronoguard-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Mailhog for Email Testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: chronoguard-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - chronoguard-dev-network
+
+  # Development Tools Container
+  dev-tools:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      target: development
+    image: chronoguard/dev-tools:latest
+    container_name: chronoguard-dev-tools
+    restart: unless-stopped
+    environment:
+      - CHRONOGUARD_ENV=development
+      - DATABASE_URL=postgresql://chronoguard:devpassword@postgres:5432/chronoguard_dev
+    volumes:
+      - ../../backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - chronoguard-dev-network
+    depends_on:
+      - postgres
+      - redis
+    command: ["tail", "-f", "/dev/null"]  # Keep container running
+
+  # Jaeger for Development Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: chronoguard-jaeger-dev
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16687:16686"  # Jaeger UI (different port)
+      - "14269:14268"  # Jaeger HTTP collector
+      - "4318:4317"    # OTLP gRPC receiver
+    networks:
+      - chronoguard-dev-network
+
+  # Test Database (for running tests)
+  postgres-test:
+    image: timescale/timescaledb:latest-pg15
+    container_name: chronoguard-postgres-test
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=chronoguard_test
+      - POSTGRES_USER=chronoguard
+      - POSTGRES_PASSWORD=testpassword
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - "5434:5432"  # Different port for tests
+    networks:
+      - chronoguard-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chronoguard -d chronoguard_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    tmpfs:
+      - /var/lib/postgresql/data  # Use tmpfs for faster tests
+
+networks:
+  chronoguard-dev-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  postgres-dev-data:
+    driver: local
+  redis-dev-data:
+    driver: local
+  chronoguard-dev-logs:
+    driver: local
