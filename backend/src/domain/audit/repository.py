@@ -1,14 +1,11 @@
 """Repository interface for audit log persistence and retrieval."""
 
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from domain.audit.entity import AccessDecision
-from domain.audit.entity import AuditEntry
-from domain.audit.entity import ChainVerificationResult
+from domain.audit.entity import AccessDecision, AuditEntry, ChainVerificationResult
 
 
 class AuditRepository(ABC):

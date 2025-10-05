@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
-from datetime import time
-
-from pydantic import BaseModel
-from pydantic import field_validator
+from datetime import UTC, datetime, time
 
 from domain.common.exceptions import ValidationError
+from pydantic import BaseModel, field_validator
 
 
 class TimeRange(BaseModel):
@@ -26,7 +22,7 @@ class TimeRange(BaseModel):
 
         frozen = True
 
-    @field_validator("start_hour", "end_hour")
+    @field_validator("start_hour", "end_hour", mode="before")
     @classmethod
     def validate_hour(cls, v: int) -> int:
         """Validate hour is in valid range.
@@ -48,7 +44,7 @@ class TimeRange(BaseModel):
             )
         return v
 
-    @field_validator("start_minute", "end_minute")
+    @field_validator("start_minute", "end_minute", mode="before")
     @classmethod
     def validate_minute(cls, v: int) -> int:
         """Validate minute is in valid range.
@@ -70,7 +66,7 @@ class TimeRange(BaseModel):
             )
         return v
 
-    @field_validator("timezone_name")
+    @field_validator("timezone_name", mode="before")
     @classmethod
     def validate_timezone(cls, v: str) -> str:
         """Validate timezone name is valid.

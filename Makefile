@@ -75,9 +75,24 @@ test-unit: ## Run unit tests with coverage
 		--cov=backend/src \
 		--cov-report=term-missing \
 		--cov-report=html \
+		--cov-report=json \
 		--cov-fail-under=$(COVERAGE_THRESHOLD) \
 		$(PYTEST_ARGS)
 	@echo "$(GREEN)✅ Unit tests passed with $(COVERAGE_THRESHOLD)%+ coverage$(RESET)"
+
+test-fast: ## Run unit tests without coverage (faster)
+	@echo "$(BLUE)⚡ Running unit tests (fast mode)...$(RESET)"
+	@PYTHONPATH=backend/src poetry run pytest backend/tests/unit/ -v --tb=short
+	@echo "$(GREEN)✅ Unit tests passed$(RESET)"
+
+test-watch: ## Run tests in watch mode (requires pytest-watch)
+	@echo "$(BLUE)👀 Running tests in watch mode...$(RESET)"
+	@PYTHONPATH=backend/src poetry run ptw backend/tests/unit/ -- -v --tb=short
+
+test-single: ## Run a single test file (usage: make test-single FILE=test_agent_domain.py)
+	@echo "$(BLUE)🧪 Running single test file: $(FILE)...$(RESET)"
+	@PYTHONPATH=backend/src poetry run pytest backend/tests/unit/$(FILE) -v --tb=short --cov=backend/src --cov-report=term-missing
+	@echo "$(GREEN)✅ Test completed$(RESET)"
 
 test-integration: ## Run integration tests
 	@echo "$(BLUE)🔗 Running integration tests...$(RESET)"
@@ -87,11 +102,18 @@ test-integration: ## Run integration tests
 test-coverage: ## Generate detailed coverage report
 	@echo "$(BLUE)📊 Generating coverage report...$(RESET)"
 	@PYTHONPATH=backend/src poetry run pytest backend/tests/unit/ \
-		--cov=src \
+		--cov=backend/src \
 		--cov-report=html \
 		--cov-report=xml \
+		--cov-report=json \
 		--cov-report=term-missing
-	@echo "$(GREEN)✅ Coverage report generated in backend/htmlcov/$(RESET)"
+	@echo "$(GREEN)✅ Coverage report generated in htmlcov/$(RESET)"
+	@echo "$(BLUE)📊 Opening coverage report...$(RESET)"
+	@open htmlcov/index.html 2>/dev/null || xdg-open htmlcov/index.html 2>/dev/null || echo "$(YELLOW)Open htmlcov/index.html manually$(RESET)"
+
+test-coverage-report: ## Show coverage summary from last run
+	@echo "$(BLUE)📊 Coverage Summary:$(RESET)"
+	@python3 -c "import json; data = json.load(open('coverage.json')); total = data['totals']; print(f\"Overall: {total['percent_covered']:.2f}%\"); print(f\"Covered: {total['covered_lines']}/{total['num_statements']} lines\"); print(f\"Missing: {total['missing_lines']} lines\"); print(f\"\\nFiles at 100%%: {sum(1 for f in data['files'].values() if f['summary']['percent_covered'] == 100.0)}\"); print(f\"Files at >=95%%: {sum(1 for f in data['files'].values() if f['summary']['percent_covered'] >= 95.0)}\"); print(f\"Files at <95%%: {sum(1 for f in data['files'].values() if f['summary']['percent_covered'] < 95.0)}\")"
 
 test-performance: ## Run performance tests
 	@echo "$(BLUE)⚡ Running performance tests...$(RESET)"

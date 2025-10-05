@@ -1,24 +1,25 @@
 """Unit tests for policy domain components."""
 
 from unittest.mock import AsyncMock
-from uuid import UUID
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
-
-from domain.common.exceptions import BusinessRuleViolationError
-from domain.common.exceptions import DuplicateEntityError
-from domain.common.exceptions import ValidationError
+from domain.common.exceptions import (
+    BusinessRuleViolationError,
+    DuplicateEntityError,
+    ValidationError,
+)
 from domain.common.value_objects import TimeRange
-from domain.policy.entity import Policy
-from domain.policy.entity import PolicyRule
-from domain.policy.entity import PolicyStatus
-from domain.policy.entity import RateLimit
-from domain.policy.entity import RuleAction
-from domain.policy.entity import RuleCondition
-from domain.policy.entity import TimeRestriction
-from domain.policy.service import PolicyEvaluationResult
-from domain.policy.service import PolicyService
+from domain.policy.entity import (
+    Policy,
+    PolicyRule,
+    PolicyStatus,
+    RateLimit,
+    RuleAction,
+    RuleCondition,
+    TimeRestriction,
+)
+from domain.policy.service import PolicyEvaluationResult, PolicyService
 from domain.policy.validator import PolicyValidator
 
 
@@ -269,6 +270,20 @@ class TestTimeRestriction:
 
         assert "At least one time range must be specified" in str(exc_info.value)
 
+    def test_time_ranges_validation_too_many(self, test_time_range: TimeRange) -> None:
+        """Test time ranges validation with too many ranges."""
+        # Create 11 time ranges (exceeds maximum of 10)
+        too_many_ranges = [test_time_range] * 11
+
+        with pytest.raises(ValidationError) as exc_info:
+            TimeRestriction(
+                allowed_time_ranges=too_many_ranges,
+                allowed_days_of_week={0, 1, 2, 3, 4},
+                timezone="UTC",
+            )
+
+        assert "Too many time ranges" in str(exc_info.value)
+
 
 class TestPolicy:
     """Unit tests for Policy entity."""
@@ -317,6 +332,20 @@ class TestPolicy:
 
         assert "Policy name too short" in str(exc_info.value)
 
+    def test_policy_name_validation_too_long(
+        self, test_tenant_id: UUID, test_user_id: UUID
+    ) -> None:
+        """Test policy name validation with too long name."""
+        with pytest.raises(ValidationError) as exc_info:
+            Policy(
+                tenant_id=test_tenant_id,
+                name="a" * 101,  # 101 characters - exceeds 100 limit
+                description="Test",
+                created_by=test_user_id,
+            )
+
+        assert "Policy name too long" in str(exc_info.value)
+
     def test_policy_priority_validation_invalid(
         self, test_tenant_id: UUID, test_user_id: UUID
     ) -> None:
@@ -335,10 +364,19 @@ class TestPolicy:
 
             assert "Policy priority must be between 1 and 1000" in str(exc_info.value)
 
-    def test_policy_add_rule(self, test_policy: Policy, test_policy_rule: PolicyRule) -> None:
+    def test_policy_add_rule(self, test_policy: Policy, test_rule_condition: RuleCondition) -> None:
         """Test adding rule to policy."""
         initial_version = test_policy.version
-        test_policy.add_rule(test_policy_rule)
+
+        # Create a new rule with different name to avoid duplicate
+        new_rule = PolicyRule(
+            name="Additional Test Rule",
+            description="Another test rule",
+            conditions=[test_rule_condition],
+            action=RuleAction.DENY,
+            priority=200,
+        )
+        test_policy.add_rule(new_rule)
 
         assert len(test_policy.rules) == 2  # Already has one rule from fixture
         assert test_policy.version == initial_version + 1
@@ -434,6 +472,29 @@ class TestPolicy:
             test_policy.add_blocked_domain("example.com")
 
         assert "already in allowed list" in str(exc_info.value)
+
+    def test_policy_remove_blocked_domain(self, test_policy: Policy) -> None:
+        """Test removing domain from blocked domains."""
+        test_policy.add_blocked_domain("malicious.com")
+        assert "malicious.com" in test_policy.blocked_domains
+
+        test_policy.remove_domain("malicious.com")
+        assert "malicious.com" not in test_policy.blocked_domains
+
+    def test_policy_with_initial_domains(self, test_tenant_id: UUID, test_user_id: UUID) -> None:
+        """Test policy creation with domains in constructor."""
+        policy = Policy(
+            tenant_id=test_tenant_id,
+            name="test-policy",
+            description="Test",
+            created_by=test_user_id,
+            allowed_domains={"example.com", "test.example.com"},
+            blocked_domains={"malicious.com"},
+        )
+
+        assert "example.com" in policy.allowed_domains
+        assert "test.example.com" in policy.allowed_domains
+        assert "malicious.com" in policy.blocked_domains
 
     def test_policy_set_time_restrictions(
         self, test_policy: Policy, test_time_restriction: TimeRestriction

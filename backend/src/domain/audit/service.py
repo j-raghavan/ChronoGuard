@@ -1,17 +1,17 @@
 """Audit domain service for secure audit logging and chain verification."""
 
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from domain.audit.entity import AccessDecision
-from domain.audit.entity import AuditEntry
-from domain.audit.entity import ChainVerificationResult
-from domain.audit.entity import TimedAccessContext
+from domain.audit.entity import (
+    AccessDecision,
+    AuditEntry,
+    ChainVerificationResult,
+    TimedAccessContext,
+)
 from domain.audit.repository import AuditRepository
-from domain.common.exceptions import BusinessRuleViolationError
-from domain.common.exceptions import ValidationError
+from domain.common.exceptions import BusinessRuleViolationError, ValidationError
 from domain.common.value_objects import DomainName
 
 
@@ -386,7 +386,7 @@ class AuditService:
             )
 
         cutoff_date = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        cutoff_date = cutoff_date.replace(day=cutoff_date.day - retention_days)
+        cutoff_date = cutoff_date - timedelta(days=retention_days)
 
         archived_count = 0
         deleted_count = 0
@@ -429,9 +429,7 @@ class AuditService:
 
         # Validate timestamp is not too far in the future
         max_future_minutes = 5
-        max_future_time = datetime.now(UTC).replace(
-            minute=datetime.now(UTC).minute + max_future_minutes
-        )
+        max_future_time = datetime.now(UTC) + timedelta(minutes=max_future_minutes)
 
         if request.timestamp > max_future_time:
             raise ValidationError(
@@ -453,8 +451,10 @@ class AuditService:
         anomalies: list[str] = []
 
         # Get recent entries for time analysis
+        from datetime import timedelta
+
         end_time = datetime.now(UTC)
-        start_time = end_time.replace(hour=end_time.hour - 24)  # Last 24 hours
+        start_time = end_time - timedelta(hours=24)  # Last 24 hours
 
         entries = await self._repository.find_by_agent_time_range(
             agent_id, start_time, end_time, limit=1000

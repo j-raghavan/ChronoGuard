@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import cache
-from typing import Any
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from core.features import FeatureCategory
-from core.features import FeatureManager
+from core.features import FeatureCategory, FeatureManager
 
 T = TypeVar("T")
 

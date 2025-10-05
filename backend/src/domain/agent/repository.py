@@ -1,12 +1,10 @@
 """Repository interface for agent persistence following DDD principles."""
 
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from datetime import datetime
 from uuid import UUID
 
-from domain.agent.entity import Agent
-from domain.agent.entity import AgentStatus
+from domain.agent.entity import Agent, AgentStatus
 
 
 class AgentRepository(ABC):

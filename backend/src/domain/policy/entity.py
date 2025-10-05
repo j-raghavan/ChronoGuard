@@ -2,19 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
-from uuid import UUID
-from uuid import uuid4
-
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import field_validator
+from uuid import UUID, uuid4
 
 from domain.common.exceptions import ValidationError
-from domain.common.value_objects import DomainName
-from domain.common.value_objects import TimeRange
+from domain.common.value_objects import DomainName, TimeRange
+from pydantic import BaseModel, Field, field_validator
 
 
 class RuleAction(str, Enum):

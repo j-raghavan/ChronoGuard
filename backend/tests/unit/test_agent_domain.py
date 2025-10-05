@@ -1,19 +1,18 @@
 """Unit tests for agent domain components."""
 
-from unittest.mock import AsyncMock
-from uuid import UUID
-from uuid import uuid4
+from unittest.mock import AsyncMock, MagicMock
+from uuid import UUID, uuid4
 
 import pytest
-
-from domain.agent.entity import Agent
-from domain.agent.entity import AgentStatus
+from domain.agent.entity import Agent, AgentStatus
 from domain.agent.service import AgentService
-from domain.common.exceptions import BusinessRuleViolationError
-from domain.common.exceptions import DuplicateEntityError
-from domain.common.exceptions import EntityNotFoundError
-from domain.common.exceptions import InvalidStateTransitionError
-from domain.common.exceptions import ValidationError
+from domain.common.exceptions import (
+    BusinessRuleViolationError,
+    DuplicateEntityError,
+    EntityNotFoundError,
+    InvalidStateTransitionError,
+    ValidationError,
+)
 from domain.common.value_objects import X509Certificate
 
 
@@ -100,14 +99,18 @@ class TestAgent:
 
     def test_agent_activate_invalid_transition(self, test_agent: Agent) -> None:
         """Test invalid activation transition."""
+        # First activate the agent so we can deactivate it
+        test_agent.activate()
+        # Then deactivate it
         test_agent.deactivate()
 
+        # Now try to activate from deactivated state (should fail)
         with pytest.raises(InvalidStateTransitionError) as exc_info:
             test_agent.activate()
 
         assert "Invalid state transition" in str(exc_info.value)
-        assert "deactivated" in str(exc_info.value)
-        assert "active" in str(exc_info.value)
+        assert "deactivated" in str(exc_info.value).lower()
+        assert "active" in str(exc_info.value).lower()
 
     def test_agent_suspend(self, test_agent: Agent) -> None:
         """Test suspending an active agent."""
@@ -178,6 +181,87 @@ class TestAgent:
             test_agent.assign_policy(uuid4())
 
         assert "Cannot assign more than 50 policies" in str(exc_info.value)
+
+    def test_agent_creation_with_duplicate_policy_ids(
+        self, test_tenant_id: UUID, test_certificate: X509Certificate
+    ) -> None:
+        """Test agent creation removes duplicate policy IDs."""
+        policy_id = uuid4()
+        duplicate_policies = [policy_id, policy_id, uuid4()]
+
+        agent = Agent(
+            tenant_id=test_tenant_id,
+            name="test-agent",
+            certificate=test_certificate,
+            policy_ids=duplicate_policies,
+        )
+
+        # Duplicates should be removed by validator
+        assert len(agent.policy_ids) == 2
+        assert agent.policy_ids.count(policy_id) == 1
+
+    def test_agent_creation_with_too_many_policy_ids(
+        self, test_tenant_id: UUID, test_certificate: X509Certificate
+    ) -> None:
+        """Test agent creation with too many policy IDs fails."""
+        # Create 51 policies (exceeds 50 limit)
+        too_many_policies = [uuid4() for _ in range(51)]
+
+        with pytest.raises(ValidationError) as exc_info:
+            Agent(
+                tenant_id=test_tenant_id,
+                name="test-agent",
+                certificate=test_certificate,
+                policy_ids=too_many_policies,
+            )
+
+        assert "Too many policies assigned" in str(exc_info.value)
+
+    def test_agent_creation_with_invalid_version(
+        self, test_tenant_id: UUID, test_certificate: X509Certificate
+    ) -> None:
+        """Test agent creation with invalid version."""
+        with pytest.raises(ValidationError) as exc_info:
+            Agent(
+                tenant_id=test_tenant_id,
+                name="test-agent",
+                certificate=test_certificate,
+                version=0,  # Invalid - must be >= 1
+            )
+
+        assert "Version must be positive" in str(exc_info.value)
+
+    def test_agent_deactivate_invalid_state(
+        self, test_tenant_id: UUID, test_certificate: X509Certificate
+    ) -> None:
+        """Test deactivating agent from invalid state."""
+        agent = Agent(
+            tenant_id=test_tenant_id,
+            name="test-agent",
+            certificate=test_certificate,
+            status=AgentStatus.PENDING,
+        )
+
+        with pytest.raises(InvalidStateTransitionError) as exc_info:
+            agent.deactivate()
+
+        assert "Agent" in str(exc_info.value)
+
+    def test_agent_mark_expired_invalid_state(
+        self, test_tenant_id: UUID, test_certificate: X509Certificate
+    ) -> None:
+        """Test marking agent expired from invalid state."""
+        agent = Agent(
+            tenant_id=test_tenant_id,
+            name="test-agent",
+            certificate=test_certificate,
+            status=AgentStatus.PENDING,
+        )
+
+        with pytest.raises(InvalidStateTransitionError) as exc_info:
+            agent.mark_expired()
+
+        assert "Agent" in str(exc_info.value)
 
     def test_agent_remove_policy(self, test_agent: Agent) -> None:
         """Test removing policy from agent."""
@@ -389,6 +473,86 @@ class TestAgentService:
         assert suspended_agent.status == AgentStatus.SUSPENDED
         assert suspended_agent.metadata["suspension_reason"] == "Security violation"
 
+    async def test_deactivate_agent_success(
+        self,
+        agent_service: AgentService,
+        mock_repository: AsyncMock,
+        test_agent: Agent,
+    ) -> None:
+        """Test successful agent deactivation."""
+        test_agent.activate()  # Must be active to deactivate
+        mock_repository.find_by_id.return_value = test_agent
+        mock_repository.save.return_value = None
+
+        deactivated_agent = await agent_service.deactivate_agent(
+            test_agent.agent_id, "End of service"
+        )
+
+        assert deactivated_agent.status == AgentStatus.DEACTIVATED
+
+    async def test_update_agent_certificate_success(
+        self,
+        agent_service: AgentService,
+        mock_repository: AsyncMock,
+        test_agent: Agent,
+        test_certificate: X509Certificate,
+    ) -> None:
+        """Test updating agent certificate."""
+        mock_repository.find_by_id.return_value = test_agent
+        mock_repository.exists_by_certificate_fingerprint.return_value = False
+        mock_repository.save.return_value = None
+
+        updated_agent = await agent_service.update_agent_certificate(
+            test_agent.agent_id, test_certificate
+        )
+
+        assert updated_agent.certificate == test_certificate
+
+    async def test_update_agent_certificate_duplicate(
+        self,
+        agent_service: AgentService,
+        mock_repository: AsyncMock,
+        test_agent: Agent,
+    ) -> None:
+        """Test updating with duplicate certificate fails."""
+        # Create a different certificate than the agent's current one
+        from datetime import UTC, datetime, timedelta
+
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.hazmat.primitives.serialization import Encoding
+        from cryptography.x509.oid import NameOID
+
+        # Generate a new certificate
+        key = rsa.generate_private_key(
+            public_exponent=65537, key_size=2048, backend=default_backend()
+        )
+        subject = issuer = x509.Name(
+            [x509.NameAttribute(NameOID.COMMON_NAME, "different.example.com")]
+        )
+        now = datetime.now(UTC)
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - timedelta(days=1))
+            .not_valid_after(now + timedelta(days=365))
+            .sign(key, hashes.SHA256(), default_backend())
+        )
+        new_cert_pem = cert.public_bytes(Encoding.PEM).decode()
+        new_cert = X509Certificate(pem_data=new_cert_pem)
+
+        mock_repository.find_by_id.return_value = test_agent
+        # Mock says this new cert fingerprint already exists
+        mock_repository.exists_by_certificate_fingerprint.return_value = True
+
+        with pytest.raises(DuplicateEntityError):
+            await agent_service.update_agent_certificate(test_agent.agent_id, new_cert)
+
     async def test_assign_policy_to_agent(
         self,
         agent_service: AgentService,
@@ -467,13 +631,11 @@ class TestAgentService:
         mock_repository: AsyncMock,
     ) -> None:
         """Test finding inactive agents for cleanup."""
-        inactive_agents = [
-            Agent(
-                tenant_id=uuid4(),
-                name="Inactive",
-                certificate=X509Certificate(pem_data="cert"),
-            )
-        ]
+        # Create mock inactive agent instead of real certificate
+        mock_inactive_agent = MagicMock()
+        mock_inactive_agent.agent_id = uuid4()
+        mock_inactive_agent.name = "Inactive"
+        inactive_agents = [mock_inactive_agent]
         mock_repository.find_inactive_agents.return_value = inactive_agents
 
         result = await agent_service.find_inactive_agents_for_cleanup(30)

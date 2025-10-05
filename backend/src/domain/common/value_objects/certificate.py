@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from pydantic import BaseModel
-from pydantic import field_validator
-
-from domain.common.exceptions import SecurityViolationError
-from domain.common.exceptions import ValidationError
+from domain.common.exceptions import SecurityViolationError, ValidationError
+from pydantic import BaseModel, field_validator
 
 
 class X509Certificate(BaseModel):
@@ -51,6 +47,9 @@ class X509Certificate(BaseModel):
 
             return v.strip()
 
+        except SecurityViolationError:
+            # Re-raise security violations as-is
+            raise
         except ValueError as e:
             raise ValidationError(
                 f"Invalid certificate format: {str(e)}",
@@ -76,20 +75,32 @@ class X509Certificate(BaseModel):
         """
         now = datetime.now(UTC)
 
+        # Ensure certificate dates are timezone-aware for comparison
+        not_valid_after = (
+            cert.not_valid_after.replace(tzinfo=UTC)
+            if cert.not_valid_after.tzinfo is None
+            else cert.not_valid_after
+        )
+        not_valid_before = (
+            cert.not_valid_before.replace(tzinfo=UTC)
+            if cert.not_valid_before.tzinfo is None
+            else cert.not_valid_before
+        )
+
         # Check expiration
-        if cert.not_valid_after < now:
+        if not_valid_after < now:
             raise SecurityViolationError(
-                f"Certificate expired on {cert.not_valid_after}",
+                f"Certificate expired on {not_valid_after}",
                 violation_type="EXPIRED_CERTIFICATE",
-                context={"expiry_date": cert.not_valid_after.isoformat()},
+                context={"expiry_date": not_valid_after.isoformat()},
             )
 
         # Check not valid before
-        if cert.not_valid_before > now:
+        if not_valid_before > now:
             raise SecurityViolationError(
-                f"Certificate not yet valid (valid from {cert.not_valid_before})",
+                f"Certificate not yet valid (valid from {not_valid_before})",
                 violation_type="PREMATURE_CERTIFICATE",
-                context={"valid_from": cert.not_valid_before.isoformat()},
+                context={"valid_from": not_valid_before.isoformat()},
             )
 
         # Check key size for RSA keys
@@ -180,10 +191,10 @@ class X509Certificate(BaseModel):
         Returns:
             SHA256 fingerprint as hex string
         """
-        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives import hashes, serialization
 
         digest = hashes.Hash(hashes.SHA256())
-        digest.update(self.certificate.public_bytes(x509.Encoding.DER))
+        digest.update(self.certificate.public_bytes(serialization.Encoding.DER))
         return digest.finalize().hex().upper()
 
     @property
@@ -293,9 +304,11 @@ class X509Certificate(BaseModel):
         Raises:
             ValidationError: If DER data is invalid
         """
+        from cryptography.hazmat.primitives import serialization
+
         try:
             cert = x509.load_der_x509_certificate(der_data, default_backend())
-            pem_data = cert.public_bytes(x509.Encoding.PEM).decode()
+            pem_data = cert.public_bytes(serialization.Encoding.PEM).decode()
             return cls(pem_data=pem_data)
         except Exception as e:
             raise ValidationError(
@@ -310,8 +323,10 @@ class X509Certificate(BaseModel):
         Returns:
             DER-encoded certificate bytes
         """
+        from cryptography.hazmat.primitives import serialization
+
         cert = self.certificate
-        return cert.public_bytes(x509.Encoding.DER)
+        return cert.public_bytes(serialization.Encoding.DER)
 
     def __str__(self) -> str:
         """String representation of certificate.

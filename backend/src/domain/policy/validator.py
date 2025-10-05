@@ -3,13 +3,8 @@
 from uuid import UUID
 
 from domain.common.exceptions import ValidationError
-from domain.common.value_objects import DomainName
-from domain.common.value_objects import TimeRange
-from domain.policy.entity import Policy
-from domain.policy.entity import PolicyRule
-from domain.policy.entity import RateLimit
-from domain.policy.entity import RuleCondition
-from domain.policy.entity import TimeRestriction
+from domain.common.value_objects import DomainName, TimeRange
+from domain.policy.entity import Policy, PolicyRule, RateLimit, RuleCondition, TimeRestriction
 
 
 class PolicyValidator:

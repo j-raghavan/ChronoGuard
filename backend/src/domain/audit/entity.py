@@ -5,19 +5,14 @@ from __future__ import annotations
 import hashlib
 import hmac
 import time
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
-from uuid import UUID
-from uuid import uuid4
-
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import field_validator
+from uuid import UUID, uuid4
 
 from domain.common.exceptions import ValidationError
 from domain.common.value_objects import DomainName
+from pydantic import BaseModel, Field, field_validator
 
 
 class AccessDecision(str, Enum):
@@ -117,6 +112,10 @@ class AuditEntry(BaseModel):
 
     def __init__(self, **data: Any) -> None:
         """Initialize audit entry with temporal context and hash calculation."""
+        # Handle timed_access_metadata reconstruction from dict
+        if "timed_access_metadata" in data and isinstance(data["timed_access_metadata"], dict):
+            data["timed_access_metadata"] = TimedAccessContext(**data["timed_access_metadata"])
+
         # Create timed access metadata if not provided
         if "timed_access_metadata" not in data and "timestamp" in data:
             data["timed_access_metadata"] = TimedAccessContext.create_from_timestamp(
@@ -129,9 +128,9 @@ class AuditEntry(BaseModel):
 
         super().__init__(**data)
 
-    @field_validator("domain")
+    @field_validator("domain", mode="before")
     @classmethod
-    def validate_domain(cls, v: str | DomainName) -> DomainName:
+    def validate_domain(cls, v: str | DomainName | dict) -> DomainName:
         """Validate domain is a DomainName instance.
 
         Args:
@@ -147,13 +146,15 @@ class AuditEntry(BaseModel):
             return DomainName(value=v)
         if isinstance(v, DomainName):
             return v
+        if isinstance(v, dict) and "value" in v:
+            return DomainName(value=v["value"])
         raise ValidationError(
             f"Domain must be string or DomainName, got {type(v)}",
             field="domain",
             value=str(v),
         )
 
-    @field_validator("timestamp")
+    @field_validator("timestamp", mode="before")
     @classmethod
     def validate_timestamp(cls, v: datetime) -> datetime:
         """Validate timestamp is timezone-aware UTC.
@@ -175,7 +176,7 @@ class AuditEntry(BaseModel):
             return v.astimezone(UTC)
         return v
 
-    @field_validator("reason")
+    @field_validator("reason", mode="before")
     @classmethod
     def validate_reason(cls, v: str) -> str:
         """Validate reason string.
@@ -197,7 +198,7 @@ class AuditEntry(BaseModel):
             )
         return v.strip()
 
-    @field_validator("source_ip")
+    @field_validator("source_ip", mode="before")
     @classmethod
     def validate_source_ip(cls, v: str | None) -> str | None:
         """Validate source IP address format.
@@ -226,7 +227,7 @@ class AuditEntry(BaseModel):
                 value=v,
             ) from e
 
-    @field_validator("sequence_number")
+    @field_validator("sequence_number", mode="before")
     @classmethod
     def validate_sequence_number(cls, v: int) -> int:
         """Validate sequence number is non-negative.

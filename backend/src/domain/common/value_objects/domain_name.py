@@ -4,11 +4,8 @@ from __future__ import annotations
 
 import re
 
-from pydantic import BaseModel
-from pydantic import field_validator
-
-from domain.common.exceptions import SecurityViolationError
-from domain.common.exceptions import ValidationError
+from domain.common.exceptions import SecurityViolationError, ValidationError
+from pydantic import BaseModel, field_validator
 
 
 class DomainName(BaseModel):
@@ -21,7 +18,7 @@ class DomainName(BaseModel):
 
         frozen = True
 
-    @field_validator("value")
+    @field_validator("value", mode="before")
     @classmethod
     def validate_domain_name(cls, v: str) -> str:
         """Validate domain name format and security constraints.
@@ -226,15 +223,15 @@ class DomainName(BaseModel):
 
         try:
             parsed = urllib.parse.urlparse(url)
-            if not parsed.netloc:
-                raise ValidationError(f"No domain found in URL: {url}", field="url", value=url)
-
-            # Remove port if present
-            domain = parsed.netloc.split(":")[0]
-            return cls(value=domain)
-
         except Exception as e:
             raise ValidationError(f"Invalid URL format: {url}", field="url", value=url) from e
+
+        if not parsed.netloc:
+            raise ValidationError(f"No domain found in URL: {url}", field="url", value=url)
+
+        # Remove port if present
+        domain = parsed.netloc.split(":")[0]
+        return cls(value=domain)
 
     def to_punycode(self) -> str:
         """Convert domain to punycode if needed.

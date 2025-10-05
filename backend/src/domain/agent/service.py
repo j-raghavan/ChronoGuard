@@ -1,15 +1,15 @@
 """Agent domain service for business operations."""
 
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from domain.agent.entity import Agent
-from domain.agent.entity import AgentStatus
+from domain.agent.entity import Agent, AgentStatus
 from domain.agent.repository import AgentRepository
-from domain.common.exceptions import BusinessRuleViolationError
-from domain.common.exceptions import DuplicateEntityError
-from domain.common.exceptions import EntityNotFoundError
+from domain.common.exceptions import (
+    BusinessRuleViolationError,
+    DuplicateEntityError,
+    EntityNotFoundError,
+)
 from domain.common.value_objects import X509Certificate
 
 
@@ -312,8 +312,10 @@ class AgentService:
         Returns:
             List of inactive agents
         """
+        from datetime import timedelta
+
         cutoff_date = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        cutoff_date = cutoff_date.replace(day=cutoff_date.day - inactive_days)
+        cutoff_date = cutoff_date - timedelta(days=inactive_days)
 
         return await self._repository.find_inactive_agents(cutoff_date)
 

@@ -1,12 +1,10 @@
 """Repository interface for policy persistence following DDD principles."""
 
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from datetime import datetime
 from uuid import UUID
 
-from domain.policy.entity import Policy
-from domain.policy.entity import PolicyStatus
+from domain.policy.entity import Policy, PolicyStatus
 
 
 class PolicyRepository(ABC):

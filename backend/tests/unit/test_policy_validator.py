@@ -1,0 +1,301 @@
+"""Tests for PolicyValidator domain service."""
+
+import pytest
+from domain.common.exceptions import ValidationError
+from domain.policy.entity import RateLimit
+from domain.policy.validator import PolicyValidator
+
+
+class TestPolicyValidator:
+    """Test PolicyValidator domain service."""
+
+    @pytest.fixture
+    def validator(self):
+        """Create PolicyValidator instance."""
+        return PolicyValidator()
+
+    def test_validate_domain_list_consistency_with_valid_domains(self, validator):
+        """Test domain list validation with valid non-overlapping domains."""
+        allowed = {"example.com", "test.example.com"}
+        blocked = {"malicious.com", "spam.example.com"}
+
+        # Should not raise
+        validator.validate_domain_list_consistency(allowed, blocked)
+
+    def test_validate_domain_list_consistency_with_overlap(self, validator):
+        """Test domain list validation detects overlaps."""
+        allowed = {"example.com", "test.com"}
+        blocked = {"example.com", "spam.com"}  # example.com in both
+
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_domain_list_consistency(allowed, blocked)
+
+        assert "cannot be both allowed and blocked" in str(exc_info.value).lower()
+        assert "example.com" in str(exc_info.value)
+
+    def test_validate_domain_list_consistency_with_invalid_domain(self, validator):
+        """Test domain list validation detects invalid domain formats."""
+        from domain.common.exceptions import SecurityViolationError
+
+        allowed = {"valid.example.com"}
+        blocked = {"192.168.1.1", "malicious.com"}  # IP address - raises SecurityViolationError
+
+        # IP addresses raise SecurityViolationError which gets caught and added to invalid list
+        with pytest.raises((ValidationError, SecurityViolationError)):
+            validator.validate_domain_list_consistency(allowed, blocked)
+
+    def test_validate_domain_list_consistency_with_empty_sets(self, validator):
+        """Test domain list validation with empty sets."""
+        allowed = set()
+        blocked = set()
+
+        # Should not raise - empty is valid
+        validator.validate_domain_list_consistency(allowed, blocked)
+
+    def test_validate_rate_limit_consistency_valid(self, validator):
+        """Test rate limit validation with consistent limits."""
+        rate_limit = RateLimit(
+            requests_per_minute=10,
+            requests_per_hour=600,  # 10 * 60 = 600
+            requests_per_day=14400,  # 600 * 24 = 14400
+            burst_limit=15,  # <= 10 * 2
+        )
+
+        # Should not raise
+        validator.validate_rate_limit_consistency(rate_limit)
+
+    def test_validate_rate_limit_consistency_hourly_too_low(self, validator):
+        """Test rate limit validation detects hourly limit too low."""
+        rate_limit = RateLimit(
+            requests_per_minute=100,
+            requests_per_hour=1000,  # Should be >= 100 * 60 = 6000
+            requests_per_day=24000,
+            burst_limit=150,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_rate_limit_consistency(rate_limit)
+
+        assert "hourly rate limit" in str(exc_info.value).lower()
+        assert "per-minute" in str(exc_info.value).lower()
+
+    def test_validate_rate_limit_consistency_daily_too_low(self, validator):
+        """Test rate limit validation detects daily limit too low."""
+        rate_limit = RateLimit(
+            requests_per_minute=10,
+            requests_per_hour=600,
+            requests_per_day=1000,  # Should be >= 600 * 24 = 14400
+            burst_limit=15,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_rate_limit_consistency(rate_limit)
+
+        assert "daily rate limit" in str(exc_info.value).lower()
+        assert "per-hour" in str(exc_info.value).lower()
+
+    def test_validate_rate_limit_consistency_burst_too_high(self, validator):
+        """Test rate limit validation detects burst limit too high."""
+        rate_limit = RateLimit(
+            requests_per_minute=10,
+            requests_per_hour=600,
+            requests_per_day=14400,
+            burst_limit=25,  # > 10 * 2 = 20
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_rate_limit_consistency(rate_limit)
+
+        assert "burst limit" in str(exc_info.value).lower()
+        assert "per-minute" in str(exc_info.value).lower()
+
+    def test_validate_time_restriction_logic_valid(self, validator):
+        """Test time restriction validation with valid restrictions."""
+        from domain.common.value_objects import TimeRange
+        from domain.policy.entity import TimeRestriction
+
+        time_restriction = TimeRestriction(
+            allowed_time_ranges=[
+                TimeRange(start_hour=9, start_minute=0, end_hour=17, end_minute=0)
+            ],
+            allowed_days_of_week={0, 1, 2, 3, 4},
+            timezone="UTC",
+        )
+
+        # Should not raise
+        validator.validate_time_restriction_logic(time_restriction)
+
+    def test_validate_time_restriction_logic_invalid_timezone(self, validator):
+        """Test time restriction validation detects invalid timezone."""
+        from domain.common.value_objects import TimeRange
+        from domain.policy.entity import TimeRestriction
+
+        time_restriction = TimeRestriction(
+            allowed_time_ranges=[
+                TimeRange(start_hour=9, start_minute=0, end_hour=17, end_minute=0)
+            ],
+            allowed_days_of_week={0, 1, 2, 3, 4},
+            timezone="Invalid/Timezone",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_time_restriction_logic(time_restriction)
+
+        assert "timezone" in str(exc_info.value).lower()
+
+    def test_validate_policy_priority_conflicts_no_conflict(self, validator):
+        """Test priority validation with no conflicts."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy
+
+        existing_policies = [
+            Policy(
+                tenant_id=uuid4(),
+                name="policy1",
+                description="Test",
+                created_by=uuid4(),
+                priority=100,
+            )
+        ]
+
+        # Different priority - no conflict
+        validator.validate_policy_priority_conflicts(existing_policies, new_priority=200)
+
+    def test_validate_policy_priority_conflicts_with_conflict(self, validator):
+        """Test priority validation detects conflicts."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy
+
+        existing_policies = [
+            Policy(
+                tenant_id=uuid4(),
+                name="policy1",
+                description="Test",
+                created_by=uuid4(),
+                priority=100,
+            )
+        ]
+
+        # Same priority - conflict!
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_policy_priority_conflicts(existing_policies, new_priority=100)
+
+        assert "priority" in str(exc_info.value).lower()
+        assert "conflict" in str(exc_info.value).lower()
+
+    def test_validate_policy_rule_limits_within_limit(self, validator):
+        """Test policy rule limit validation when within limits."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy
+
+        policy = Policy(
+            tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
+        )
+
+        # Adding 10 rules (well within 100 limit)
+        validator.validate_policy_rule_limits(policy, new_rule_count=10)
+
+    def test_validate_policy_rule_limits_exceeds_limit(self, validator):
+        """Test policy rule limit validation when limit exceeded."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy
+
+        policy = Policy(
+            tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
+        )
+
+        # Trying to add 101 rules (exceeds 100 limit)
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_policy_rule_limits(policy, new_rule_count=101)
+
+        assert "rule limit" in str(exc_info.value).lower()
+
+    def test_validate_priority_conflicts_with_exclusion(self, validator):
+        """Test priority validation excludes specified policy."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy
+
+        policy_id = uuid4()
+        existing_policies = [
+            Policy(
+                policy_id=policy_id,
+                tenant_id=uuid4(),
+                name="policy1",
+                description="Test",
+                created_by=uuid4(),
+                priority=100,
+            )
+        ]
+
+        # Same priority but excluded - no conflict
+        validator.validate_policy_priority_conflicts(
+            existing_policies, new_priority=100, exclude_policy_id=policy_id
+        )
+
+    def test_validate_policy_for_activation_with_rules(self, validator):
+        """Test policy activation validation with rules."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy, PolicyRule, RuleAction, RuleCondition
+
+        policy = Policy(
+            tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
+        )
+
+        # Add a valid rule
+        rule = PolicyRule(
+            name="test-rule",
+            description="Test",
+            conditions=[RuleCondition(field="domain", operator="equals", value="example.com")],
+            action=RuleAction.ALLOW,
+        )
+        policy.add_rule(rule)
+
+        # Should validate successfully
+        validator.validate_policy_for_activation(policy)
+
+    def test_validate_policy_for_activation_empty_policy_fails(self, validator):
+        """Test policy activation validation fails for empty policy."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy
+
+        # Create policy with no rules, domains, or restrictions
+        policy = Policy(
+            tenant_id=uuid4(), name="empty-policy", description="Test", created_by=uuid4()
+        )
+
+        # Should fail - no enforcement mechanisms
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_policy_for_activation(policy)
+
+        assert "at least one" in str(exc_info.value).lower()
+
+    def test_validate_policy_for_activation_with_domain_overlap(self, validator):
+        """Test policy activation validation detects domain overlaps."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy
+
+        policy = Policy(
+            tenant_id=uuid4(),
+            name="test-policy",
+            description="Test",
+            created_by=uuid4(),
+            allowed_domains={"example.com"},
+            blocked_domains={"example.com"},  # Overlap!
+        )
+
+        # Should fail due to overlap
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_policy_for_activation(policy)
+
+        assert (
+            "allowed and blocked" in str(exc_info.value).lower()
+            or "overlap" in str(exc_info.value).lower()
+        )
