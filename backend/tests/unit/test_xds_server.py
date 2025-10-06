@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from uuid import uuid4
 
 import pytest
-
 from domain.agent.entity import Agent, AgentStatus
 from domain.common.value_objects import X509Certificate
 from infrastructure.envoy.config_generator import (

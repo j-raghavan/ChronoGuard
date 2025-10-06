@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, Mock, patch, create_autospec
+from unittest.mock import AsyncMock, MagicMock, Mock, create_autospec, patch
 from uuid import uuid4
 
 import aiohttp
 import pytest
-
 from domain.common.value_objects import TimeRange
 from domain.policy.entity import (
     Policy,
