@@ -108,7 +108,7 @@ jobs:
           echo "🐳 Testing complete Docker Compose stack..."
 
           # Start essential services only for CI test
-          docker-compose -f deployments/docker/docker-compose.yml up -d \
+          docker compose -f deployments/docker/docker-compose.yml up -d \
             postgres redis chronoguard-api
 
           # Wait for services to be ready
@@ -118,11 +118,11 @@ jobs:
           curl -f http://localhost:8000/health || exit 1
 
           # Check PostgreSQL connection
-          docker-compose -f deployments/docker/docker-compose.yml exec -T postgres \
+          docker compose -f deployments/docker/docker-compose.yml exec -T postgres \
             psql -U chronoguard -d chronoguard -c "SELECT 1;" || exit 1
 
           # Check Redis connection
-          docker-compose -f deployments/docker/docker-compose.yml exec -T redis \
+          docker compose -f deployments/docker/docker-compose.yml exec -T redis \
             redis-cli ping || exit 1
 
           echo "✅ Docker Compose stack test successful"
@@ -130,6 +130,6 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          docker-compose -f deployments/docker/docker-compose.yml down -v
+          docker compose -f deployments/docker/docker-compose.yml down -v
 
   # Multi-arch manifest publishing moved to docker-images.yml (manual release workflow)

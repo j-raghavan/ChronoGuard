@@ -70,7 +70,7 @@ jobs:
       - name: Import validation
         run: |
           echo "📥 Validating module imports..."
-          PYTHONPATH=backend/src python -c "
+          PYTHONPATH=backend/src poetry run python -c "
           from core.features import FeatureManager; print('✅ Core systems')
           from domain.agent import Agent; print('✅ Agent domain')
           from domain.policy import Policy; print('✅ Policy domain')

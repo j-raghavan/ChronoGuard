@@ -34,7 +34,7 @@ jobs:
       - name: Start ChronoGuard stack
         run: |
           echo "🚀 Starting complete ChronoGuard stack..."
-          docker-compose -f deployments/docker/docker-compose.full.yml up -d \
+          docker compose -f deployments/docker/docker-compose.full.yml up -d \
             postgres redis chronoguard-api chronoguard-proxy chronoguard-policy-engine \
             chronoguard-audit-sink chronoguard-metrics-exporter
 
@@ -163,11 +163,11 @@ jobs:
           echo "📋 Collecting service logs for debugging..."
 
           mkdir -p integration-logs
-          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-api > integration-logs/api.log
-          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-proxy > integration-logs/proxy.log
-          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-policy-engine > integration-logs/policy-engine.log
-          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-audit-sink > integration-logs/audit-sink.log
-          docker-compose -f deployments/docker/docker-compose.full.yml logs chronoguard-metrics-exporter > integration-logs/metrics-exporter.log
+          docker compose -f deployments/docker/docker-compose.full.yml logs chronoguard-api > integration-logs/api.log
+          docker compose -f deployments/docker/docker-compose.full.yml logs chronoguard-proxy > integration-logs/proxy.log
+          docker compose -f deployments/docker/docker-compose.full.yml logs chronoguard-policy-engine > integration-logs/policy-engine.log
+          docker compose -f deployments/docker/docker-compose.full.yml logs chronoguard-audit-sink > integration-logs/audit-sink.log
+          docker compose -f deployments/docker/docker-compose.full.yml logs chronoguard-metrics-exporter > integration-logs/metrics-exporter.log
 
       - name: Upload integration test artifacts
         if: always()
@@ -184,7 +184,7 @@ jobs:
         if: always()
         run: |
           echo "🧹 Cleaning up test environment..."
-          docker-compose -f deployments/docker/docker-compose.full.yml down -v
+          docker compose -f deployments/docker/docker-compose.full.yml down -v
           docker system prune -f
 
   playwright-smoke-tests:
@@ -208,7 +208,7 @@ jobs:
       - name: Start ChronoGuard with Playwright runner
         run: |
           echo "🎭 Starting ChronoGuard with Playwright runner..."
-          docker-compose -f deployments/docker/docker-compose.full.yml up -d
+          docker compose -f deployments/docker/docker-compose.full.yml up -d
 
       - name: Wait for complete stack
         run: |
@@ -220,7 +220,7 @@ jobs:
           echo "🧪 Running Playwright smoke tests..."
 
           # Run smoke tests through the playwright runner container
-          docker-compose -f deployments/docker/docker-compose.full.yml run --rm \
+          docker compose -f deployments/docker/docker-compose.full.yml run --rm \
             chronoguard-playwright-runner npm run test:smoke
 
       - name: Collect test reports
@@ -245,4 +245,4 @@ jobs:
       - name: Cleanup smoke test environment
         if: always()
         run: |
-          docker-compose -f deployments/docker/docker-compose.full.yml down -v
+          docker compose -f deployments/docker/docker-compose.full.yml down -v
