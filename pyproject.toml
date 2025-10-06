@@ -197,3 +197,15 @@ skip_glob = [
     "__pycache__",
     ".venv/*",
 ]
+
+[tool.bandit]
+# Bandit security scanner configuration
+skips = [
+    "B104",  # Hardcoded bind all interfaces - Required for proxy infrastructure
+    "B701",  # Jinja2 autoescape false - Used for Rego code generation, not HTML
+]
+exclude_dirs = [
+    "backend/tests/",
+    ".venv/",
+    "__pycache__/",
+]

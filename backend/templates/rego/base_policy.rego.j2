@@ -1,0 +1,303 @@
+# ChronoGuard Policy: {{ policy_name }}
+# Policy ID: {{ policy_id }}
+# Tenant ID: {{ tenant_id }}
+# Generated automatically - DO NOT EDIT
+
+package chronoguard.policies.{{ policy_name }}
+
+import future.keywords.if
+import future.keywords.in
+
+# Policy metadata
+policy_metadata := {
+    "id": "{{ policy_id }}",
+    "name": "{{ policy_name }}",
+    "tenant_id": "{{ tenant_id }}",
+    "priority": {{ priority }},
+    "status": "{{ status }}"
+}
+
+# Domain access control
+allowed_domains := {{ allowed_domains | tojson }}
+blocked_domains := {{ blocked_domains | tojson }}
+
+# Time restrictions
+{% if time_restrictions.enabled %}
+time_restrictions := {
+    "enabled": true,
+    "timezone": "{{ time_restrictions.timezone }}",
+    "allowed_days": {{ time_restrictions.allowed_days | tojson }},
+    "time_ranges": {{ time_restrictions.time_ranges | tojson }}
+}
+{% else %}
+time_restrictions := {"enabled": false}
+{% endif %}
+
+# Rate limits
+{% if rate_limits.enabled %}
+rate_limits := {
+    "enabled": true,
+    "requests_per_minute": {{ rate_limits.requests_per_minute }},
+    "requests_per_hour": {{ rate_limits.requests_per_hour }},
+    "requests_per_day": {{ rate_limits.requests_per_day }},
+    "burst_limit": {{ rate_limits.burst_limit }}
+}
+{% else %}
+rate_limits := {"enabled": false}
+{% endif %}
+
+# Policy rules
+{% for rule in rules %}
+# Rule: {{ rule.name }}
+rule_{{ loop.index0 }} := {
+    "rule_id": "{{ rule.rule_id }}",
+    "name": "{{ rule.name }}",
+    "action": "{{ rule.action }}",
+    "priority": {{ rule.priority }},
+    "conditions": {{ rule.conditions | tojson }}
+}
+{% endfor %}
+
+# Main allow decision
+default allow := false
+
+allow if {
+    # Check tenant matches
+    input.tenant_id == "{{ tenant_id }}"
+
+    # Check domain access
+    domain_allowed
+
+    # Check time restrictions
+    time_allowed
+
+    # Check rate limits
+    rate_limit_ok
+
+    # Evaluate rules
+    rules_allow
+}
+
+# Domain access logic
+domain_allowed if {
+    count(allowed_domains) == 0
+    count(blocked_domains) == 0
+}
+
+domain_allowed if {
+    count(allowed_domains) > 0
+    input.domain in allowed_domains
+}
+
+domain_allowed if {
+    count(blocked_domains) > 0
+    not input.domain in blocked_domains
+}
+
+# Time restriction logic
+{% if time_restrictions.enabled %}
+time_allowed if {
+    time_restrictions.enabled
+
+    # Check day of week
+    time.weekday(time.now_ns()) in time_restrictions.allowed_days
+
+    # Check time ranges
+    current_hour := time.clock(time.now_ns())[0]
+    current_minute := time.clock(time.now_ns())[1]
+    current_time := (current_hour * 60) + current_minute
+
+    some range in time_restrictions.time_ranges
+    start_time := (range.start_hour * 60) + range.start_minute
+    end_time := (range.end_hour * 60) + range.end_minute
+    current_time >= start_time
+    current_time <= end_time
+}
+{% else %}
+time_allowed if {
+    not time_restrictions.enabled
+}
+{% endif %}
+
+# Rate limit logic (placeholder - actual implementation would query rate limit service)
+{% if rate_limits.enabled %}
+rate_limit_ok if {
+    rate_limits.enabled
+    # In production, this would check against a rate limit service/cache
+    # For now, we allow if rate limits are configured
+    true
+}
+{% else %}
+rate_limit_ok if {
+    not rate_limits.enabled
+}
+{% endif %}
+
+# Rules evaluation
+{% if rules %}
+rules_allow if {
+    # Evaluate each rule in priority order
+    some rule_result in [
+        {% for rule in rules %}
+        evaluate_rule_{{ loop.index0 }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+    rule_result.action == "allow"
+    rule_result.matches
+}
+
+{% for rule in rules %}
+# Evaluate rule: {{ rule.name }}
+evaluate_rule_{{ loop.index0 }} := result if {
+    # Check all conditions
+    conditions_met := [condition_met |
+        some condition in rule_{{ loop.index0 }}.conditions
+        condition_met := check_condition(condition, input)
+    ]
+
+    # All conditions must be true
+    all_met := all([c | c := conditions_met[_]; c == true])
+
+    result := {
+        "rule_id": "{{ rule.rule_id }}",
+        "action": "{{ rule.action }}",
+        "matches": all_met
+    }
+}
+{% endfor %}
+{% else %}
+rules_allow if {
+    # No rules configured, default to allow
+    true
+}
+{% endif %}
+
+# Condition checking helper
+check_condition(condition, input) := result if {
+    condition.operator == "equals"
+    result := object.get(input, condition.field, null) == condition.value
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "not_equals"
+    result := object.get(input, condition.field, null) != condition.value
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "contains"
+    field_value := object.get(input, condition.field, "")
+    result := contains(field_value, condition.value)
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "not_contains"
+    field_value := object.get(input, condition.field, "")
+    result := not contains(field_value, condition.value)
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "starts_with"
+    field_value := object.get(input, condition.field, "")
+    result := startswith(field_value, condition.value)
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "ends_with"
+    field_value := object.get(input, condition.field, "")
+    result := endswith(field_value, condition.value)
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "in"
+    field_value := object.get(input, condition.field, null)
+    values := split(condition.value, ",")
+    result := field_value in values
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "not_in"
+    field_value := object.get(input, condition.field, null)
+    values := split(condition.value, ",")
+    result := not field_value in values
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "greater_than"
+    field_value := to_number(object.get(input, condition.field, 0))
+    threshold := to_number(condition.value)
+    result := field_value > threshold
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "less_than"
+    field_value := to_number(object.get(input, condition.field, 0))
+    threshold := to_number(condition.value)
+    result := field_value < threshold
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "greater_equal"
+    field_value := to_number(object.get(input, condition.field, 0))
+    threshold := to_number(condition.value)
+    result := field_value >= threshold
+}
+
+check_condition(condition, input) := result if {
+    condition.operator == "less_equal"
+    field_value := to_number(object.get(input, condition.field, 0))
+    threshold := to_number(condition.value)
+    result := field_value <= threshold
+}
+
+# Deny decision (inverse of allow)
+deny if {
+    not allow
+}
+
+# Decision with reason
+decision := {
+    "allow": allow,
+    "deny": deny,
+    "policy": policy_metadata,
+    "reasons": reasons
+}
+
+# Reasons for decision
+reasons := r if {
+    allow
+    r := ["policy_allows_access"]
+}
+
+reasons := r if {
+    deny
+    r := denial_reasons
+}
+
+denial_reasons := reasons if {
+    reasons := array.concat(
+        domain_denial_reasons,
+        array.concat(time_denial_reasons, rate_limit_denial_reasons)
+    )
+}
+
+domain_denial_reasons := ["domain_not_allowed"] if {
+    not domain_allowed
+} else := []
+
+time_denial_reasons := ["time_restriction_violated"] if {
+    {% if time_restrictions.enabled %}
+    time_restrictions.enabled
+    not time_allowed
+    {% else %}
+    false
+    {% endif %}
+} else := []
+
+rate_limit_denial_reasons := ["rate_limit_exceeded"] if {
+    {% if rate_limits.enabled %}
+    rate_limits.enabled
+    not rate_limit_ok
+    {% else %}
+    false
+    {% endif %}
+} else := []

@@ -217,3 +217,19 @@ class PolicyActivationError(PolicyError):
         )
         self.policy_id = policy_id
         self.reason = reason
+
+
+class PolicyCompilationError(PolicyError):
+    """Raised when policy compilation to Rego format fails."""
+
+    def __init__(self, reason: str) -> None:
+        """Initialize policy compilation error.
+
+        Args:
+            reason: Reason why compilation failed
+        """
+        super().__init__(
+            f"Policy compilation failed: {reason}",
+            error_code="POLICY_COMPILATION_FAILED",
+        )
+        self.reason = reason

@@ -193,8 +193,8 @@ jobs:
           echo "🔒 Running comprehensive security analysis..."
 
           # Bandit security scan
-          poetry run bandit -r backend/src/ -f json -o bandit-results.json
-          poetry run bandit -r backend/src/ -f txt
+          poetry run bandit -r backend/src/ -c pyproject.toml -f json -o bandit-results.json
+          poetry run bandit -r backend/src/ -c pyproject.toml -f txt
 
           # Safety dependency check (skip for now - requires interactive login)
           echo "📋 Skipping Safety CLI (requires interactive login)"

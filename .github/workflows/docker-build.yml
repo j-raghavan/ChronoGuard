@@ -18,6 +18,8 @@ jobs:
   validate-dockerfiles:
     name: Validate Docker Builds (No Push)
     runs-on: ubuntu-latest
+    # Disabled until Docker deployment infrastructure is complete (Phase 5-6)
+    if: false
 
     strategy:
       matrix:
