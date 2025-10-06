@@ -1,0 +1,135 @@
+name: Docker Build Validation
+
+on:
+  pull_request:
+    branches: [ master, develop ]
+  push:
+    branches: [ develop, feat/* ]
+    paths:
+      - 'docker/**'
+      - 'backend/src/**'
+      - '.github/workflows/docker-build.yml'
+
+env:
+  REGISTRY: docker.io
+  DOCKERHUB_USERNAME: chronoguard
+
+jobs:
+  validate-dockerfiles:
+    name: Validate Docker Builds (No Push)
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - image: proxy
+            context: ./docker/proxy
+            description: "Envoy forward proxy with TLS, DFP, and OPA ext_authz"
+
+          - image: policy-engine
+            context: ./docker/policy-engine
+            description: "OPA with temporal-access Rego policies"
+
+          - image: audit-sink
+            context: ./docker/audit-sink
+            description: "Ingests decisions and creates hash-chained audit records"
+
+          - image: metrics-exporter
+            context: ./docker/metrics-exporter
+            description: "Prometheus/OTel metrics for temporal analysis"
+
+          - image: dashboard
+            context: ./docker/dashboard
+            description: "Minimal UI for policy visualization"
+
+          - image: playwright-runner
+            context: ./docker/playwright-runner
+            description: "Playwright + proxy for smoke tests"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # No Docker Hub login needed - validation only
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/${{ matrix.image }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build Docker image (validation only - no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64  # Single platform for faster validation
+          push: false  # Never push - validation only
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VERSION=dev-build
+            REVISION=${{ github.sha }}
+
+      # Security scans removed - handled in docker-images.yml for releases
+
+  docker-compose-test:
+    name: Test Docker Compose Stack
+    runs-on: ubuntu-latest
+    needs: validate-dockerfiles
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create environment file
+        run: |
+          cat > .env << EOF
+          DB_PASSWORD=test_password_123
+          REDIS_PASSWORD=test_redis_123
+          SECRET_KEY=test-secret-key-for-ci-only-do-not-use-in-production
+          GRAFANA_PASSWORD=test_grafana_123
+          EOF
+
+      - name: Test Docker Compose stack
+        run: |
+          echo "🐳 Testing complete Docker Compose stack..."
+
+          # Start essential services only for CI test
+          docker-compose -f deployments/docker/docker-compose.yml up -d \
+            postgres redis chronoguard-api
+
+          # Wait for services to be ready
+          sleep 30
+
+          # Test service health
+          curl -f http://localhost:8000/health || exit 1
+
+          # Check PostgreSQL connection
+          docker-compose -f deployments/docker/docker-compose.yml exec -T postgres \
+            psql -U chronoguard -d chronoguard -c "SELECT 1;" || exit 1
+
+          # Check Redis connection
+          docker-compose -f deployments/docker/docker-compose.yml exec -T redis \
+            redis-cli ping || exit 1
+
+          echo "✅ Docker Compose stack test successful"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f deployments/docker/docker-compose.yml down -v
+
+  # Multi-arch manifest publishing moved to docker-images.yml (manual release workflow)

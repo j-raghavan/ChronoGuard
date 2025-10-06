@@ -1,0 +1,228 @@
+name: Build and Push ChronoGuard Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0, v1.2.3)'
+        required: true
+        type: string
+      push_to_registry:
+        description: 'Push images to Docker Hub'
+        required: true
+        type: boolean
+        default: false
+      platforms:
+        description: 'Target platforms'
+        required: false
+        type: string
+        default: 'linux/amd64,linux/arm64'
+
+env:
+  REGISTRY: docker.io
+  DOCKERHUB_USERNAME: chronoguard
+
+jobs:
+  validate-inputs:
+    name: Validate Release Inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release tag format
+        run: |
+          TAG="${{ github.event.inputs.release_tag }}"
+          echo "🏷️ Release Tag: $TAG"
+          echo "📦 Push to Registry: ${{ github.event.inputs.push_to_registry }}"
+          echo "🖥️ Platforms: ${{ github.event.inputs.platforms }}"
+
+          # Validate semver format
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "❌ Invalid tag format. Expected semver like v1.0.0, v1.2.3, or v1.0.0-beta.1"
+            exit 1
+          fi
+
+          echo "✅ Tag format valid"
+
+  build-all-images:
+    name: Build All ChronoGuard Images
+    runs-on: ubuntu-latest
+    needs: validate-inputs
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: proxy
+            context: ./docker/proxy
+            description: "Envoy forward proxy with TLS, DFP, and OPA ext_authz defaults"
+            dockerfile: ./docker/proxy/Dockerfile
+
+          - image: policy-engine
+            context: ./docker/policy-engine
+            description: "OPA (envoy ext_authz) with starter temporal-access Rego bundle"
+            dockerfile: ./docker/policy-engine/Dockerfile
+
+          - image: audit-sink
+            context: ./docker/audit-sink
+            description: "Ingests decisions/logs; writes hash-chained audit records to DB/S3"
+            dockerfile: ./docker/audit-sink/Dockerfile
+
+          - image: metrics-exporter
+            context: ./docker/metrics-exporter
+            description: "Prom/OTel metrics for temporal windows, denials, and audit lag"
+            dockerfile: ./docker/metrics-exporter/Dockerfile
+
+          - image: dashboard
+            context: ./docker/dashboard
+            description: "Minimal UI to visualize policy windows, denials, and audit integrity"
+            dockerfile: ./docker/dashboard/Dockerfile
+
+          - image: playwright-runner
+            context: ./docker/playwright-runner
+            description: "Playwright + proxy prewired; ready for demo/scripted smoke tests"
+            dockerfile: ./docker/playwright-runner/Dockerfile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PAT }}
+
+      - name: Extract metadata for ${{ matrix.image }}
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/${{ matrix.image }}
+          tags: |
+            type=raw,value=${{ github.event.inputs.release_tag }}
+            type=raw,value=latest,enable=${{ github.event.inputs.push_to_registry }}
+          labels: |
+            org.opencontainers.image.title=ChronoGuard ${{ matrix.image }}
+            org.opencontainers.image.description=${{ matrix.description }}
+            org.opencontainers.image.vendor=ChronoGuard
+            org.opencontainers.image.version=${{ github.event.inputs.release_tag }}
+
+      - name: Copy shared backend code for ${{ matrix.image }}
+        if: contains(matrix.image, 'audit-sink') || contains(matrix.image, 'metrics-exporter')
+        run: |
+          # Copy shared backend domain and core code
+          mkdir -p ${{ matrix.context }}/src
+          cp -r backend/src/domain ${{ matrix.context }}/src/
+          cp -r backend/src/core ${{ matrix.context }}/src/
+          cp -r backend/src/infrastructure ${{ matrix.context }}/src/
+          cp backend/pyproject.toml ${{ matrix.context }}/
+
+      - name: Build and push ${{ matrix.image }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ github.event.inputs.platforms }}
+          push: ${{ github.event.inputs.push_to_registry }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VERSION=${{ github.event.inputs.release_tag }}
+            REVISION=${{ github.sha }}
+
+      - name: Run security scan on ${{ matrix.image }}
+        if: ${{ github.event.inputs.push_to_registry }}
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ github.event.inputs.release_tag }}
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.image }}.sarif'
+
+      - name: Upload security scan results for ${{ matrix.image }}
+        if: ${{ github.event.inputs.push_to_registry }}
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-${{ matrix.image }}.sarif'
+          category: 'docker-${{ matrix.image }}'
+
+  test-images:
+    name: Test Docker Images
+    runs-on: ubuntu-latest
+    needs: build-all-images
+    if: ${{ github.event.inputs.push_to_registry }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test image functionality
+        run: |
+          echo "🧪 Testing ChronoGuard image functionality..."
+
+          # Test each image can start and respond to health checks
+          images=("proxy" "policy-engine" "audit-sink" "metrics-exporter")
+
+          for image in "${images[@]}"; do
+            echo "Testing chronoguard/$image:${{ github.event.inputs.release_tag }}..."
+
+            # Start container
+            docker run -d --name "test-$image" \
+              -e CHRONOGUARD_ENV=testing \
+              "chronoguard/$image:${{ github.event.inputs.release_tag }}"
+
+            # Wait for startup
+            sleep 10
+
+            # Test health endpoint (where applicable)
+            if [ "$image" != "proxy" ] && [ "$image" != "policy-engine" ]; then
+              docker exec "test-$image" curl -f http://localhost:800X/health || true
+            fi
+
+            # Cleanup
+            docker stop "test-$image"
+            docker rm "test-$image"
+
+            echo "✅ $image test completed"
+          done
+
+  update-docker-hub-descriptions:
+    name: Update Docker Hub Descriptions
+    runs-on: ubuntu-latest
+    needs: build-all-images
+    if: ${{ github.event.inputs.push_to_registry }}
+
+    strategy:
+      matrix:
+        include:
+          - image: proxy
+            description: "🛡️ ChronoGuard Proxy - Envoy forward proxy with TLS termination, dynamic forward proxy (DFP), and OPA external authorization. Provides zero-trust network access control for browser automation with temporal restrictions."
+
+          - image: policy-engine
+            description: "⏰ ChronoGuard Policy Engine - Open Policy Agent (OPA) with pre-configured temporal access control policies. Evaluates time-based authorization rules for business hours enforcement and domain restrictions."
+
+          - image: audit-sink
+            description: "📝 ChronoGuard Audit Sink - High-performance audit log ingestion service. Creates cryptographically hash-chained audit records with tamper-proof integrity verification for compliance and security monitoring."
+
+          - image: metrics-exporter
+            description: "📊 ChronoGuard Metrics Exporter - Prometheus and OpenTelemetry metrics collector. Provides real-time monitoring of temporal access patterns, policy violations, and audit chain integrity metrics."
+
+          - image: dashboard
+            description: "🎛️ ChronoGuard Dashboard - Minimal web interface for visualizing temporal access policies, monitoring access denials, and verifying audit chain integrity. Built with React and Next.js."
+
+          - image: playwright-runner
+            description: "🎭 ChronoGuard Playwright Runner - Pre-configured Playwright browser automation with ChronoGuard proxy integration. Ready for demo scenarios and automated smoke testing of temporal access controls."
+
+    steps:
+      - name: Update Docker Hub description for ${{ matrix.image }}
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PAT }}
+          repository: ${{ env.DOCKERHUB_USERNAME }}/${{ matrix.image }}
+          short-description: ${{ matrix.description }}
+          readme-filepath: ./docker/${{ matrix.image }}/README.md

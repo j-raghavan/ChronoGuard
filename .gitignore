@@ -1,0 +1,456 @@
+# ChronoGuard .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django/Flask stuff
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# FastAPI
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+.pdm-python
+.pdm-build/
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Planning
+DEVPLAN.md
+PROJECT_PLAN.md
+CODING_GUIDELINES.md
+BYTEBOT_LEARNINGS.md
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3-journal
+*.sql
+
+# Redis dumps
+dump.rdb
+
+# PostgreSQL
+*.pgsql
+*.backup
+
+# TimescaleDB
+*.tsdb
+
+# Certificates and Keys
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+*.jks
+certs/
+keys/
+ssl/
+tls/
+
+# ChronoGuard specific certificates
+/backend/certs/
+/infrastructure/certs/
+/config/certs/
+
+# Configuration files with secrets
+config.yaml
+config.json
+.env.production
+.env.staging
+secrets.yaml
+secrets.json
+
+# Envoy configuration with sensitive data
+envoy-config.yaml
+envoy-secrets.yaml
+
+# OPA policies with sensitive rules
+policies/production/
+policies/secrets/
+
+# Kubernetes secrets
+k8s-secrets.yaml
+*.secret.yaml
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# Logs
+logs/
+*.log
+*.out
+*.err
+access.log
+error.log
+debug.log
+audit.log
+
+# ChronoGuard specific logs
+/backend/logs/
+/var/log/chronoguard/
+chronoguard-*.log
+envoy-*.log
+opa-*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Keep .vscode settings but ignore user-specific
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Profiling
+*.prof
+*.pstats
+
+# Memory profiling
+*.mprof
+
+# Performance testing results
+locust-*.csv
+locust-*.html
+
+# Security scanning results
+bandit-report.json
+safety-report.json
+.safety-policy.json
+
+# Audit and compliance
+audit-reports/
+compliance-reports/
+security-scans/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Archive files
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.rar
+*.7z
+
+# Node.js (for frontend dashboard)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+storybook-static
+
+# Temporary folders
+tmp/
+temp/
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# ChronoGuard specific ignores
+# Build artifacts
+/backend/build/
+/frontend/build/
+/frontend/dist/
+
+# Local development
+.local/
+local/
+dev/
+
+# Monitoring and observability
+/monitoring/data/
+/grafana/data/
+/prometheus/data/
+/jaeger/data/
+
+# Test data
+test-data/
+fixtures/large/
+*.test.db
+
+# Documentation builds
+docs/_build/
+docs/build/
+site/
+
+# Helm charts values with secrets
+values-production.yaml
+values-staging.yaml
+values-secrets.yaml
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Vagrant
+.vagrant/
+
+# Local machine specific
+.local.env
+.personal.env
+local-config.yaml
+
+# Performance and load testing
+/load-test-results/
+*.jmx.log
+
+# ChronoGuard temporal data (development)
+/dev-audit-logs/
+/dev-metrics/
+temporal-test-data/
+
+# Redis development data
+redis-dev.rdb
+
+# Development certificates
+dev-ca.crt
+dev-server.crt
+dev-server.key
+dev-client.crt
+dev-client.key
