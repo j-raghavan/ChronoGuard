@@ -2,8 +2,7 @@
 
 import asyncio
 import os
-from datetime import datetime, timezone
-from typing import Dict
+from datetime import datetime, UTC
 
 from fastapi import FastAPI
 from prometheus_client import (
@@ -93,11 +92,11 @@ class MetricsExporter:
                 "status": "healthy",
                 "service": "chronoguard-metrics-exporter",
                 "version": "1.0.0",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         @self.app.post("/metrics/temporal_access")
-        async def record_temporal_access(data: Dict):
+        async def record_temporal_access(data: dict):
             """Record temporal access metrics."""
             try:
                 TEMPORAL_ACCESS_TOTAL.labels(
@@ -125,7 +124,7 @@ class MetricsExporter:
                 return {"status": "error", "message": str(e)}
 
         @self.app.post("/metrics/audit_lag")
-        async def record_audit_lag(data: Dict):
+        async def record_audit_lag(data: dict):
             """Record audit lag metrics."""
             try:
                 lag_seconds = data.get("lag_seconds", 0.0)
@@ -140,7 +139,7 @@ class MetricsExporter:
                 return {"status": "error", "message": str(e)}
 
         @self.app.post("/metrics/policy_evaluation")
-        async def record_policy_evaluation(data: Dict):
+        async def record_policy_evaluation(data: dict):
             """Record policy evaluation metrics."""
             try:
                 duration_seconds = data.get("duration_seconds", 0.0)
@@ -156,7 +155,7 @@ class MetricsExporter:
                 return {"status": "error", "message": str(e)}
 
         @self.app.put("/metrics/active_agents")
-        async def update_active_agents(data: Dict):
+        async def update_active_agents(data: dict):
             """Update active agents count."""
             try:
                 ACTIVE_AGENTS_BY_TENANT.labels(
@@ -170,7 +169,7 @@ class MetricsExporter:
                 return {"status": "error", "message": str(e)}
 
         @self.app.put("/metrics/certificate_expiry")
-        async def update_certificate_expiry(data: Dict):
+        async def update_certificate_expiry(data: dict):
             """Update certificate expiry metrics."""
             try:
                 CERTIFICATE_EXPIRY_DAYS.labels(
@@ -185,7 +184,7 @@ class MetricsExporter:
                 return {"status": "error", "message": str(e)}
 
         @self.app.put("/metrics/audit_integrity")
-        async def update_audit_integrity(data: Dict):
+        async def update_audit_integrity(data: dict):
             """Update audit chain integrity metrics."""
             try:
                 AUDIT_CHAIN_INTEGRITY.labels(

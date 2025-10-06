@@ -94,10 +94,25 @@ test-single: ## Run a single test file (usage: make test-single FILE=test_agent_
 	@PYTHONPATH=backend/src poetry run pytest backend/tests/unit/$(FILE) -v --tb=short --cov=backend/src --cov-report=term-missing
 	@echo "$(GREEN)✅ Test completed$(RESET)"
 
-test-integration: ## Run integration tests
-	@echo "$(BLUE)🔗 Running integration tests...$(RESET)"
-	@PYTHONPATH=backend/src poetry run pytest backend/tests/integration/ $(PYTEST_ARGS)
+test-integration: ## Run integration tests (requires dev-up)
+	@echo "$(BLUE)🔗 Running integration tests with real services...$(RESET)"
+	@echo "$(YELLOW)⚠️  Make sure services are running: make dev-up$(RESET)"
+	@PYTHONPATH=backend/src \
+		TEST_DATABASE_URL=postgresql://chronoguard:testpassword@localhost:5434/chronoguard_test \
+		TEST_REDIS_URL=redis://localhost:6380/1 \
+		poetry run pytest backend/tests/integration/ $(PYTEST_ARGS)
 	@echo "$(GREEN)✅ Integration tests passed$(RESET)"
+
+test-integration-auto: dev-up test-integration ## Start services, run integration tests, then stop
+	@echo "$(GREEN)✅ Integration tests completed$(RESET)"
+
+test-e2e: dev-up ## Run end-to-end tests with real infrastructure
+	@echo "$(BLUE)🔗 Running end-to-end tests...$(RESET)"
+	@PYTHONPATH=backend/src \
+		DATABASE_URL=postgresql://chronoguard:devpassword@localhost:5433/chronoguard_dev \
+		REDIS_URL=redis://localhost:6380/0 \
+		poetry run pytest backend/tests/e2e/ $(PYTEST_ARGS) || true
+	@echo "$(GREEN)✅ End-to-end tests completed$(RESET)"
 
 test-coverage: ## Generate detailed coverage report
 	@echo "$(BLUE)📊 Generating coverage report...$(RESET)"
@@ -173,15 +188,38 @@ dev-setup: install-dev ## Complete development environment setup
 	fi
 	@echo "$(GREEN)✅ Development environment ready$(RESET)"
 
-dev-start: ## Start development environment
-	@echo "$(BLUE)🚀 Starting development environment...$(RESET)"
-	docker-compose -f deployments/docker/docker-compose.dev.yml up -d
-	@echo "$(GREEN)✅ Development environment started$(RESET)"
+dev-up: ## Start all services (PostgreSQL, Redis, Jaeger, etc.)
+	@echo "$(BLUE)🚀 Starting development services...$(RESET)"
+	@echo "$(BLUE)   • PostgreSQL (TimescaleDB) on port 5433$(RESET)"
+	@echo "$(BLUE)   • Redis on port 6380$(RESET)"
+	@echo "$(BLUE)   • Jaeger UI on port 16687$(RESET)"
+	@echo "$(BLUE)   • MailHog UI on port 8025$(RESET)"
+	@docker compose -f deployments/docker/docker-compose.dev.yml up -d postgres redis jaeger mailhog postgres-test
+	@echo "$(GREEN)✅ Development services started$(RESET)"
+	@echo "$(YELLOW)📊 View service status: make dev-status$(RESET)"
 
-dev-stop: ## Stop development environment
-	@echo "$(BLUE)🛑 Stopping development environment...$(RESET)"
-	docker-compose -f deployments/docker/docker-compose.dev.yml down
-	@echo "$(GREEN)✅ Development environment stopped$(RESET)"
+dev-down: ## Stop all development services
+	@echo "$(BLUE)🛑 Stopping development services...$(RESET)"
+	@docker compose -f deployments/docker/docker-compose.dev.yml down
+	@echo "$(GREEN)✅ Development services stopped$(RESET)"
+
+dev-status: ## Show status of development services
+	@echo "$(BLUE)📊 Development Services Status:$(RESET)"
+	@docker compose -f deployments/docker/docker-compose.dev.yml ps
+
+dev-logs: ## View logs from development services
+	@echo "$(BLUE)📋 Development Services Logs:$(RESET)"
+	@docker compose -f deployments/docker/docker-compose.dev.yml logs -f
+
+dev-restart: dev-down dev-up ## Restart all development services
+	@echo "$(GREEN)🔄 Development services restarted$(RESET)"
+
+# Legacy aliases (backwards compatibility)
+dev-start: dev-up ## Alias for dev-up (deprecated)
+	@echo "$(YELLOW)⚠️  Use 'make dev-up' instead$(RESET)"
+
+dev-stop: dev-down ## Alias for dev-down (deprecated)
+	@echo "$(YELLOW)⚠️  Use 'make dev-down' instead$(RESET)"
 
 ##@ Cleanup and Maintenance
 

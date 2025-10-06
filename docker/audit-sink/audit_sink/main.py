@@ -1,6 +1,6 @@
 """ChronoGuard Audit Sink - Ingests decisions and creates hash-chained audit records."""
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -84,7 +84,7 @@ class AuditSinkApp:
                 "status": "healthy",
                 "service": "chronoguard-audit-sink",
                 "version": "1.0.0",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         @self.app.get("/metrics")

@@ -87,7 +87,15 @@ addopts = [
 
 [tool.coverage.run]
 source = ["backend/src"]
-omit = ["*/tests/*", "*/test_*.py"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    # Infrastructure persistence layer - tested via integration tests with real DB/Redis
+    "*/infrastructure/persistence/models.py",
+    "*/infrastructure/persistence/postgres/*_repository.py",
+    "*/infrastructure/persistence/redis/*.py",
+    "*/infrastructure/persistence/timescale.py",
+]
 relative_files = true
 
 [tool.coverage.paths]
