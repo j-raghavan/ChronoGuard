@@ -1,20 +1,51 @@
 name: Build and Push ChronoGuard Images
 
 on:
-  push:
-    branches: [ master ]
-    tags: [ 'v*.*.*' ]
-  release:
-    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0, v1.2.3)'
+        required: true
+        type: string
+      push_to_registry:
+        description: 'Push images to Docker Hub'
+        required: true
+        type: boolean
+        default: false
+      platforms:
+        description: 'Target platforms'
+        required: false
+        type: string
+        default: 'linux/amd64,linux/arm64'
 
 env:
   REGISTRY: docker.io
   DOCKERHUB_USERNAME: chronoguard
 
 jobs:
+  validate-inputs:
+    name: Validate Release Inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release tag format
+        run: |
+          TAG="${{ github.event.inputs.release_tag }}"
+          echo "🏷️ Release Tag: $TAG"
+          echo "📦 Push to Registry: ${{ github.event.inputs.push_to_registry }}"
+          echo "🖥️ Platforms: ${{ github.event.inputs.platforms }}"
+
+          # Validate semver format
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "❌ Invalid tag format. Expected semver like v1.0.0, v1.2.3, or v1.0.0-beta.1"
+            exit 1
+          fi
+
+          echo "✅ Tag format valid"
+
   build-all-images:
     name: Build All ChronoGuard Images
     runs-on: ubuntu-latest
+    needs: validate-inputs
 
     strategy:
       fail-fast: false
@@ -70,15 +101,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/${{ matrix.image }}
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.event.inputs.release_tag }}
+            type=raw,value=latest,enable=${{ github.event.inputs.push_to_registry }}
           labels: |
             org.opencontainers.image.title=ChronoGuard ${{ matrix.image }}
             org.opencontainers.image.description=${{ matrix.description }}
             org.opencontainers.image.vendor=ChronoGuard
+            org.opencontainers.image.version=${{ github.event.inputs.release_tag }}
 
       - name: Copy shared backend code for ${{ matrix.image }}
         if: contains(matrix.image, 'audit-sink') || contains(matrix.image, 'metrics-exporter')
@@ -95,25 +124,27 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
-          platforms: linux/amd64,linux/arm64
-          push: true
+          platforms: ${{ github.event.inputs.platforms }}
+          push: ${{ github.event.inputs.push_to_registry }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
           build-args: |
             BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
-            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
-            REVISION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+            VERSION=${{ github.event.inputs.release_tag }}
+            REVISION=${{ github.sha }}
 
       - name: Run security scan on ${{ matrix.image }}
+        if: ${{ github.event.inputs.push_to_registry }}
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
+          image-ref: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ github.event.inputs.release_tag }}
           format: 'sarif'
           output: 'trivy-results-${{ matrix.image }}.sarif'
 
       - name: Upload security scan results for ${{ matrix.image }}
+        if: ${{ github.event.inputs.push_to_registry }}
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results-${{ matrix.image }}.sarif'
@@ -123,6 +154,7 @@ jobs:
     name: Test Docker Images
     runs-on: ubuntu-latest
     needs: build-all-images
+    if: ${{ github.event.inputs.push_to_registry }}
 
     steps:
       - name: Checkout code
@@ -136,12 +168,12 @@ jobs:
           images=("proxy" "policy-engine" "audit-sink" "metrics-exporter")
 
           for image in "${images[@]}"; do
-            echo "Testing chronoguard/$image..."
+            echo "Testing chronoguard/$image:${{ github.event.inputs.release_tag }}..."
 
             # Start container
             docker run -d --name "test-$image" \
               -e CHRONOGUARD_ENV=testing \
-              "chronoguard/$image:latest"
+              "chronoguard/$image:${{ github.event.inputs.release_tag }}"
 
             # Wait for startup
             sleep 10
@@ -162,6 +194,7 @@ jobs:
     name: Update Docker Hub Descriptions
     runs-on: ubuntu-latest
     needs: build-all-images
+    if: ${{ github.event.inputs.push_to_registry }}
 
     strategy:
       matrix:
