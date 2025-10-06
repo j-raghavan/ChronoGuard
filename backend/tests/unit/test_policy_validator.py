@@ -302,9 +302,10 @@ class TestPolicyValidator:
 
     def test_validate_policy_for_activation_with_time_restrictions(self, validator):
         """Test policy activation validation with time restrictions."""
+        from uuid import uuid4
+
         from domain.common.value_objects import TimeRange
         from domain.policy.entity import Policy, TimeRestriction
-        from uuid import uuid4
 
         policy = Policy(
             tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
@@ -312,7 +313,9 @@ class TestPolicyValidator:
 
         # Add time restrictions
         time_restriction = TimeRestriction(
-            allowed_time_ranges=[TimeRange(start_hour=9, start_minute=0, end_hour=17, end_minute=0)],
+            allowed_time_ranges=[
+                TimeRange(start_hour=9, start_minute=0, end_hour=17, end_minute=0)
+            ],
             allowed_days_of_week={0, 1, 2, 3, 4},
             timezone="UTC",
         )
@@ -323,8 +326,9 @@ class TestPolicyValidator:
 
     def test_validate_policy_for_activation_with_rate_limits(self, validator):
         """Test policy activation validation with rate limits."""
-        from domain.policy.entity import Policy, RateLimit
         from uuid import uuid4
+
+        from domain.policy.entity import Policy, RateLimit
 
         policy = Policy(
             tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
@@ -341,8 +345,9 @@ class TestPolicyValidator:
 
     def test_validate_policy_for_activation_with_both_allowed_and_blocked(self, validator):
         """Test policy activation validation with both allowed and blocked domains."""
-        from domain.policy.entity import Policy
         from uuid import uuid4
+
+        from domain.policy.entity import Policy
 
         policy = Policy(
             tenant_id=uuid4(),
