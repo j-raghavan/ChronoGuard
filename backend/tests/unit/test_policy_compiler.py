@@ -522,6 +522,41 @@ class TestPolicyCompiler:
         assert compiler.session is None
 
     @pytest.mark.asyncio
+    async def test_push_policies(self, compiler: PolicyCompiler, sample_policy: Policy) -> None:
+        """Test pushing multiple policies to OPA."""
+        policy2 = Policy(
+            policy_id=uuid4(),
+            tenant_id=uuid4(),
+            name="Second Policy",
+            description="Another policy",
+            created_by=uuid4(),
+            status=PolicyStatus.ACTIVE,
+        )
+
+        with patch.object(compiler, "deploy_policy", new_callable=AsyncMock) as mock_deploy:
+            await compiler.push_policies([sample_policy, policy2])
+
+            assert mock_deploy.await_count == 2
+            mock_deploy.assert_any_await(sample_policy)
+            mock_deploy.assert_any_await(policy2)
+
+    @pytest.mark.asyncio
+    async def test_push_policies_failure(
+        self, compiler: PolicyCompiler, sample_policy: Policy
+    ) -> None:
+        """Test push_policies handles deployment failures."""
+        with (
+            patch.object(
+                compiler,
+                "deploy_policy",
+                new_callable=AsyncMock,
+                side_effect=PolicyCompilationError("Deployment failed"),
+            ),
+            pytest.raises(PolicyCompilationError, match="Failed to push policies"),
+        ):
+            await compiler.push_policies([sample_policy])
+
+    @pytest.mark.asyncio
     async def test_validate_rego_success(self, compiler: PolicyCompiler) -> None:
         """Test successful Rego validation."""
         mock_response = AsyncMock()

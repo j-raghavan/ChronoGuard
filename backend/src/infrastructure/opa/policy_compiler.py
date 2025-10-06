@@ -391,6 +391,33 @@ class PolicyCompiler:
         timestamp = str(time.time()).encode()
         return hashlib.sha256(timestamp).hexdigest()[:12]
 
+    async def push_policies(self, policies: list[Policy]) -> None:
+        """Push policies to OPA using policy API.
+
+        Compiles and deploys each policy individually to OPA. For production
+        deployments, consider using bundle-based deployment with generate_bundle.
+
+        Args:
+            policies: List of policies to push to OPA
+
+        Raises:
+            PolicyCompilationError: If pushing policies fails
+
+        Note:
+            Uses /v1/policies endpoint for individual policy updates.
+            For bundle-based deployment, serve bundles via HTTP server
+            and configure OPA to pull from bundle server.
+        """
+        try:
+            for policy in policies:
+                await self.deploy_policy(policy)
+
+            logger.info(f"Successfully pushed {len(policies)} policies to OPA")
+
+        except Exception as e:
+            logger.error(f"Failed to push policies to OPA: {e}", exc_info=True)
+            raise PolicyCompilationError(f"Failed to push policies: {e}") from e
+
     async def close(self) -> None:
         """Close HTTP session."""
         if self.session:
