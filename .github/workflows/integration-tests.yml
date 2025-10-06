@@ -13,6 +13,9 @@ jobs:
     name: Full Stack Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Disabled until Docker images are published
+    # Enable after running: gh workflow run docker-images.yml -f release_tag=v1.0.0 -f push_to_registry=true
+    if: false
 
     steps:
       - name: Checkout code
@@ -191,6 +194,8 @@ jobs:
     name: Playwright Smoke Tests
     runs-on: ubuntu-latest
     needs: integration-tests
+    # Disabled until Docker images are published
+    if: false
 
     steps:
       - name: Checkout code
