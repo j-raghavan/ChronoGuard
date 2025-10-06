@@ -44,7 +44,9 @@ class CacheService:
         if not self._redis:
             await self.connect()
 
-        assert self._redis is not None
+        if self._redis is None:
+            raise RuntimeError("Redis connection not established")
+
         return await self._redis.get(key)
 
     async def set(self, key: str, value: str, ttl: int = 300) -> None:
@@ -58,7 +60,9 @@ class CacheService:
         if not self._redis:
             await self.connect()
 
-        assert self._redis is not None
+        if self._redis is None:
+            raise RuntimeError("Redis connection not established")
+
         await self._redis.setex(key, ttl, value)
 
     async def delete(self, key: str) -> None:
@@ -70,7 +74,9 @@ class CacheService:
         if not self._redis:
             await self.connect()
 
-        assert self._redis is not None
+        if self._redis is None:
+            raise RuntimeError("Redis connection not established")
+
         await self._redis.delete(key)
 
     async def exists(self, key: str) -> bool:
@@ -85,6 +91,8 @@ class CacheService:
         if not self._redis:
             await self.connect()
 
-        assert self._redis is not None
+        if self._redis is None:
+            raise RuntimeError("Redis connection not established")
+
         result = await self._redis.exists(key)
         return bool(result)
