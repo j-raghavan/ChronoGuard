@@ -88,6 +88,13 @@ addopts = [
 [tool.coverage.run]
 source = ["backend/src"]
 omit = ["*/tests/*", "*/test_*.py"]
+relative_files = true
+
+[tool.coverage.paths]
+source = [
+    "backend/src",
+    "*/ChronoGuard/backend/src",
+]
 
 [tool.coverage.report]
 exclude_lines = [

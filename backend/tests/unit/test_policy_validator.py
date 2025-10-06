@@ -299,3 +299,76 @@ class TestPolicyValidator:
             "allowed and blocked" in str(exc_info.value).lower()
             or "overlap" in str(exc_info.value).lower()
         )
+
+    def test_validate_policy_for_activation_with_time_restrictions(self, validator):
+        """Test policy activation validation with time restrictions."""
+        from domain.common.value_objects import TimeRange
+        from domain.policy.entity import Policy, TimeRestriction
+        from uuid import uuid4
+
+        policy = Policy(
+            tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
+        )
+
+        # Add time restrictions
+        time_restriction = TimeRestriction(
+            allowed_time_ranges=[TimeRange(start_hour=9, start_minute=0, end_hour=17, end_minute=0)],
+            allowed_days_of_week={0, 1, 2, 3, 4},
+            timezone="UTC",
+        )
+        policy.set_time_restrictions(time_restriction)
+
+        # Should validate successfully with time restrictions
+        validator.validate_policy_for_activation(policy)
+
+    def test_validate_policy_for_activation_with_rate_limits(self, validator):
+        """Test policy activation validation with rate limits."""
+        from domain.policy.entity import Policy, RateLimit
+        from uuid import uuid4
+
+        policy = Policy(
+            tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
+        )
+
+        # Add rate limits
+        rate_limit = RateLimit(
+            requests_per_minute=60, requests_per_hour=3600, requests_per_day=86400, burst_limit=100
+        )
+        policy.set_rate_limits(rate_limit)
+
+        # Should validate successfully with rate limits
+        validator.validate_policy_for_activation(policy)
+
+    def test_validate_policy_for_activation_with_both_allowed_and_blocked(self, validator):
+        """Test policy activation validation with both allowed and blocked domains."""
+        from domain.policy.entity import Policy
+        from uuid import uuid4
+
+        policy = Policy(
+            tenant_id=uuid4(),
+            name="test-policy",
+            description="Test",
+            created_by=uuid4(),
+            allowed_domains={"allowed.com"},
+            blocked_domains={"blocked.com"},  # Different domain - no overlap
+        )
+
+        # Should validate successfully - different domains
+        validator.validate_policy_for_activation(policy)
+
+    def test_validate_time_restriction_logic_with_overlapping_ranges(self, validator):
+        """Test time restriction validation with overlapping ranges."""
+        from domain.common.value_objects import TimeRange
+        from domain.policy.entity import TimeRestriction
+
+        time_restriction = TimeRestriction(
+            allowed_time_ranges=[
+                TimeRange(start_hour=9, start_minute=0, end_hour=13, end_minute=0),
+                TimeRange(start_hour=12, start_minute=0, end_hour=17, end_minute=0),  # Overlaps!
+            ],
+            allowed_days_of_week={0, 1, 2, 3, 4},
+            timezone="UTC",
+        )
+
+        # Overlapping ranges are allowed (just triggers warning in production)
+        validator.validate_time_restriction_logic(time_restriction)
