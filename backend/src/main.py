@@ -78,10 +78,18 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Health check endpoint
+    # Include API routers
+    from presentation.api.routes import agents_router, audit_router, health_router, policies_router
+
+    app.include_router(health_router)
+    app.include_router(agents_router)
+    app.include_router(policies_router)
+    app.include_router(audit_router)
+
+    # Legacy health check endpoint (kept for backwards compatibility)
     @app.get("/health")
-    async def health_check() -> dict[str, str]:
-        """Health check endpoint.
+    async def legacy_health_check() -> dict[str, str]:
+        """Legacy health check endpoint.
 
         Returns:
             Health status information

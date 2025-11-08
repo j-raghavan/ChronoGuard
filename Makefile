@@ -137,6 +137,25 @@ test-performance: ## Run performance tests
 
 ##@ Pre-commit and Quality Gates
 
+quality: ## Run comprehensive quality checks (ruff, black, mypy)
+	@echo "$(BLUE)🔍 Running comprehensive quality checks...$(RESET)"
+	@echo "$(BLUE)  1/4 Running ruff...$(RESET)"
+	@poetry run ruff check backend/src/ backend/tests/
+	@echo "$(GREEN)    ✅ Ruff passed$(RESET)"
+	@echo "$(BLUE)  2/4 Running black...$(RESET)"
+	@poetry run black --check backend/src/ backend/tests/
+	@echo "$(GREEN)    ✅ Black passed$(RESET)"
+	@echo "$(BLUE)  3/4 Running mypy...$(RESET)"
+	@poetry run mypy backend/src/ backend/tests/ --show-error-codes --show-error-context
+	@echo "$(GREEN)    ✅ Mypy passed$(RESET)"
+	@echo "$(BLUE)  4/4 Checking database migrations...$(RESET)"
+	@if [ -d "backend/alembic/versions" ]; then \
+		echo "$(GREEN)    ✅ Alembic migrations directory exists$(RESET)"; \
+	else \
+		echo "$(YELLOW)    ⚠️  Alembic migrations not yet configured$(RESET)"; \
+	fi
+	@echo "$(GREEN)🎉 All quality checks passed!$(RESET)"
+
 pre-commit: install-dev lint type-check security ## Run essential pre-commit checks
 	@echo "$(GREEN)🎉 All pre-commit checks passed!$(RESET)"
 

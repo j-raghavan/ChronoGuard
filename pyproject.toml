@@ -92,7 +92,9 @@ omit = [
     "*/test_*.py",
     # Infrastructure persistence layer - tested via integration tests with real DB/Redis
     "*/infrastructure/persistence/models.py",
-    "*/infrastructure/persistence/postgres/*_repository.py",
+    "*/infrastructure/persistence/postgres/agent_repository.py",
+    "*/infrastructure/persistence/postgres/policy_repository.py",
+    "*/infrastructure/persistence/postgres/audit_repository.py",
     "*/infrastructure/persistence/redis/*.py",
     "*/infrastructure/persistence/timescale.py",
 ]
@@ -150,6 +152,9 @@ ignore = [
     "F401",    # Unused imports OK in tests
     "F841",    # Unused variables OK in tests
     "S108",    # Hardcoded temp file paths OK in tests
+]
+"backend/src/presentation/api/routes/**" = [
+    "B008",    # FastAPI Depends() in function defaults is the correct pattern
 ]
 
 [tool.mypy]
