@@ -6,7 +6,9 @@ from collections.abc import AsyncGenerator, Generator
 from uuid import UUID, uuid4
 
 import pytest
-from infrastructure.persistence.models import Base
+
+# Import all models to ensure they're registered with Base.metadata
+from infrastructure.persistence.models import AgentModel, Base, PolicyModel  # noqa: F401
 from infrastructure.persistence.timescale import setup_timescaledb
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
@@ -57,7 +59,10 @@ async def engine(database_url: str) -> AsyncGenerator[AsyncEngine, None]:
 async def clean_database(engine: AsyncEngine) -> AsyncGenerator[None, None]:
     """Clean database between tests."""
     async with engine.begin() as conn:
+        # Truncate all tables in correct order (respect foreign keys if any)
         await conn.execute(text("TRUNCATE TABLE audit_entries CASCADE"))
+        await conn.execute(text("TRUNCATE TABLE agents CASCADE"))
+        await conn.execute(text("TRUNCATE TABLE policies CASCADE"))
 
     yield
 

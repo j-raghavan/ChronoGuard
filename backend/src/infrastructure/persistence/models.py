@@ -7,19 +7,8 @@ These models are tested via integration tests with real PostgreSQL/TimescaleDB.
 from domain.agent.entity import AgentStatus
 from domain.audit.entity import AccessDecision
 from domain.policy.entity import PolicyStatus
-from sqlalchemy import (
-    JSON,
-    BigInteger,
-    Column,
-    DateTime,
-    Enum,
-    Float,
-    Index,
-    Integer,
-    String,
-    Text,
-)
-from sqlalchemy.dialects.postgresql import ARRAY, UUID as PG_UUID
+from sqlalchemy import BigInteger, Column, DateTime, Enum, Float, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -48,7 +37,7 @@ class AgentModel(Base):
     created_at = Column(DateTime(timezone=True), nullable=False)
     updated_at = Column(DateTime(timezone=True), nullable=False)
     last_seen_at = Column(DateTime(timezone=True), nullable=True)
-    agent_metadata = Column(JSON, nullable=False, default=dict)
+    agent_metadata = Column(JSONB, nullable=False, default=dict)
     version = Column(Integer, nullable=False, default=1)
 
     __table_args__ = (
@@ -70,9 +59,9 @@ class PolicyModel(Base):
     tenant_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)
-    rules = Column(JSON, nullable=False, default=list)
-    time_restrictions = Column(JSON, nullable=True)
-    rate_limits = Column(JSON, nullable=True)
+    rules = Column(JSONB, nullable=False, default=list)
+    time_restrictions = Column(JSONB, nullable=True)
+    rate_limits = Column(JSONB, nullable=True)
     priority = Column(Integer, nullable=False, default=500)
     status: Column[PolicyStatus] = Column(
         Enum(PolicyStatus), nullable=False, default=PolicyStatus.DRAFT, index=True
@@ -83,7 +72,7 @@ class PolicyModel(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False)
     created_by = Column(PG_UUID(as_uuid=True), nullable=False)
     version = Column(Integer, nullable=False, default=1)
-    policy_metadata = Column(JSON, nullable=False, default=dict)
+    policy_metadata = Column(JSONB, nullable=False, default=dict)
 
     __table_args__ = (
         Index("ix_policy_tenant_name", "tenant_id", "name", unique=True),
@@ -120,11 +109,11 @@ class AuditEntryModel(Base):
     response_status = Column(Integer, nullable=True)
     response_size_bytes = Column(BigInteger, nullable=True)
     processing_time_ms = Column(Float, nullable=True)
-    timed_access_metadata = Column(JSON, nullable=False)
+    timed_access_metadata = Column(JSONB, nullable=False)
     previous_hash = Column(String(64), nullable=False, default="")
     current_hash = Column(String(64), nullable=False, default="")
     sequence_number = Column(BigInteger, nullable=False, default=0)
-    entry_metadata = Column(JSON, nullable=False, default=dict)
+    entry_metadata = Column(JSONB, nullable=False, default=dict)
 
     __table_args__ = (
         Index("ix_audit_tenant_timestamp", "tenant_id", "timestamp"),
