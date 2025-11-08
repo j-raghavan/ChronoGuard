@@ -20,7 +20,7 @@ from domain.audit.exceptions import (
 class TestAuditError:
     """Test base AuditError class."""
 
-    def test_audit_error_is_base_class(self):
+    def test_audit_error_is_base_class(self) -> None:
         """Test that AuditError can be instantiated."""
         error = AuditError("Test audit error")
         assert str(error) == "Test audit error"
@@ -29,7 +29,7 @@ class TestAuditError:
 class TestAuditEntryNotFoundError:
     """Test AuditEntryNotFoundError exception."""
 
-    def test_audit_entry_not_found_error_creation(self):
+    def test_audit_entry_not_found_error_creation(self) -> None:
         """Test creation of AuditEntryNotFoundError."""
         entry_id = uuid4()
         error = AuditEntryNotFoundError(entry_id)
@@ -39,7 +39,7 @@ class TestAuditEntryNotFoundError:
         assert error.entry_id == entry_id
         assert error.error_code == "AUDIT_ENTRY_NOT_FOUND"
 
-    def test_audit_entry_not_found_error_attributes(self):
+    def test_audit_entry_not_found_error_attributes(self) -> None:
         """Test AuditEntryNotFoundError has correct attributes."""
         entry_id = uuid4()
         error = AuditEntryNotFoundError(entry_id)
@@ -52,7 +52,7 @@ class TestAuditEntryNotFoundError:
 class TestAuditChainIntegrityError:
     """Test AuditChainIntegrityError exception."""
 
-    def test_audit_chain_integrity_error_creation(self):
+    def test_audit_chain_integrity_error_creation(self) -> None:
         """Test creation of AuditChainIntegrityError."""
         agent_id = uuid4()
         error_details = "Hash mismatch detected"
@@ -65,7 +65,7 @@ class TestAuditChainIntegrityError:
         assert error.error_details == error_details
         assert error.error_code == "AUDIT_CHAIN_INTEGRITY_ERROR"
 
-    def test_audit_chain_integrity_error_attributes(self):
+    def test_audit_chain_integrity_error_attributes(self) -> None:
         """Test AuditChainIntegrityError has correct attributes."""
         agent_id = uuid4()
         error = AuditChainIntegrityError(agent_id, "test error")
@@ -78,7 +78,7 @@ class TestAuditChainIntegrityError:
 class TestAuditHashMismatchError:
     """Test AuditHashMismatchError exception."""
 
-    def test_audit_hash_mismatch_error_creation(self):
+    def test_audit_hash_mismatch_error_creation(self) -> None:
         """Test creation of AuditHashMismatchError."""
         entry_id = uuid4()
         expected_hash = "abc123"
@@ -94,7 +94,7 @@ class TestAuditHashMismatchError:
         assert error.actual_hash == actual_hash
         assert error.error_code == "AUDIT_HASH_MISMATCH"
 
-    def test_audit_hash_mismatch_error_attributes(self):
+    def test_audit_hash_mismatch_error_attributes(self) -> None:
         """Test AuditHashMismatchError has correct attributes."""
         entry_id = uuid4()
         error = AuditHashMismatchError(entry_id, "expected", "actual")
@@ -108,7 +108,7 @@ class TestAuditHashMismatchError:
 class TestAuditSequenceGapError:
     """Test AuditSequenceGapError exception."""
 
-    def test_audit_sequence_gap_error_creation(self):
+    def test_audit_sequence_gap_error_creation(self) -> None:
         """Test creation of AuditSequenceGapError."""
         agent_id = uuid4()
         gap_start = 10
@@ -124,7 +124,7 @@ class TestAuditSequenceGapError:
         assert error.gap_end == gap_end
         assert error.error_code == "AUDIT_SEQUENCE_GAP"
 
-    def test_audit_sequence_gap_error_attributes(self):
+    def test_audit_sequence_gap_error_attributes(self) -> None:
         """Test AuditSequenceGapError has correct attributes."""
         agent_id = uuid4()
         error = AuditSequenceGapError(agent_id, 5, 10)
@@ -138,7 +138,7 @@ class TestAuditSequenceGapError:
 class TestAuditTimestampAnomalyError:
     """Test AuditTimestampAnomalyError exception."""
 
-    def test_audit_timestamp_anomaly_error_creation(self):
+    def test_audit_timestamp_anomaly_error_creation(self) -> None:
         """Test creation of AuditTimestampAnomalyError."""
         entry_id = uuid4()
         anomaly_description = "Timestamp in the future"
@@ -151,7 +151,7 @@ class TestAuditTimestampAnomalyError:
         assert error.anomaly_description == anomaly_description
         assert error.error_code == "AUDIT_TIMESTAMP_ANOMALY"
 
-    def test_audit_timestamp_anomaly_error_attributes(self):
+    def test_audit_timestamp_anomaly_error_attributes(self) -> None:
         """Test AuditTimestampAnomalyError has correct attributes."""
         entry_id = uuid4()
         error = AuditTimestampAnomalyError(entry_id, "test anomaly")
@@ -164,7 +164,7 @@ class TestAuditTimestampAnomalyError:
 class TestAuditStorageError:
     """Test AuditStorageError exception."""
 
-    def test_audit_storage_error_creation(self):
+    def test_audit_storage_error_creation(self) -> None:
         """Test creation of AuditStorageError."""
         operation = "write"
         error_details = "Database connection failed"
@@ -177,7 +177,7 @@ class TestAuditStorageError:
         assert error.error_details == error_details
         assert error.error_code == "AUDIT_STORAGE_ERROR"
 
-    def test_audit_storage_error_attributes(self):
+    def test_audit_storage_error_attributes(self) -> None:
         """Test AuditStorageError has correct attributes."""
         error = AuditStorageError("read", "disk error")
 
@@ -189,7 +189,7 @@ class TestAuditStorageError:
 class TestAuditExportError:
     """Test AuditExportError exception."""
 
-    def test_audit_export_error_creation(self):
+    def test_audit_export_error_creation(self) -> None:
         """Test creation of AuditExportError."""
         export_format = "csv"
         error_details = "Invalid CSV format"
@@ -202,7 +202,7 @@ class TestAuditExportError:
         assert error.error_details == error_details
         assert error.error_code == "AUDIT_EXPORT_ERROR"
 
-    def test_audit_export_error_attributes(self):
+    def test_audit_export_error_attributes(self) -> None:
         """Test AuditExportError has correct attributes."""
         error = AuditExportError("json", "encoding error")
 
@@ -214,7 +214,7 @@ class TestAuditExportError:
 class TestAuditRetentionViolationError:
     """Test AuditRetentionViolationError exception."""
 
-    def test_audit_retention_violation_error_creation(self):
+    def test_audit_retention_violation_error_creation(self) -> None:
         """Test creation of AuditRetentionViolationError."""
         requested = 30
         minimum = 90
@@ -227,7 +227,7 @@ class TestAuditRetentionViolationError:
         assert error.minimum_required == minimum
         assert error.error_code == "AUDIT_RETENTION_VIOLATION"
 
-    def test_audit_retention_violation_error_attributes(self):
+    def test_audit_retention_violation_error_attributes(self) -> None:
         """Test AuditRetentionViolationError has correct attributes."""
         error = AuditRetentionViolationError(60, 180)
 
@@ -239,7 +239,7 @@ class TestAuditRetentionViolationError:
 class TestAuditAccessDeniedError:
     """Test AuditAccessDeniedError exception."""
 
-    def test_audit_access_denied_error_creation(self):
+    def test_audit_access_denied_error_creation(self) -> None:
         """Test creation of AuditAccessDeniedError."""
         tenant_id = uuid4()
         reason = "Insufficient permissions"
@@ -253,7 +253,7 @@ class TestAuditAccessDeniedError:
         assert error.reason == reason
         assert error.error_code == "AUDIT_ACCESS_DENIED"
 
-    def test_audit_access_denied_error_attributes(self):
+    def test_audit_access_denied_error_attributes(self) -> None:
         """Test AuditAccessDeniedError has correct attributes."""
         tenant_id = uuid4()
         error = AuditAccessDeniedError(tenant_id, "test reason")
@@ -266,7 +266,7 @@ class TestAuditAccessDeniedError:
 class TestAuditConfigurationError:
     """Test AuditConfigurationError exception."""
 
-    def test_audit_configuration_error_creation(self):
+    def test_audit_configuration_error_creation(self) -> None:
         """Test creation of AuditConfigurationError."""
         config_issue = "Invalid storage backend"
         error = AuditConfigurationError(config_issue)
@@ -276,7 +276,7 @@ class TestAuditConfigurationError:
         assert error.configuration_issue == config_issue
         assert error.error_code == "AUDIT_CONFIGURATION_ERROR"
 
-    def test_audit_configuration_error_attributes(self):
+    def test_audit_configuration_error_attributes(self) -> None:
         """Test AuditConfigurationError has correct attributes."""
         error = AuditConfigurationError("missing required setting")
 

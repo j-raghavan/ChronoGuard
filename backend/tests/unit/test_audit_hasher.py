@@ -12,7 +12,7 @@ from domain.common.exceptions import SecurityViolationError
 class TestAuditHashError:
     """Test AuditHashError exception."""
 
-    def test_audit_hash_error_creation(self):
+    def test_audit_hash_error_creation(self) -> None:
         """Test creating AuditHashError."""
         error = AuditHashError("Test hash error")
         assert str(error) == "Test hash error"
@@ -39,20 +39,20 @@ class TestEnhancedAuditHasher:
             reason="Test access",
         )
 
-    def test_hasher_init_with_secret_key(self, secret_key: bytes):
+    def test_hasher_init_with_secret_key(self, secret_key: bytes) -> None:
         """Test hasher initialization with provided secret key."""
         hasher = EnhancedAuditHasher(secret_key)
         assert hasher.secret_key == secret_key
         assert hasher._algorithm == hasher._algorithm
 
-    def test_hasher_init_without_secret_key(self):
+    def test_hasher_init_without_secret_key(self) -> None:
         """Test hasher initialization without secret key generates one."""
         hasher = EnhancedAuditHasher()
         assert hasher.secret_key is not None
         assert len(hasher.secret_key) == 32
         assert isinstance(hasher.secret_key, bytes)
 
-    def test_compute_entry_hash_basic(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_compute_entry_hash_basic(self, secret_key: bytes, test_entry: AuditEntry) -> None:
         """Test basic entry hash computation."""
         hasher = EnhancedAuditHasher(secret_key)
         hash_bytes = hasher.compute_entry_hash(test_entry)
@@ -60,7 +60,9 @@ class TestEnhancedAuditHasher:
         assert isinstance(hash_bytes, bytes)
         assert len(hash_bytes) == 48  # 16 bytes salt + 32 bytes hash
 
-    def test_compute_entry_hash_with_previous(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_compute_entry_hash_with_previous(
+        self, secret_key: bytes, test_entry: AuditEntry
+    ) -> None:
         """Test entry hash computation with previous hash."""
         hasher = EnhancedAuditHasher(secret_key)
         previous_hash = "abcdef1234567890"
@@ -69,7 +71,9 @@ class TestEnhancedAuditHasher:
         assert isinstance(hash_bytes, bytes)
         assert len(hash_bytes) == 48
 
-    def test_compute_entry_hash_with_entropy(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_compute_entry_hash_with_entropy(
+        self, secret_key: bytes, test_entry: AuditEntry
+    ) -> None:
         """Test entry hash computation with additional entropy."""
         hasher = EnhancedAuditHasher(secret_key)
         entropy = b"additional_entropy"
@@ -78,7 +82,9 @@ class TestEnhancedAuditHasher:
         assert isinstance(hash_bytes, bytes)
         assert len(hash_bytes) == 48
 
-    def test_compute_entry_hash_consistency(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_compute_entry_hash_consistency(
+        self, secret_key: bytes, test_entry: AuditEntry
+    ) -> None:
         """Test hash computation consistency with same inputs."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -90,7 +96,7 @@ class TestEnhancedAuditHasher:
             hash2 = hasher.compute_entry_hash(test_entry, additional_entropy=entropy)
             assert hash1 == hash2
 
-    def test_verify_entry_hash_valid(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_verify_entry_hash_valid(self, secret_key: bytes, test_entry: AuditEntry) -> None:
         """Test verifying valid entry hash."""
         hasher = EnhancedAuditHasher(secret_key)
         hash_bytes = hasher.compute_entry_hash(test_entry)
@@ -98,7 +104,9 @@ class TestEnhancedAuditHasher:
         is_valid = hasher.verify_entry_hash(test_entry, hash_bytes)
         assert is_valid is True
 
-    def test_verify_entry_hash_invalid_length(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_verify_entry_hash_invalid_length(
+        self, secret_key: bytes, test_entry: AuditEntry
+    ) -> None:
         """Test verifying invalid hash length."""
         hasher = EnhancedAuditHasher(secret_key)
         invalid_hash = b"too_short"
@@ -107,7 +115,9 @@ class TestEnhancedAuditHasher:
             hasher.verify_entry_hash(test_entry, invalid_hash)
         assert "Invalid hash format" in str(exc_info.value)
 
-    def test_verify_entry_hash_invalid_hash(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_verify_entry_hash_invalid_hash(
+        self, secret_key: bytes, test_entry: AuditEntry
+    ) -> None:
         """Test verifying invalid hash."""
         hasher = EnhancedAuditHasher(secret_key)
         # Create valid length but wrong content
@@ -116,13 +126,15 @@ class TestEnhancedAuditHasher:
         is_valid = hasher.verify_entry_hash(test_entry, invalid_hash)
         assert is_valid is False
 
-    def test_compute_chain_hash_empty(self, secret_key: bytes):
+    def test_compute_chain_hash_empty(self, secret_key: bytes) -> None:
         """Test computing chain hash for empty list."""
         hasher = EnhancedAuditHasher(secret_key)
         chain_hash = hasher.compute_chain_hash([])
         assert chain_hash == ""
 
-    def test_compute_chain_hash_single_entry(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_compute_chain_hash_single_entry(
+        self, secret_key: bytes, test_entry: AuditEntry
+    ) -> None:
         """Test computing chain hash for single entry."""
         hasher = EnhancedAuditHasher(secret_key)
         entries = [test_entry]
@@ -131,7 +143,7 @@ class TestEnhancedAuditHasher:
         assert isinstance(chain_hash, str)
         assert len(chain_hash) == 64  # SHA-256 hex string
 
-    def test_compute_chain_hash_multiple_entries(self, secret_key: bytes):
+    def test_compute_chain_hash_multiple_entries(self, secret_key: bytes) -> None:
         """Test computing chain hash for multiple entries."""
         hasher = EnhancedAuditHasher(secret_key)
         entries = [
@@ -148,7 +160,7 @@ class TestEnhancedAuditHasher:
         assert isinstance(chain_hash, str)
         assert len(chain_hash) == 64
 
-    def test_verify_chain_integrity_valid(self, secret_key: bytes):
+    def test_verify_chain_integrity_valid(self, secret_key: bytes) -> None:
         """Test verifying valid chain integrity."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -182,7 +194,7 @@ class TestEnhancedAuditHasher:
         assert is_valid is True
         assert len(errors) == 0
 
-    def test_verify_chain_integrity_broken_chain(self, secret_key: bytes):
+    def test_verify_chain_integrity_broken_chain(self, secret_key: bytes) -> None:
         """Test verifying chain with broken integrity."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -211,7 +223,7 @@ class TestEnhancedAuditHasher:
         assert is_valid is False
         assert len(errors) > 0
 
-    def test_generate_integrity_proof_empty(self, secret_key: bytes):
+    def test_generate_integrity_proof_empty(self, secret_key: bytes) -> None:
         """Test generating integrity proof for empty entries."""
         hasher = EnhancedAuditHasher(secret_key)
         proof = hasher.generate_integrity_proof([])
@@ -219,7 +231,7 @@ class TestEnhancedAuditHasher:
         assert isinstance(proof, dict)
         assert len(proof) == 0  # Empty dict for empty entries
 
-    def test_generate_integrity_proof_with_entries(self, secret_key: bytes):
+    def test_generate_integrity_proof_with_entries(self, secret_key: bytes) -> None:
         """Test generating integrity proof for entries."""
         hasher = EnhancedAuditHasher(secret_key)
         entries = [
@@ -243,7 +255,7 @@ class TestEnhancedAuditHasher:
         assert "signature" in proof
         assert len(proof["signature"]) > 0
 
-    def test_generate_integrity_proof_signature_verification(self, secret_key: bytes):
+    def test_generate_integrity_proof_signature_verification(self, secret_key: bytes) -> None:
         """Test integrity proof signature can be verified."""
         hasher = EnhancedAuditHasher(secret_key)
         entries = [
@@ -262,7 +274,7 @@ class TestEnhancedAuditHasher:
         # Verify signature format (should be valid hex)
         assert len(signature) == 32  # HMAC-SHA256 output length
 
-    def test_entry_serialization_for_hash(self, secret_key: bytes, test_entry: AuditEntry):
+    def test_entry_serialization_for_hash(self, secret_key: bytes, test_entry: AuditEntry) -> None:
         """Test entry serialization produces consistent data for hashing."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -272,7 +284,9 @@ class TestEnhancedAuditHasher:
             hash2 = hasher.compute_entry_hash(test_entry)
             assert hash1 == hash2
 
-    def test_hasher_different_secret_keys_produce_different_hashes(self, test_entry: AuditEntry):
+    def test_hasher_different_secret_keys_produce_different_hashes(
+        self, test_entry: AuditEntry
+    ) -> None:
         """Test different secret keys produce different hashes."""
         hasher1 = EnhancedAuditHasher(b"secret1_32_bytes_exactly_padded!")
         hasher2 = EnhancedAuditHasher(b"secret2_32_bytes_exactly_padded!")
@@ -282,7 +296,7 @@ class TestEnhancedAuditHasher:
             hash2 = hasher2.compute_entry_hash(test_entry)
             assert hash1 != hash2
 
-    def test_verify_chain_integrity_sequence_gaps(self, secret_key: bytes):
+    def test_verify_chain_integrity_sequence_gaps(self, secret_key: bytes) -> None:
         """Test chain verification detects sequence number gaps."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -309,7 +323,7 @@ class TestEnhancedAuditHasher:
 
     def test_verify_entry_hash_with_additional_entropy(
         self, secret_key: bytes, test_entry: AuditEntry
-    ):
+    ) -> None:
         """Test hash verification with additional entropy."""
         hasher = EnhancedAuditHasher(secret_key)
         entropy = b"test_entropy"
@@ -325,7 +339,7 @@ class TestEnhancedAuditHasher:
         is_valid_no_entropy = hasher.verify_entry_hash(test_entry, hash_bytes)
         assert is_valid_no_entropy is False
 
-    def test_verify_chain_integrity_empty_list(self, secret_key: bytes):
+    def test_verify_chain_integrity_empty_list(self, secret_key: bytes) -> None:
         """Test verify_chain_integrity with empty entry list."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -335,7 +349,7 @@ class TestEnhancedAuditHasher:
         assert is_valid is True
         assert errors == []
 
-    def test_verify_chain_integrity_with_expected_hashes(self, secret_key: bytes):
+    def test_verify_chain_integrity_with_expected_hashes(self, secret_key: bytes) -> None:
         """Test verifying chain integrity with expected hashes provided."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -372,7 +386,7 @@ class TestEnhancedAuditHasher:
         assert is_valid is True
         assert len(errors) == 0
 
-    def test_compute_chain_hash_single_entry_edge_case(self, secret_key: bytes):
+    def test_compute_chain_hash_single_entry_edge_case(self, secret_key: bytes) -> None:
         """Test chain hash with single entry."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -390,7 +404,7 @@ class TestEnhancedAuditHasher:
         assert isinstance(chain_hash, str)
         assert len(chain_hash) == 64  # SHA-256 hex
 
-    def test_generate_integrity_proof_without_expected_hashes(self, secret_key: bytes):
+    def test_generate_integrity_proof_without_expected_hashes(self, secret_key: bytes) -> None:
         """Test generating integrity proof without providing expected hashes."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -413,7 +427,7 @@ class TestEnhancedAuditHasher:
         assert "signature" in proof
         assert int(proof["entry_count"]) == 2
 
-    def test_verify_chain_integrity_with_mismatched_hashes(self, secret_key: bytes):
+    def test_verify_chain_integrity_with_mismatched_hashes(self, secret_key: bytes) -> None:
         """Test chain verification detects hash mismatches."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -439,7 +453,7 @@ class TestEnhancedAuditHasher:
 
     def test_compute_entry_hash_with_all_parameters(
         self, secret_key: bytes, test_entry: AuditEntry
-    ):
+    ) -> None:
         """Test hash computation with all optional parameters."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -451,7 +465,7 @@ class TestEnhancedAuditHasher:
         assert isinstance(hash_bytes, bytes)
         assert len(hash_bytes) == 48  # salt + hash
 
-    def test_verify_chain_integrity_with_invalid_hash_format(self, secret_key: bytes):
+    def test_verify_chain_integrity_with_invalid_hash_format(self, secret_key: bytes) -> None:
         """Test chain verification handles entries with invalid hash format."""
         hasher = EnhancedAuditHasher(secret_key)
 
@@ -471,7 +485,7 @@ class TestEnhancedAuditHasher:
         # Should handle the format error
         assert isinstance(errors, list)
 
-    def test_generate_integrity_proof_with_multiple_entries(self, secret_key: bytes):
+    def test_generate_integrity_proof_with_multiple_entries(self, secret_key: bytes) -> None:
         """Test integrity proof generation with multiple entries."""
         hasher = EnhancedAuditHasher(secret_key)
 

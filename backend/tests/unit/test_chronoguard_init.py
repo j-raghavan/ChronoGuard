@@ -8,7 +8,7 @@ from core.features import FeatureManager
 class TestChronoGuardInit:
     """Test chronoguard module initialization."""
 
-    def test_version_info(self):
+    def test_version_info(self) -> None:
         """Test version information is available."""
         assert hasattr(chronoguard, "__version__")
         assert hasattr(chronoguard, "__author__")
@@ -18,7 +18,7 @@ class TestChronoGuardInit:
         assert chronoguard.__author__ == "ChronoGuard Team"
         assert chronoguard.__email__ == "team@chronoguard.com"
 
-    def test_exported_components(self):
+    def test_exported_components(self) -> None:
         """Test that main components are exported."""
         assert hasattr(chronoguard, "FeatureManager")
         assert hasattr(chronoguard, "DependencyContainer")
@@ -27,7 +27,7 @@ class TestChronoGuardInit:
         assert chronoguard.FeatureManager is FeatureManager
         assert chronoguard.DependencyContainer is DependencyContainer
 
-    def test_all_attribute(self):
+    def test_all_attribute(self) -> None:
         """Test __all__ attribute contains expected exports."""
         expected_exports = ["FeatureManager", "DependencyContainer", "__version__"]
         assert chronoguard.__all__ == expected_exports

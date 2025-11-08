@@ -1,6 +1,7 @@
 """Tests for core logging functionality to improve coverage."""
 
 from datetime import datetime
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from core.logging import (
@@ -102,7 +103,7 @@ class TestLoggingCoverage:
         assert "ValueError" in result
 
     @patch("core.logging.logger")
-    def test_configure_logging_structured(self, mock_logger) -> None:
+    def test_configure_logging_structured(self, mock_logger: Any) -> None:
         """Test structured logging configuration."""
         configure_logging(level="INFO", structured=True, environment="production")
 
@@ -112,7 +113,7 @@ class TestLoggingCoverage:
         assert mock_logger.add.called
 
     @patch("core.logging.logger")
-    def test_configure_logging_development(self, mock_logger) -> None:
+    def test_configure_logging_development(self, mock_logger: Any) -> None:
         """Test development logging configuration."""
         configure_logging(level="DEBUG", structured=False, environment="development")
 
@@ -120,7 +121,7 @@ class TestLoggingCoverage:
         assert mock_logger.add.called
 
     @patch("core.logging.logger")
-    def test_get_logger(self, mock_logger) -> None:
+    def test_get_logger(self, mock_logger: Any) -> None:
         """Test get_logger function."""
         mock_logger.bind.return_value = "bound_logger"
 
@@ -130,7 +131,7 @@ class TestLoggingCoverage:
         assert result == "bound_logger"
 
     @patch("core.logging.logger")
-    def test_get_correlation_logger(self, mock_logger) -> None:
+    def test_get_correlation_logger(self, mock_logger: Any) -> None:
         """Test get_correlation_logger function."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -143,7 +144,7 @@ class TestLoggingCoverage:
         assert result == "final_logger"
 
     @patch("core.logging.logger")
-    def test_get_correlation_logger_no_name(self, mock_logger) -> None:
+    def test_get_correlation_logger_no_name(self, mock_logger: Any) -> None:
         """Test get_correlation_logger without name."""
         mock_logger.bind.return_value = "bound_logger"
 
@@ -153,7 +154,7 @@ class TestLoggingCoverage:
         assert result == "bound_logger"
 
     @patch("core.logging.logger")
-    def test_get_tenant_logger(self, mock_logger) -> None:
+    def test_get_tenant_logger(self, mock_logger: Any) -> None:
         """Test get_tenant_logger function."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -167,7 +168,7 @@ class TestLoggingCoverage:
         assert result == bound_logger
 
     @patch("core.logging.logger")
-    def test_log_security_event(self, mock_logger) -> None:
+    def test_log_security_event(self, mock_logger: Any) -> None:
         """Test log_security_event function."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -184,7 +185,7 @@ class TestLoggingCoverage:
         bound_logger.error.assert_called_once_with("Authentication failed")
 
     @patch("core.logging.logger")
-    def test_log_security_event_critical(self, mock_logger) -> None:
+    def test_log_security_event_critical(self, mock_logger: Any) -> None:
         """Test log_security_event with critical severity."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -196,7 +197,7 @@ class TestLoggingCoverage:
         bound_logger.critical.assert_called_once_with("Security breach detected")
 
     @patch("core.logging.logger")
-    def test_log_performance_metric(self, mock_logger) -> None:
+    def test_log_performance_metric(self, mock_logger: Any) -> None:
         """Test log_performance_metric function."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -209,7 +210,7 @@ class TestLoggingCoverage:
         bound_logger.info.assert_called_once()
 
     @patch("core.logging.logger")
-    def test_log_audit_event(self, mock_logger) -> None:
+    def test_log_audit_event(self, mock_logger: Any) -> None:
         """Test log_audit_event function."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -228,7 +229,7 @@ class TestLoggingCoverage:
         assert logger.name == "test_logger"
 
     @patch("core.logging.logger")
-    def test_structured_logger_with_context(self, mock_logger) -> None:
+    def test_structured_logger_with_context(self, mock_logger: Any) -> None:
         """Test StructuredLogger with_context method."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -241,7 +242,7 @@ class TestLoggingCoverage:
         assert isinstance(new_logger, StructuredLogger)
 
     @patch("core.logging.logger")
-    def test_structured_logger_methods(self, mock_logger) -> None:
+    def test_structured_logger_methods(self, mock_logger: Any) -> None:
         """Test StructuredLogger logging methods."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -266,7 +267,7 @@ class TestLoggingCoverage:
         bound_logger.critical.assert_called_with("Critical message")
 
     @patch("core.logging.logger")
-    def test_structured_logger_with_exception(self, mock_logger) -> None:
+    def test_structured_logger_with_exception(self, mock_logger: Any) -> None:
         """Test StructuredLogger error and critical with exceptions."""
         bound_logger = MagicMock()
         mock_logger.bind.return_value = bound_logger
@@ -284,7 +285,7 @@ class TestLoggingCoverage:
         bound_logger.opt.assert_called()
 
     @patch("core.logging.configure_logger_levels")
-    def test_configure_logging_with_file(self, mock_configure_levels) -> None:
+    def test_configure_logging_with_file(self, mock_configure_levels: Any) -> None:
         """Test configure_logging with file output."""
         import tempfile
         from pathlib import Path

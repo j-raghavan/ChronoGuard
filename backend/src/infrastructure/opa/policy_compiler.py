@@ -62,7 +62,7 @@ class PolicyCompiler:
             loader=FileSystemLoader(str(template_dir)),
             trim_blocks=True,
             lstrip_blocks=True,
-            autoescape=False,  # noqa: S701 - Rego code generation, not HTML
+            autoescape=False,  # noqa: S701  # nosec B701 - Rego generation, not HTML
         )
         self.opa_url = opa_url.rstrip("/")
         self.session: aiohttp.ClientSession | None = None

@@ -56,7 +56,7 @@ format: ## Auto-format code (ruff, black, isort)
 
 type-check: ## Run mypy type checking
 	@echo "$(BLUE)🔍 Running type checking...$(RESET)"
-	@poetry run mypy backend/src/ --show-error-codes --show-error-context
+	@poetry run mypy backend/src/ backend/tests/ --show-error-codes --show-error-context
 	@echo "$(GREEN)✅ Type checking passed$(RESET)"
 
 security: ## Run security analysis (bandit, safety)

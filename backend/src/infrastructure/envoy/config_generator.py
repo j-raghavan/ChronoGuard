@@ -121,7 +121,7 @@ class ConfigGenerator:
         # Main proxy listener
         main_listener = ListenerConfig(
             name="chronoguard_proxy",
-            address="0.0.0.0",  # noqa: S104 - Envoy proxy binds to all interfaces
+            address="0.0.0.0",  # noqa: S104  # nosec B104 - Envoy proxy binds to all interfaces
             port=8443,
             filter_chains=[
                 {

@@ -8,7 +8,7 @@ from domain.common.exceptions import ConcurrencyError, RateLimitExceededError, T
 class TestTimeSecurityError:
     """Test TimeSecurityError exception."""
 
-    def test_time_security_error_creation(self):
+    def test_time_security_error_creation(self) -> None:
         """Test creating TimeSecurityError."""
         error = TimeSecurityError(
             "Access denied outside business hours",
@@ -24,7 +24,7 @@ class TestTimeSecurityError:
 class TestRateLimitExceededError:
     """Test RateLimitExceededError exception."""
 
-    def test_rate_limit_exceeded_error_without_reset_time(self):
+    def test_rate_limit_exceeded_error_without_reset_time(self) -> None:
         """Test RateLimitExceededError without reset time."""
         error = RateLimitExceededError(
             limit_type="requests_per_minute", current_count=105, max_allowed=100
@@ -37,7 +37,7 @@ class TestRateLimitExceededError:
         assert error.max_allowed == 100
         assert error.reset_time is None
 
-    def test_rate_limit_exceeded_error_with_reset_time(self):
+    def test_rate_limit_exceeded_error_with_reset_time(self) -> None:
         """Test RateLimitExceededError with reset time."""
         reset_time = "2023-09-14T10:00:00Z"
         error = RateLimitExceededError(
@@ -56,7 +56,7 @@ class TestRateLimitExceededError:
 class TestConcurrencyError:
     """Test ConcurrencyError exception."""
 
-    def test_concurrency_error_creation(self):
+    def test_concurrency_error_creation(self) -> None:
         """Test creating ConcurrencyError."""
         entity_id = uuid4()
         error = ConcurrencyError(

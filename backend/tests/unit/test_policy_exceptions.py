@@ -22,7 +22,7 @@ from domain.policy.exceptions import (
 class TestPolicyError:
     """Test base PolicyError class."""
 
-    def test_policy_error_inheritance(self):
+    def test_policy_error_inheritance(self) -> None:
         """Test PolicyError inherits from DomainError."""
         error = PolicyError("Test policy error")
         assert isinstance(error, DomainError)
@@ -32,7 +32,7 @@ class TestPolicyError:
 class TestPolicyNotFoundError:
     """Test PolicyNotFoundError exception."""
 
-    def test_policy_not_found_error_creation(self):
+    def test_policy_not_found_error_creation(self) -> None:
         """Test creating PolicyNotFoundError."""
         policy_id = uuid4()
         error = PolicyNotFoundError(policy_id)
@@ -43,7 +43,7 @@ class TestPolicyNotFoundError:
         assert error.error_code == "POLICY_NOT_FOUND"
         assert "not found" in str(error)
 
-    def test_policy_not_found_error_attributes(self):
+    def test_policy_not_found_error_attributes(self) -> None:
         """Test PolicyNotFoundError attributes are accessible."""
         policy_id = uuid4()
         error = PolicyNotFoundError(policy_id)
@@ -57,7 +57,7 @@ class TestPolicyNotFoundError:
 class TestPolicyNameExistsError:
     """Test PolicyNameExistsError exception."""
 
-    def test_policy_name_exists_error_creation(self):
+    def test_policy_name_exists_error_creation(self) -> None:
         """Test creating PolicyNameExistsError."""
         tenant_id = uuid4()
         name = "Existing Policy"
@@ -71,7 +71,7 @@ class TestPolicyNameExistsError:
         assert name in str(error)
         assert str(tenant_id) in str(error)
 
-    def test_policy_name_exists_error_attributes(self):
+    def test_policy_name_exists_error_attributes(self) -> None:
         """Test PolicyNameExistsError attributes."""
         tenant_id = uuid4()
         name = "Test Policy"
@@ -84,7 +84,7 @@ class TestPolicyNameExistsError:
 class TestPolicyPriorityConflictError:
     """Test PolicyPriorityConflictError exception."""
 
-    def test_policy_priority_conflict_error_creation(self):
+    def test_policy_priority_conflict_error_creation(self) -> None:
         """Test creating PolicyPriorityConflictError."""
         tenant_id = uuid4()
         priority = 100
@@ -100,7 +100,7 @@ class TestPolicyPriorityConflictError:
         assert str(priority) in str(error)
         assert str(len(existing_policy_ids)) in str(error)
 
-    def test_policy_priority_conflict_single_existing(self):
+    def test_policy_priority_conflict_single_existing(self) -> None:
         """Test priority conflict with single existing policy."""
         tenant_id = uuid4()
         existing_policy_ids = [uuid4()]
@@ -113,7 +113,7 @@ class TestPolicyPriorityConflictError:
 class TestPolicyLimitExceededError:
     """Test PolicyLimitExceededError exception."""
 
-    def test_policy_limit_exceeded_error_creation(self):
+    def test_policy_limit_exceeded_error_creation(self) -> None:
         """Test creating PolicyLimitExceededError."""
         tenant_id = uuid4()
         current_count = 25
@@ -128,7 +128,7 @@ class TestPolicyLimitExceededError:
         assert "limit exceeded" in str(error)
         assert f"{current_count}/{max_allowed}" in str(error)
 
-    def test_policy_limit_exceeded_at_exact_limit(self):
+    def test_policy_limit_exceeded_at_exact_limit(self) -> None:
         """Test limit exceeded when at exact limit."""
         tenant_id = uuid4()
         error = PolicyLimitExceededError(tenant_id, 10, 10)
@@ -140,7 +140,7 @@ class TestPolicyLimitExceededError:
 class TestPolicyRuleLimitExceededError:
     """Test PolicyRuleLimitExceededError exception."""
 
-    def test_policy_rule_limit_exceeded_error_creation(self):
+    def test_policy_rule_limit_exceeded_error_creation(self) -> None:
         """Test creating PolicyRuleLimitExceededError."""
         policy_id = uuid4()
         current_count = 15
@@ -159,7 +159,7 @@ class TestPolicyRuleLimitExceededError:
 class TestPolicyStatusTransitionError:
     """Test PolicyStatusTransitionError exception."""
 
-    def test_policy_status_transition_error_creation(self):
+    def test_policy_status_transition_error_creation(self) -> None:
         """Test creating PolicyStatusTransitionError."""
         policy_id = uuid4()
         current_status = "ACTIVE"
@@ -174,7 +174,7 @@ class TestPolicyStatusTransitionError:
         assert "Invalid status transition" in str(error)
         assert f"{current_status} -> {requested_status}" in str(error)
 
-    def test_policy_status_transition_error_attributes(self):
+    def test_policy_status_transition_error_attributes(self) -> None:
         """Test PolicyStatusTransitionError attributes."""
         policy_id = uuid4()
         error = PolicyStatusTransitionError(policy_id, "DRAFT", "ACTIVE")
@@ -186,7 +186,7 @@ class TestPolicyStatusTransitionError:
 class TestPolicyEvaluationError:
     """Test PolicyEvaluationError exception."""
 
-    def test_policy_evaluation_error_creation(self):
+    def test_policy_evaluation_error_creation(self) -> None:
         """Test creating PolicyEvaluationError."""
         policy_id = uuid4()
         reason = "Missing required rule conditions"
@@ -199,7 +199,7 @@ class TestPolicyEvaluationError:
         assert "evaluation failed" in str(error)
         assert reason in str(error)
 
-    def test_policy_evaluation_error_with_complex_reason(self):
+    def test_policy_evaluation_error_with_complex_reason(self) -> None:
         """Test evaluation error with complex reason."""
         policy_id = uuid4()
         reason = "Rule #3 has invalid operator 'unknown_op' for field 'domain'"
@@ -212,7 +212,7 @@ class TestPolicyEvaluationError:
 class TestPolicyRuleNotFoundError:
     """Test PolicyRuleNotFoundError exception."""
 
-    def test_policy_rule_not_found_error_creation(self):
+    def test_policy_rule_not_found_error_creation(self) -> None:
         """Test creating PolicyRuleNotFoundError."""
         policy_id = uuid4()
         rule_id = uuid4()
@@ -230,7 +230,7 @@ class TestPolicyRuleNotFoundError:
 class TestPolicyDomainConflictError:
     """Test PolicyDomainConflictError exception."""
 
-    def test_policy_domain_conflict_error_creation(self):
+    def test_policy_domain_conflict_error_creation(self) -> None:
         """Test creating PolicyDomainConflictError."""
         policy_id = uuid4()
         domain = "example.com"
@@ -246,7 +246,7 @@ class TestPolicyDomainConflictError:
         assert domain in str(error)
         assert conflict_type in str(error)
 
-    def test_policy_domain_conflict_blocked_type(self):
+    def test_policy_domain_conflict_blocked_type(self) -> None:
         """Test domain conflict with blocked type."""
         policy_id = uuid4()
         error = PolicyDomainConflictError(policy_id, "blocked.com", "already_blocked")
@@ -258,7 +258,7 @@ class TestPolicyDomainConflictError:
 class TestPolicyReferencedByAgentsError:
     """Test PolicyReferencedByAgentsError exception."""
 
-    def test_policy_referenced_by_agents_error_creation(self):
+    def test_policy_referenced_by_agents_error_creation(self) -> None:
         """Test creating PolicyReferencedByAgentsError."""
         policy_id = uuid4()
         referencing_agent_count = 5
@@ -272,7 +272,7 @@ class TestPolicyReferencedByAgentsError:
         assert "5 agents" in str(error)
         assert "cannot be deleted" in str(error)
 
-    def test_policy_referenced_by_single_agent(self):
+    def test_policy_referenced_by_single_agent(self) -> None:
         """Test policy referenced by single agent."""
         policy_id = uuid4()
         error = PolicyReferencedByAgentsError(policy_id, 1)
@@ -284,7 +284,7 @@ class TestPolicyReferencedByAgentsError:
 class TestPolicyActivationError:
     """Test PolicyActivationError exception."""
 
-    def test_policy_activation_error_creation(self):
+    def test_policy_activation_error_creation(self) -> None:
         """Test creating PolicyActivationError."""
         policy_id = uuid4()
         reason = "Policy has no rules defined"
@@ -297,7 +297,7 @@ class TestPolicyActivationError:
         assert "Cannot activate" in str(error)
         assert reason in str(error)
 
-    def test_policy_activation_error_complex_reason(self):
+    def test_policy_activation_error_complex_reason(self) -> None:
         """Test activation error with complex reason."""
         policy_id = uuid4()
         reason = "Policy contains invalid time restrictions and conflicting domain rules"
@@ -311,7 +311,7 @@ class TestPolicyActivationError:
 class TestExceptionIntegration:
     """Test exception integration and inheritance."""
 
-    def test_all_exceptions_inherit_from_policy_error(self):
+    def test_all_exceptions_inherit_from_policy_error(self) -> None:
         """Test all policy exceptions inherit from PolicyError."""
         policy_id = uuid4()
         tenant_id = uuid4()
@@ -335,7 +335,7 @@ class TestExceptionIntegration:
             assert isinstance(exception, PolicyError)
             assert isinstance(exception, DomainError)
 
-    def test_all_exceptions_have_error_codes(self):
+    def test_all_exceptions_have_error_codes(self) -> None:
         """Test all policy exceptions have unique error codes."""
         policy_id = uuid4()
         tenant_id = uuid4()
@@ -365,7 +365,7 @@ class TestExceptionIntegration:
             assert len(code) > 0
             assert "POLICY" in code
 
-    def test_exception_string_representations(self):
+    def test_exception_string_representations(self) -> None:
         """Test exception string representations are informative."""
         policy_id = uuid4()
         tenant_id = uuid4()
@@ -382,7 +382,7 @@ class TestExceptionIntegration:
         error3 = PolicyLimitExceededError(tenant_id, 25, 20)
         assert "25/20" in str(error3)
 
-    def test_exception_repr_functionality(self):
+    def test_exception_repr_functionality(self) -> None:
         """Test exception repr provides useful debugging info."""
         policy_id = uuid4()
         error = PolicyNotFoundError(policy_id)
@@ -390,8 +390,10 @@ class TestExceptionIntegration:
         repr_str = repr(error)
         assert "PolicyNotFoundError" in repr_str
 
-    def test_exception_context_preservation(self):
+    def test_exception_context_preservation(self) -> None:
         """Test exceptions preserve context information."""
+        from uuid import UUID
+
         policy_id = uuid4()
         tenant_id = uuid4()
         rule_id = uuid4()
@@ -406,14 +408,14 @@ class TestExceptionIntegration:
         original_rule_id = error.rule_id
 
         # Simulate passing exception around
-        def process_error(exc):
+        def process_error(exc: PolicyRuleNotFoundError) -> tuple[UUID, UUID]:
             return exc.policy_id, exc.rule_id
 
         processed_policy_id, processed_rule_id = process_error(error)
         assert processed_policy_id == original_policy_id
         assert processed_rule_id == original_rule_id
 
-    def test_exception_chaining_compatibility(self):
+    def test_exception_chaining_compatibility(self) -> None:
         """Test exceptions work with exception chaining."""
         policy_id = uuid4()
 

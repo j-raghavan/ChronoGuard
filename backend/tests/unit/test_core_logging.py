@@ -22,7 +22,7 @@ from core.logging import (
 class TestSerializeLog:
     """Test log serialization functionality."""
 
-    def test_serialize_log_basic(self):
+    def test_serialize_log_basic(self) -> None:
         """Test basic log serialization."""
         mock_level = Mock()
         mock_level.name = "INFO"
@@ -47,7 +47,7 @@ class TestSerializeLog:
         assert data["line"] == 42
         assert data["message"] == "Test message"
 
-    def test_serialize_log_with_correlation_id(self):
+    def test_serialize_log_with_correlation_id(self) -> None:
         """Test log serialization with correlation ID."""
         mock_level = Mock()
         mock_level.name = "DEBUG"
@@ -67,7 +67,7 @@ class TestSerializeLog:
 
         assert data["correlation_id"] == "test-corr-123"
 
-    def test_serialize_log_with_tenant_context(self):
+    def test_serialize_log_with_tenant_context(self) -> None:
         """Test log serialization with tenant context."""
         mock_level = Mock()
         mock_level.name = "INFO"
@@ -88,7 +88,7 @@ class TestSerializeLog:
         assert data["tenant_id"] == "tenant-123"
         assert data["agent_id"] == "agent-456"
 
-    def test_serialize_log_with_exception(self):
+    def test_serialize_log_with_exception(self) -> None:
         """Test log serialization with exception."""
         # Mock exception
         mock_exception = Mock()
@@ -117,7 +117,7 @@ class TestSerializeLog:
         assert data["exception"]["value"] == "Test error"
         assert data["exception"]["traceback"] == "Traceback: line 1"
 
-    def test_serialize_log_with_extra_fields(self):
+    def test_serialize_log_with_extra_fields(self) -> None:
         """Test log serialization with extra fields."""
         mock_level = Mock()
         mock_level.name = "INFO"
@@ -150,7 +150,7 @@ class TestConfigureLogging:
     """Test logging configuration."""
 
     @patch("core.logging.logger")
-    def test_configure_logging_structured(self, mock_logger):
+    def test_configure_logging_structured(self, mock_logger: Mock) -> None:
         """Test structured logging configuration."""
         mock_logger.remove = Mock()
         mock_logger.add = Mock()
@@ -162,7 +162,7 @@ class TestConfigureLogging:
         assert mock_logger.add.call_count >= 1
 
     @patch("core.logging.logger")
-    def test_configure_logging_text_format(self, mock_logger):
+    def test_configure_logging_text_format(self, mock_logger: Mock) -> None:
         """Test text logging configuration."""
         mock_logger.remove = Mock()
         mock_logger.add = Mock()
@@ -173,7 +173,7 @@ class TestConfigureLogging:
         mock_logger.add.assert_called()
 
     @patch("core.logging.logger")
-    def test_configure_logging_with_file(self, mock_logger):
+    def test_configure_logging_with_file(self, mock_logger: Mock) -> None:
         """Test logging configuration with file."""
         mock_logger.remove = Mock()
         mock_logger.add = Mock()
@@ -187,7 +187,9 @@ class TestConfigureLogging:
 
     @patch("core.logging.configure_logger_levels")
     @patch("core.logging.logger")
-    def test_configure_logging_calls_level_config(self, mock_logger, mock_configure_levels):
+    def test_configure_logging_calls_level_config(
+        self, mock_logger: Mock, mock_configure_levels: Mock
+    ) -> None:
         """Test that logging configuration calls level configuration."""
         mock_logger.remove = Mock()
         mock_logger.add = Mock()
@@ -201,7 +203,7 @@ class TestConfigureLoggerLevels:
     """Test logger level configuration."""
 
     @patch("core.logging.logger")
-    def test_configure_logger_levels_development(self, mock_logger):
+    def test_configure_logger_levels_development(self, mock_logger: Mock) -> None:
         """Test logger level configuration for development."""
         mock_logger.level = Mock()
 
@@ -210,7 +212,7 @@ class TestConfigureLoggerLevels:
         mock_logger.level.assert_called_with("TRACE", color="<dim>")
 
     @patch("core.logging.logger")
-    def test_configure_logger_levels_production(self, mock_logger):
+    def test_configure_logger_levels_production(self, mock_logger: Mock) -> None:
         """Test logger level configuration for production."""
         mock_logger.disable = Mock()
 
@@ -226,7 +228,7 @@ class TestGetLogger:
     """Test logger factory functions."""
 
     @patch("core.logging.logger")
-    def test_get_logger(self, mock_logger):
+    def test_get_logger(self, mock_logger: Mock) -> None:
         """Test getting a named logger."""
         mock_logger.bind = Mock(return_value="bound_logger")
 
@@ -236,7 +238,7 @@ class TestGetLogger:
         assert result == "bound_logger"
 
     @patch("core.logging.logger")
-    def test_get_correlation_logger(self, mock_logger):
+    def test_get_correlation_logger(self, mock_logger: Mock) -> None:
         """Test getting correlation logger."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -249,7 +251,7 @@ class TestGetLogger:
         assert result == "final_logger"
 
     @patch("core.logging.logger")
-    def test_get_correlation_logger_no_name(self, mock_logger):
+    def test_get_correlation_logger_no_name(self, mock_logger: Mock) -> None:
         """Test getting correlation logger without name."""
         mock_logger.bind.return_value = "bound_logger"
 
@@ -259,7 +261,7 @@ class TestGetLogger:
         assert result == "bound_logger"
 
     @patch("core.logging.logger")
-    def test_get_tenant_logger(self, mock_logger):
+    def test_get_tenant_logger(self, mock_logger: Mock) -> None:
         """Test getting tenant logger."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -272,7 +274,7 @@ class TestGetLogger:
         assert mock_bound.bind.call_count == 2
 
     @patch("core.logging.logger")
-    def test_get_tenant_logger_minimal(self, mock_logger):
+    def test_get_tenant_logger_minimal(self, mock_logger: Mock) -> None:
         """Test getting tenant logger with minimal args."""
         mock_logger.bind.return_value = "bound_logger"
 
@@ -286,7 +288,7 @@ class TestSpecializedLogging:
     """Test specialized logging functions."""
 
     @patch("core.logging.logger")
-    def test_log_security_event_critical(self, mock_logger):
+    def test_log_security_event_critical(self, mock_logger: Mock) -> None:
         """Test logging critical security event."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -304,7 +306,7 @@ class TestSpecializedLogging:
         mock_bound.critical.assert_called_once_with("Failed login attempt")
 
     @patch("core.logging.logger")
-    def test_log_security_event_low_severity(self, mock_logger):
+    def test_log_security_event_low_severity(self, mock_logger: Mock) -> None:
         """Test logging low severity security event."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -317,7 +319,7 @@ class TestSpecializedLogging:
         mock_bound.info.assert_called_once_with("User accessed resource")
 
     @patch("core.logging.logger")
-    def test_log_performance_metric(self, mock_logger):
+    def test_log_performance_metric(self, mock_logger: Mock) -> None:
         """Test logging performance metric."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -341,7 +343,7 @@ class TestSpecializedLogging:
         assert call_args["query_count"] == 3
 
     @patch("core.logging.logger")
-    def test_log_audit_event(self, mock_logger):
+    def test_log_audit_event(self, mock_logger: Mock) -> None:
         """Test logging audit event."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -361,7 +363,7 @@ class TestSpecializedLogging:
         mock_bound.info.assert_called_once_with("Audit: create on user succeeded")
 
     @patch("core.logging.logger")
-    def test_log_audit_event_failure(self, mock_logger):
+    def test_log_audit_event_failure(self, mock_logger: Mock) -> None:
         """Test logging failed audit event."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -376,7 +378,7 @@ class TestStructuredLogger:
     """Test StructuredLogger class."""
 
     @patch("core.logging.logger")
-    def test_structured_logger_init(self, mock_logger):
+    def test_structured_logger_init(self, mock_logger: Mock) -> None:
         """Test StructuredLogger initialization."""
         mock_logger.bind.return_value = mock_logger
 
@@ -389,7 +391,7 @@ class TestStructuredLogger:
         assert mock_logger.bind.call_count >= 1
 
     @patch("core.logging.logger")
-    def test_structured_logger_minimal_init(self, mock_logger):
+    def test_structured_logger_minimal_init(self, mock_logger: Mock) -> None:
         """Test StructuredLogger with minimal args."""
         mock_logger.bind.return_value = mock_logger
 
@@ -399,7 +401,7 @@ class TestStructuredLogger:
         mock_logger.bind.assert_called_once_with(logger_name="test_logger")
 
     @patch("core.logging.logger")
-    def test_structured_logger_with_context(self, mock_logger):
+    def test_structured_logger_with_context(self, mock_logger: Mock) -> None:
         """Test StructuredLogger with_context method."""
         mock_logger.bind.return_value = mock_logger
 
@@ -410,7 +412,7 @@ class TestStructuredLogger:
         assert new_logger.name == "test_logger"
 
     @patch("core.logging.logger")
-    def test_structured_logger_debug(self, mock_logger):
+    def test_structured_logger_debug(self, mock_logger: Mock) -> None:
         """Test StructuredLogger debug method."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -423,7 +425,7 @@ class TestStructuredLogger:
         mock_bound.debug.assert_called_once_with("Debug message")
 
     @patch("core.logging.logger")
-    def test_structured_logger_info(self, mock_logger):
+    def test_structured_logger_info(self, mock_logger: Mock) -> None:
         """Test StructuredLogger info method."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -436,7 +438,7 @@ class TestStructuredLogger:
         mock_bound.info.assert_called_once_with("Info message")
 
     @patch("core.logging.logger")
-    def test_structured_logger_error_with_exception(self, mock_logger):
+    def test_structured_logger_error_with_exception(self, mock_logger: Mock) -> None:
         """Test StructuredLogger error with exception."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -453,7 +455,7 @@ class TestStructuredLogger:
         mock_opt.error.assert_called_once_with("Error occurred")
 
     @patch("core.logging.logger")
-    def test_structured_logger_error_without_exception(self, mock_logger):
+    def test_structured_logger_error_without_exception(self, mock_logger: Mock) -> None:
         """Test StructuredLogger error without exception."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -466,7 +468,7 @@ class TestStructuredLogger:
         mock_bound.error.assert_called_once_with("Error occurred")
 
     @patch("core.logging.logger")
-    def test_structured_logger_critical(self, mock_logger):
+    def test_structured_logger_critical(self, mock_logger: Mock) -> None:
         """Test StructuredLogger critical method."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
@@ -479,7 +481,7 @@ class TestStructuredLogger:
         mock_bound.critical.assert_called_once_with("Critical error")
 
     @patch("core.logging.logger")
-    def test_structured_logger_warning(self, mock_logger):
+    def test_structured_logger_warning(self, mock_logger: Mock) -> None:
         """Test StructuredLogger warning method."""
         mock_bound = Mock()
         mock_logger.bind.return_value = mock_bound
