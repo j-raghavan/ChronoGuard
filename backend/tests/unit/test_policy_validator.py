@@ -10,11 +10,13 @@ class TestPolicyValidator:
     """Test PolicyValidator domain service."""
 
     @pytest.fixture
-    def validator(self):
+    def validator(self) -> PolicyValidator:
         """Create PolicyValidator instance."""
         return PolicyValidator()
 
-    def test_validate_domain_list_consistency_with_valid_domains(self, validator):
+    def test_validate_domain_list_consistency_with_valid_domains(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test domain list validation with valid non-overlapping domains."""
         allowed = {"example.com", "test.example.com"}
         blocked = {"malicious.com", "spam.example.com"}
@@ -22,7 +24,9 @@ class TestPolicyValidator:
         # Should not raise
         validator.validate_domain_list_consistency(allowed, blocked)
 
-    def test_validate_domain_list_consistency_with_overlap(self, validator):
+    def test_validate_domain_list_consistency_with_overlap(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test domain list validation detects overlaps."""
         allowed = {"example.com", "test.com"}
         blocked = {"example.com", "spam.com"}  # example.com in both
@@ -33,7 +37,9 @@ class TestPolicyValidator:
         assert "cannot be both allowed and blocked" in str(exc_info.value).lower()
         assert "example.com" in str(exc_info.value)
 
-    def test_validate_domain_list_consistency_with_invalid_domain(self, validator):
+    def test_validate_domain_list_consistency_with_invalid_domain(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test domain list validation detects invalid domain formats."""
         from domain.common.exceptions import SecurityViolationError
 
@@ -44,15 +50,17 @@ class TestPolicyValidator:
         with pytest.raises((ValidationError, SecurityViolationError)):
             validator.validate_domain_list_consistency(allowed, blocked)
 
-    def test_validate_domain_list_consistency_with_empty_sets(self, validator):
+    def test_validate_domain_list_consistency_with_empty_sets(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test domain list validation with empty sets."""
-        allowed = set()
-        blocked = set()
+        allowed: set[str] = set()
+        blocked: set[str] = set()
 
         # Should not raise - empty is valid
         validator.validate_domain_list_consistency(allowed, blocked)
 
-    def test_validate_rate_limit_consistency_valid(self, validator):
+    def test_validate_rate_limit_consistency_valid(self, validator: PolicyValidator) -> None:
         """Test rate limit validation with consistent limits."""
         rate_limit = RateLimit(
             requests_per_minute=10,
@@ -64,7 +72,9 @@ class TestPolicyValidator:
         # Should not raise
         validator.validate_rate_limit_consistency(rate_limit)
 
-    def test_validate_rate_limit_consistency_hourly_too_low(self, validator):
+    def test_validate_rate_limit_consistency_hourly_too_low(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test rate limit validation detects hourly limit too low."""
         rate_limit = RateLimit(
             requests_per_minute=100,
@@ -79,7 +89,9 @@ class TestPolicyValidator:
         assert "hourly rate limit" in str(exc_info.value).lower()
         assert "per-minute" in str(exc_info.value).lower()
 
-    def test_validate_rate_limit_consistency_daily_too_low(self, validator):
+    def test_validate_rate_limit_consistency_daily_too_low(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test rate limit validation detects daily limit too low."""
         rate_limit = RateLimit(
             requests_per_minute=10,
@@ -94,7 +106,9 @@ class TestPolicyValidator:
         assert "daily rate limit" in str(exc_info.value).lower()
         assert "per-hour" in str(exc_info.value).lower()
 
-    def test_validate_rate_limit_consistency_burst_too_high(self, validator):
+    def test_validate_rate_limit_consistency_burst_too_high(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test rate limit validation detects burst limit too high."""
         rate_limit = RateLimit(
             requests_per_minute=10,
@@ -109,7 +123,7 @@ class TestPolicyValidator:
         assert "burst limit" in str(exc_info.value).lower()
         assert "per-minute" in str(exc_info.value).lower()
 
-    def test_validate_time_restriction_logic_valid(self, validator):
+    def test_validate_time_restriction_logic_valid(self, validator: PolicyValidator) -> None:
         """Test time restriction validation with valid restrictions."""
         from domain.common.value_objects import TimeRange
         from domain.policy.entity import TimeRestriction
@@ -125,7 +139,9 @@ class TestPolicyValidator:
         # Should not raise
         validator.validate_time_restriction_logic(time_restriction)
 
-    def test_validate_time_restriction_logic_invalid_timezone(self, validator):
+    def test_validate_time_restriction_logic_invalid_timezone(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test time restriction validation detects invalid timezone."""
         from domain.common.value_objects import TimeRange
         from domain.policy.entity import TimeRestriction
@@ -143,7 +159,9 @@ class TestPolicyValidator:
 
         assert "timezone" in str(exc_info.value).lower()
 
-    def test_validate_policy_priority_conflicts_no_conflict(self, validator):
+    def test_validate_policy_priority_conflicts_no_conflict(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test priority validation with no conflicts."""
         from uuid import uuid4
 
@@ -162,7 +180,9 @@ class TestPolicyValidator:
         # Different priority - no conflict
         validator.validate_policy_priority_conflicts(existing_policies, new_priority=200)
 
-    def test_validate_policy_priority_conflicts_with_conflict(self, validator):
+    def test_validate_policy_priority_conflicts_with_conflict(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test priority validation detects conflicts."""
         from uuid import uuid4
 
@@ -185,7 +205,7 @@ class TestPolicyValidator:
         assert "priority" in str(exc_info.value).lower()
         assert "conflict" in str(exc_info.value).lower()
 
-    def test_validate_policy_rule_limits_within_limit(self, validator):
+    def test_validate_policy_rule_limits_within_limit(self, validator: PolicyValidator) -> None:
         """Test policy rule limit validation when within limits."""
         from uuid import uuid4
 
@@ -198,7 +218,7 @@ class TestPolicyValidator:
         # Adding 10 rules (well within 100 limit)
         validator.validate_policy_rule_limits(policy, new_rule_count=10)
 
-    def test_validate_policy_rule_limits_exceeds_limit(self, validator):
+    def test_validate_policy_rule_limits_exceeds_limit(self, validator: PolicyValidator) -> None:
         """Test policy rule limit validation when limit exceeded."""
         from uuid import uuid4
 
@@ -214,7 +234,7 @@ class TestPolicyValidator:
 
         assert "rule limit" in str(exc_info.value).lower()
 
-    def test_validate_priority_conflicts_with_exclusion(self, validator):
+    def test_validate_priority_conflicts_with_exclusion(self, validator: PolicyValidator) -> None:
         """Test priority validation excludes specified policy."""
         from uuid import uuid4
 
@@ -237,7 +257,7 @@ class TestPolicyValidator:
             existing_policies, new_priority=100, exclude_policy_id=policy_id
         )
 
-    def test_validate_policy_for_activation_with_rules(self, validator):
+    def test_validate_policy_for_activation_with_rules(self, validator: PolicyValidator) -> None:
         """Test policy activation validation with rules."""
         from uuid import uuid4
 
@@ -259,7 +279,9 @@ class TestPolicyValidator:
         # Should validate successfully
         validator.validate_policy_for_activation(policy)
 
-    def test_validate_policy_for_activation_empty_policy_fails(self, validator):
+    def test_validate_policy_for_activation_empty_policy_fails(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test policy activation validation fails for empty policy."""
         from uuid import uuid4
 
@@ -276,7 +298,9 @@ class TestPolicyValidator:
 
         assert "at least one" in str(exc_info.value).lower()
 
-    def test_validate_policy_for_activation_with_domain_overlap(self, validator):
+    def test_validate_policy_for_activation_with_domain_overlap(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test policy activation validation detects domain overlaps."""
         from uuid import uuid4
 
@@ -300,7 +324,9 @@ class TestPolicyValidator:
             or "overlap" in str(exc_info.value).lower()
         )
 
-    def test_validate_policy_for_activation_with_time_restrictions(self, validator):
+    def test_validate_policy_for_activation_with_time_restrictions(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test policy activation validation with time restrictions."""
         from uuid import uuid4
 
@@ -324,7 +350,9 @@ class TestPolicyValidator:
         # Should validate successfully with time restrictions
         validator.validate_policy_for_activation(policy)
 
-    def test_validate_policy_for_activation_with_rate_limits(self, validator):
+    def test_validate_policy_for_activation_with_rate_limits(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test policy activation validation with rate limits."""
         from uuid import uuid4
 
@@ -343,7 +371,9 @@ class TestPolicyValidator:
         # Should validate successfully with rate limits
         validator.validate_policy_for_activation(policy)
 
-    def test_validate_policy_for_activation_with_both_allowed_and_blocked(self, validator):
+    def test_validate_policy_for_activation_with_both_allowed_and_blocked(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test policy activation validation with both allowed and blocked domains."""
         from uuid import uuid4
 
@@ -361,7 +391,9 @@ class TestPolicyValidator:
         # Should validate successfully - different domains
         validator.validate_policy_for_activation(policy)
 
-    def test_validate_time_restriction_logic_with_overlapping_ranges(self, validator):
+    def test_validate_time_restriction_logic_with_overlapping_ranges(
+        self, validator: PolicyValidator
+    ) -> None:
         """Test time restriction validation with overlapping ranges."""
         from domain.common.value_objects import TimeRange
         from domain.policy.entity import TimeRestriction
@@ -377,3 +409,136 @@ class TestPolicyValidator:
 
         # Overlapping ranges are allowed (just triggers warning in production)
         validator.validate_time_restriction_logic(time_restriction)
+
+    def test_validate_policy_for_activation_with_invalid_rate_limits(
+        self, validator: PolicyValidator
+    ) -> None:
+        """Test policy activation validation detects invalid rate limits."""
+        from uuid import uuid4
+
+        from domain.policy.entity import Policy, RateLimit
+
+        policy = Policy(
+            tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
+        )
+
+        # Add rate limits with invalid values
+        rate_limit = RateLimit(
+            requests_per_minute=100,
+            requests_per_hour=1000,  # Too low (should be >= 100 * 60)
+            requests_per_day=24000,
+            burst_limit=150,
+        )
+        policy.set_rate_limits(rate_limit)
+
+        # Should fail - hourly rate too low
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_policy_for_activation(policy)
+
+        assert "rate" in str(exc_info.value).lower()
+
+    def test_validate_rule_logic_with_contradictory_equals_conditions(
+        self, validator: PolicyValidator
+    ) -> None:
+        """Test rule validation detects contradictory equals conditions."""
+        from domain.policy.entity import PolicyRule, RuleAction, RuleCondition
+
+        rule = PolicyRule(
+            name="test-rule",
+            description="Test",
+            conditions=[
+                RuleCondition(field="domain", operator="equals", value="example.com"),
+                RuleCondition(
+                    field="domain", operator="equals", value="test.com"
+                ),  # Different value!
+            ],
+            action=RuleAction.ALLOW,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_rule_logic(rule)
+
+        assert "contradictory" in str(exc_info.value).lower()
+        assert "equals" in str(exc_info.value).lower()
+
+    def test_validate_rule_logic_with_contradictory_equals_not_equals(
+        self, validator: PolicyValidator
+    ) -> None:
+        """Test rule validation detects contradictory equals/not_equals conditions."""
+        from domain.policy.entity import PolicyRule, RuleAction, RuleCondition
+
+        rule = PolicyRule(
+            name="test-rule",
+            description="Test",
+            conditions=[
+                RuleCondition(field="domain", operator="equals", value="example.com"),
+                RuleCondition(
+                    field="domain", operator="not_equals", value="example.com"
+                ),  # Contradiction!
+            ],
+            action=RuleAction.ALLOW,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_rule_logic(rule)
+
+        assert "contradictory" in str(exc_info.value).lower()
+
+    def test_validate_rule_logic_with_invalid_domain_value(
+        self, validator: PolicyValidator
+    ) -> None:
+        """Test rule validation detects invalid domain in condition."""
+        from domain.common.exceptions import SecurityViolationError
+        from domain.policy.entity import PolicyRule, RuleAction, RuleCondition
+
+        rule = PolicyRule(
+            name="test-rule",
+            description="Test",
+            conditions=[
+                RuleCondition(
+                    field="domain", operator="equals", value="192.168.1.1"
+                )  # IP address (invalid)
+            ],
+            action=RuleAction.ALLOW,
+        )
+
+        # Should raise ValidationError or SecurityViolationError
+        with pytest.raises((ValidationError, SecurityViolationError)):
+            validator.validate_rule_logic(rule)
+
+    def test_validate_rule_logic_with_invalid_http_method(self, validator: PolicyValidator) -> None:
+        """Test rule validation detects invalid HTTP method."""
+        from domain.policy.entity import PolicyRule, RuleAction, RuleCondition
+
+        rule = PolicyRule(
+            name="test-rule",
+            description="Test",
+            conditions=[
+                RuleCondition(
+                    field="method", operator="equals", value="INVALID"
+                )  # Not a valid HTTP method
+            ],
+            action=RuleAction.ALLOW,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_rule_logic(rule)
+
+        assert "method" in str(exc_info.value).lower()
+
+    def test_validate_rule_logic_with_valid_http_methods(self, validator: PolicyValidator) -> None:
+        """Test rule validation accepts valid HTTP methods."""
+        from domain.policy.entity import PolicyRule, RuleAction, RuleCondition
+
+        valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT"]
+
+        for method in valid_methods:
+            rule = PolicyRule(
+                name=f"test-rule-{method}",
+                description="Test",
+                conditions=[RuleCondition(field="method", operator="equals", value=method)],
+                action=RuleAction.ALLOW,
+            )
+
+            # Should not raise for valid methods
+            validator.validate_rule_logic(rule)

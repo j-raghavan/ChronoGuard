@@ -1,12 +1,14 @@
 """Comprehensive tests for X509Certificate value object with proper timezone-aware fixtures."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import NameOID
 from domain.common.exceptions import SecurityViolationError, ValidationError
@@ -17,14 +19,14 @@ class TestCertificateFixtures:
     """Test fixtures for creating timezone-aware X.509 certificates."""
 
     @pytest.fixture
-    def rsa_private_key(self):
+    def rsa_private_key(self) -> RSAPrivateKey:
         """Generate an RSA private key for testing."""
         return rsa.generate_private_key(
             public_exponent=65537, key_size=2048, backend=default_backend()
         )
 
     @pytest.fixture
-    def valid_cert_pem(self, rsa_private_key):
+    def valid_cert_pem(self, rsa_private_key: RSAPrivateKey) -> str:
         """Create a valid timezone-aware certificate PEM."""
         # Create a valid certificate that expires in the future
         subject = issuer = x509.Name(
@@ -66,7 +68,7 @@ class TestCertificateFixtures:
         return cert.public_bytes(Encoding.PEM).decode()
 
     @pytest.fixture
-    def expired_cert_pem(self, rsa_private_key):
+    def expired_cert_pem(self, rsa_private_key: RSAPrivateKey) -> str:
         """Create an expired timezone-aware certificate."""
         subject = issuer = x509.Name(
             [
@@ -93,7 +95,7 @@ class TestCertificateFixtures:
         return cert.public_bytes(Encoding.PEM).decode()
 
     @pytest.fixture
-    def future_cert_pem(self, rsa_private_key):
+    def future_cert_pem(self, rsa_private_key: RSAPrivateKey) -> str:
         """Create a certificate that is not yet valid."""
         subject = issuer = x509.Name(
             [
@@ -120,7 +122,7 @@ class TestCertificateFixtures:
         return cert.public_bytes(Encoding.PEM).decode()
 
     @pytest.fixture
-    def weak_key_cert_pem(self):
+    def weak_key_cert_pem(self) -> str:
         """Create a certificate with weak RSA key (1024 bits)."""
         # Generate weak key
         weak_key = rsa.generate_private_key(
@@ -151,7 +153,7 @@ class TestCertificateFixtures:
     # The certificate.py code still validates against SHA1 signatures, but we can't create test certs with it
 
     @pytest.fixture
-    def ca_cert_pem(self, rsa_private_key):
+    def ca_cert_pem(self, rsa_private_key: RSAPrivateKey) -> str:
         """Create a CA certificate for chain verification."""
         subject = issuer = x509.Name(
             [
@@ -183,7 +185,7 @@ class TestCertificateFixtures:
 class TestX509CertificateValidation(TestCertificateFixtures):
     """Test X509Certificate validation."""
 
-    def test_create_valid_certificate(self, valid_cert_pem):
+    def test_create_valid_certificate(self, valid_cert_pem: str) -> None:
         """Test creating a valid certificate."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
@@ -191,28 +193,28 @@ class TestX509CertificateValidation(TestCertificateFixtures):
         assert "BEGIN CERTIFICATE" in cert.pem_data
         assert cert.subject_common_name == "chronoguard.example.com"
 
-    def test_empty_certificate_validation(self):
+    def test_empty_certificate_validation(self) -> None:
         """Test validation of empty certificate."""
         with pytest.raises(ValidationError) as exc_info:
             X509Certificate(pem_data="")
 
         assert "Certificate data cannot be empty" in str(exc_info.value)
 
-    def test_whitespace_only_certificate_validation(self):
+    def test_whitespace_only_certificate_validation(self) -> None:
         """Test validation of whitespace-only certificate."""
         with pytest.raises(ValidationError) as exc_info:
             X509Certificate(pem_data="   \n  \t  ")
 
         assert "Certificate data cannot be empty" in str(exc_info.value)
 
-    def test_invalid_certificate_format(self):
+    def test_invalid_certificate_format(self) -> None:
         """Test validation of invalid certificate format."""
         with pytest.raises(ValidationError) as exc_info:
             X509Certificate(pem_data="invalid certificate data")
 
         assert "Invalid certificate format" in str(exc_info.value)
 
-    def test_malformed_pem_certificate(self):
+    def test_malformed_pem_certificate(self) -> None:
         """Test validation of malformed PEM certificate."""
         malformed_pem = """-----BEGIN CERTIFICATE-----
         This is not a valid base64 certificate
@@ -223,7 +225,7 @@ class TestX509CertificateValidation(TestCertificateFixtures):
 
         assert "Invalid certificate format" in str(exc_info.value)
 
-    def test_expired_certificate_validation(self, expired_cert_pem):
+    def test_expired_certificate_validation(self, expired_cert_pem: str) -> None:
         """Test validation rejects expired certificates."""
         with pytest.raises(SecurityViolationError) as exc_info:
             X509Certificate(pem_data=expired_cert_pem)
@@ -231,7 +233,7 @@ class TestX509CertificateValidation(TestCertificateFixtures):
         assert "expired" in str(exc_info.value).lower()
         assert exc_info.value.violation_type == "EXPIRED_CERTIFICATE"
 
-    def test_future_certificate_validation(self, future_cert_pem):
+    def test_future_certificate_validation(self, future_cert_pem: str) -> None:
         """Test validation rejects certificates not yet valid."""
         with pytest.raises(SecurityViolationError) as exc_info:
             X509Certificate(pem_data=future_cert_pem)
@@ -239,7 +241,7 @@ class TestX509CertificateValidation(TestCertificateFixtures):
         assert "not yet valid" in str(exc_info.value).lower()
         assert exc_info.value.violation_type == "PREMATURE_CERTIFICATE"
 
-    def test_weak_key_certificate_validation(self, weak_key_cert_pem):
+    def test_weak_key_certificate_validation(self, weak_key_cert_pem: str) -> None:
         """Test validation rejects certificates with weak keys."""
         with pytest.raises(SecurityViolationError) as exc_info:
             X509Certificate(pem_data=weak_key_cert_pem)
@@ -251,7 +253,7 @@ class TestX509CertificateValidation(TestCertificateFixtures):
     # SHA1 signature test removed - modern cryptography doesn't support creating SHA1-signed certs
     # The validation code in certificate.py still checks for this, but we can't test it without a real SHA1 cert
 
-    def test_certificate_parsing_generic_exception(self):
+    def test_certificate_parsing_generic_exception(self) -> None:
         """Test generic exception handling during certificate parsing."""
         # Pass non-PEM data that will cause a generic exception
         with pytest.raises(ValidationError) as exc_info:
@@ -267,13 +269,13 @@ class TestX509CertificateValidation(TestCertificateFixtures):
 class TestX509CertificateProperties(TestCertificateFixtures):
     """Test X509Certificate properties."""
 
-    def test_subject_common_name(self, valid_cert_pem):
+    def test_subject_common_name(self, valid_cert_pem: str) -> None:
         """Test subject common name extraction."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         assert cert.subject_common_name == "chronoguard.example.com"
 
-    def test_subject_common_name_missing(self, rsa_private_key):
+    def test_subject_common_name_missing(self, rsa_private_key: RSAPrivateKey) -> None:
         """Test subject common name when not present."""
         # Create certificate without CN
         subject = issuer = x509.Name(
@@ -299,7 +301,7 @@ class TestX509CertificateProperties(TestCertificateFixtures):
 
         assert cert.subject_common_name is None
 
-    def test_subject_alt_names(self, valid_cert_pem):
+    def test_subject_alt_names(self, valid_cert_pem: str) -> None:
         """Test subject alternative names extraction."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         sans = cert.subject_alt_names
@@ -308,7 +310,7 @@ class TestX509CertificateProperties(TestCertificateFixtures):
         assert "*.chronoguard.example.com" in sans
         assert "api.chronoguard.example.com" in sans
 
-    def test_subject_alt_names_missing(self, rsa_private_key):
+    def test_subject_alt_names_missing(self, rsa_private_key: RSAPrivateKey) -> None:
         """Test subject alternative names when not present."""
         subject = issuer = x509.Name(
             [
@@ -333,14 +335,14 @@ class TestX509CertificateProperties(TestCertificateFixtures):
 
         assert cert.subject_alt_names == []
 
-    def test_issuer_common_name(self, valid_cert_pem):
+    def test_issuer_common_name(self, valid_cert_pem: str) -> None:
         """Test issuer common name extraction."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         # Self-signed, so issuer == subject
         assert cert.issuer_common_name == "chronoguard.example.com"
 
-    def test_issuer_common_name_missing(self, rsa_private_key):
+    def test_issuer_common_name_missing(self, rsa_private_key: RSAPrivateKey) -> None:
         """Test issuer common name when not present."""
         # Create certificate without CN in issuer
         subject = x509.Name(
@@ -371,7 +373,7 @@ class TestX509CertificateProperties(TestCertificateFixtures):
 
         assert cert.issuer_common_name is None
 
-    def test_serial_number(self, valid_cert_pem):
+    def test_serial_number(self, valid_cert_pem: str) -> None:
         """Test serial number extraction."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         serial = cert.serial_number
@@ -381,7 +383,7 @@ class TestX509CertificateProperties(TestCertificateFixtures):
         # Serial number should be hex uppercase
         assert all(c in "0123456789ABCDEF" for c in serial)
 
-    def test_fingerprint_sha256(self, valid_cert_pem):
+    def test_fingerprint_sha256(self, valid_cert_pem: str) -> None:
         """Test SHA256 fingerprint calculation."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         fingerprint = cert.fingerprint_sha256
@@ -390,7 +392,7 @@ class TestX509CertificateProperties(TestCertificateFixtures):
         assert len(fingerprint) == 64  # SHA256 hex = 64 chars
         assert all(c in "0123456789ABCDEF" for c in fingerprint)
 
-    def test_not_valid_before(self, valid_cert_pem):
+    def test_not_valid_before(self, valid_cert_pem: str) -> None:
         """Test not_valid_before property."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         not_before = cert.not_valid_before
@@ -400,7 +402,7 @@ class TestX509CertificateProperties(TestCertificateFixtures):
         # Should be in the past
         assert not_before < datetime.now(UTC)
 
-    def test_not_valid_after(self, valid_cert_pem):
+    def test_not_valid_after(self, valid_cert_pem: str) -> None:
         """Test not_valid_after property."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         not_after = cert.not_valid_after
@@ -410,13 +412,13 @@ class TestX509CertificateProperties(TestCertificateFixtures):
         # Should be in the future
         assert not_after > datetime.now(UTC)
 
-    def test_is_valid_now(self, valid_cert_pem):
+    def test_is_valid_now(self, valid_cert_pem: str) -> None:
         """Test is_valid_now property."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         assert cert.is_valid_now is True
 
-    def test_days_until_expiry(self, valid_cert_pem):
+    def test_days_until_expiry(self, valid_cert_pem: str) -> None:
         """Test days_until_expiry calculation."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         days = cert.days_until_expiry
@@ -431,20 +433,20 @@ class TestX509CertificateProperties(TestCertificateFixtures):
 class TestX509CertificateDomainMatching(TestCertificateFixtures):
     """Test X509Certificate domain matching."""
 
-    def test_matches_domain_exact_cn(self, valid_cert_pem):
+    def test_matches_domain_exact_cn(self, valid_cert_pem: str) -> None:
         """Test domain matching against exact common name."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         assert cert.matches_domain("chronoguard.example.com") is True
 
-    def test_matches_domain_exact_san(self, valid_cert_pem):
+    def test_matches_domain_exact_san(self, valid_cert_pem: str) -> None:
         """Test domain matching against subject alternative name."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         # This tests the exact match in SAN list (line 254)
         assert cert.matches_domain("api.chronoguard.example.com") is True
 
-    def test_matches_domain_first_san_match(self, valid_cert_pem):
+    def test_matches_domain_first_san_match(self, valid_cert_pem: str) -> None:
         """Test domain matching returns True on first SAN match."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
@@ -452,7 +454,7 @@ class TestX509CertificateDomainMatching(TestCertificateFixtures):
         # This ensures we hit the return True on line 254
         assert cert.matches_domain("chronoguard.example.com") is True
 
-    def test_matches_domain_wildcard(self, valid_cert_pem):
+    def test_matches_domain_wildcard(self, valid_cert_pem: str) -> None:
         """Test domain matching against wildcard SAN."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
@@ -460,28 +462,28 @@ class TestX509CertificateDomainMatching(TestCertificateFixtures):
         assert cert.matches_domain("www.chronoguard.example.com") is True
         assert cert.matches_domain("test.chronoguard.example.com") is True
 
-    def test_matches_domain_wildcard_base_domain(self, valid_cert_pem):
+    def test_matches_domain_wildcard_base_domain(self, valid_cert_pem: str) -> None:
         """Test wildcard matches base domain."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         # Wildcard should also match the base domain
         assert cert.matches_domain("chronoguard.example.com") is True
 
-    def test_matches_domain_case_insensitive(self, valid_cert_pem):
+    def test_matches_domain_case_insensitive(self, valid_cert_pem: str) -> None:
         """Test domain matching is case insensitive."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         assert cert.matches_domain("CHRONOGUARD.EXAMPLE.COM") is True
         assert cert.matches_domain("ChronoGuard.Example.Com") is True
 
-    def test_matches_domain_no_match(self, valid_cert_pem):
+    def test_matches_domain_no_match(self, valid_cert_pem: str) -> None:
         """Test domain matching returns False for non-matching domain."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         assert cert.matches_domain("other.example.com") is False
         assert cert.matches_domain("example.com") is False
 
-    def test_matches_domain_wildcard_no_subdomain_match(self, valid_cert_pem):
+    def test_matches_domain_wildcard_no_subdomain_match(self, valid_cert_pem: str) -> None:
         """Test wildcard matches any level of subdomain (current implementation)."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
@@ -494,7 +496,9 @@ class TestX509CertificateDomainMatching(TestCertificateFixtures):
 class TestX509CertificateChainVerification(TestCertificateFixtures):
     """Test X509Certificate chain verification."""
 
-    def test_verify_chain_with_matching_issuer(self, rsa_private_key, ca_cert_pem):
+    def test_verify_chain_with_matching_issuer(
+        self, rsa_private_key: RSAPrivateKey, ca_cert_pem: str
+    ) -> None:
         """Test chain verification with matching issuer."""
         # Create a certificate signed by the CA
         ca_key = rsa_private_key
@@ -532,7 +536,7 @@ class TestX509CertificateChainVerification(TestCertificateFixtures):
 
         assert leaf.verify_chain([ca]) is True
 
-    def test_verify_chain_no_matching_issuer(self, valid_cert_pem, ca_cert_pem):
+    def test_verify_chain_no_matching_issuer(self, valid_cert_pem: str, ca_cert_pem: str) -> None:
         """Test chain verification with no matching issuer."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         ca = X509Certificate(pem_data=ca_cert_pem)
@@ -540,13 +544,13 @@ class TestX509CertificateChainVerification(TestCertificateFixtures):
         # Self-signed cert won't match CA
         assert cert.verify_chain([ca]) is False
 
-    def test_verify_chain_empty_ca_list(self, valid_cert_pem):
+    def test_verify_chain_empty_ca_list(self, valid_cert_pem: str) -> None:
         """Test chain verification with empty CA list."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
         assert cert.verify_chain([]) is False
 
-    def test_verify_chain_exception_handling(self, valid_cert_pem):
+    def test_verify_chain_exception_handling(self, valid_cert_pem: str) -> None:
         """Test chain verification handles exceptions gracefully."""
         from unittest.mock import Mock
 
@@ -565,7 +569,7 @@ class TestX509CertificateChainVerification(TestCertificateFixtures):
 class TestX509CertificateConversions(TestCertificateFixtures):
     """Test X509Certificate format conversions."""
 
-    def test_from_der(self, valid_cert_pem):
+    def test_from_der(self, valid_cert_pem: str) -> None:
         """Test creating certificate from DER format."""
         # First create from PEM
         pem_cert = X509Certificate(pem_data=valid_cert_pem)
@@ -580,14 +584,14 @@ class TestX509CertificateConversions(TestCertificateFixtures):
         assert der_cert.subject_common_name == pem_cert.subject_common_name
         assert der_cert.serial_number == pem_cert.serial_number
 
-    def test_from_der_invalid_data(self):
+    def test_from_der_invalid_data(self) -> None:
         """Test from_der with invalid DER data."""
         with pytest.raises(ValidationError) as exc_info:
             X509Certificate.from_der(b"invalid der data")
 
         assert "Invalid DER certificate data" in str(exc_info.value)
 
-    def test_to_der(self, valid_cert_pem):
+    def test_to_der(self, valid_cert_pem: str) -> None:
         """Test converting certificate to DER format."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         der_data = cert.to_der()
@@ -597,7 +601,7 @@ class TestX509CertificateConversions(TestCertificateFixtures):
         # DER format doesn't have PEM headers
         assert b"BEGIN CERTIFICATE" not in der_data
 
-    def test_roundtrip_pem_der_pem(self, valid_cert_pem):
+    def test_roundtrip_pem_der_pem(self, valid_cert_pem: str) -> None:
         """Test PEM -> DER -> PEM roundtrip."""
         original = X509Certificate(pem_data=valid_cert_pem)
 
@@ -615,7 +619,7 @@ class TestX509CertificateConversions(TestCertificateFixtures):
 class TestX509CertificateStringRepresentation(TestCertificateFixtures):
     """Test X509Certificate string representation."""
 
-    def test_string_representation(self, valid_cert_pem):
+    def test_string_representation(self, valid_cert_pem: str) -> None:
         """Test string representation of certificate."""
         cert = X509Certificate(pem_data=valid_cert_pem)
         cert_str = str(cert)
@@ -624,7 +628,7 @@ class TestX509CertificateStringRepresentation(TestCertificateFixtures):
         assert "chronoguard.example.com" in cert_str
         assert cert.serial_number in cert_str
 
-    def test_immutability(self, valid_cert_pem):
+    def test_immutability(self, valid_cert_pem: str) -> None:
         """Test that X509Certificate is immutable."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
@@ -635,7 +639,7 @@ class TestX509CertificateStringRepresentation(TestCertificateFixtures):
 class TestX509CertificateEdgeCases(TestCertificateFixtures):
     """Test X509Certificate edge cases and error handling."""
 
-    def test_certificate_property_caching(self, valid_cert_pem):
+    def test_certificate_property_caching(self, valid_cert_pem: str) -> None:
         """Test that certificate property is re-parsed each time."""
         cert = X509Certificate(pem_data=valid_cert_pem)
 
@@ -646,14 +650,16 @@ class TestX509CertificateEdgeCases(TestCertificateFixtures):
         # Should be equivalent but not same object (re-parsed)
         assert cert1.serial_number == cert2.serial_number
 
-    def test_certificate_with_stripped_whitespace(self, valid_cert_pem):
+    def test_certificate_with_stripped_whitespace(self, valid_cert_pem: str) -> None:
         """Test certificate with extra whitespace is stripped."""
         padded_pem = "\n\n" + valid_cert_pem + "\n\n"
         cert = X509Certificate(pem_data=padded_pem)
 
         assert cert.pem_data == valid_cert_pem.strip()
 
-    def test_negative_days_until_expiry_for_expired_cert(self, rsa_private_key):
+    def test_negative_days_until_expiry_for_expired_cert(
+        self, rsa_private_key: RSAPrivateKey
+    ) -> None:
         """Test days_until_expiry returns negative for expired cert."""
         # Create cert that expired 30 days ago
         subject = issuer = x509.Name(

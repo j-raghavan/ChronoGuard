@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Callable, Generator
 from datetime import UTC, datetime
+from typing import Any
 from unittest.mock import AsyncMock, patch
 from uuid import UUID, uuid4
 
@@ -12,7 +13,7 @@ from faker import Faker
 
 # Global patch to prevent OpenTelemetry shutdown issues during tests
 @pytest.fixture(autouse=True)
-def disable_telemetry_shutdown():
+def disable_telemetry_shutdown() -> Generator[None, None, None]:
     """Prevent OpenTelemetry initialization that causes shutdown errors."""
     with (
         patch("infrastructure.observability.telemetry.TracerProvider") as mock_tracer_provider,
@@ -274,11 +275,11 @@ def agent_factory() -> Callable:
     """Factory for creating test agents."""
 
     def _create_agent(
-        tenant_id: UUID = None,
-        agent_id: UUID = None,
-        name: str = None,
+        tenant_id: UUID | None = None,
+        agent_id: UUID | None = None,
+        name: str | None = None,
         status: AgentStatus = AgentStatus.ACTIVE,
-        certificate_pem: str = None,
+        certificate_pem: str | None = None,
     ) -> Agent:
         return Agent(
             agent_id=agent_id or uuid4(),
@@ -296,12 +297,12 @@ def policy_factory() -> Callable:
     """Factory for creating test policies."""
 
     def _create_policy(
-        tenant_id: UUID = None,
-        policy_id: UUID = None,
-        name: str = None,
+        tenant_id: UUID | None = None,
+        policy_id: UUID | None = None,
+        name: str | None = None,
         status: PolicyStatus = PolicyStatus.ACTIVE,
         priority: int = 500,
-        created_by: UUID = None,
+        created_by: UUID | None = None,
     ) -> Policy:
         return Policy(
             policy_id=policy_id or uuid4(),
@@ -321,12 +322,12 @@ def audit_entry_factory() -> Callable:
     """Factory for creating test audit entries."""
 
     def _create_audit_entry(
-        tenant_id: UUID = None,
-        agent_id: UUID = None,
-        domain: str = None,
+        tenant_id: UUID | None = None,
+        agent_id: UUID | None = None,
+        domain: str | None = None,
         decision: AccessDecision = AccessDecision.ALLOW,
         sequence_number: int = 1,
-        timestamp: datetime = None,
+        timestamp: datetime | None = None,
     ) -> AuditEntry:
         timestamp = timestamp or datetime.now(UTC)
         return AuditEntry(
@@ -408,14 +409,14 @@ def test_audit_entries_collection(
 
 # Performance test fixtures
 @pytest.fixture
-def performance_timer() -> Callable:
+def performance_timer() -> Any:
     """Timer utility for performance testing."""
     import time
 
     class Timer:
         def __init__(self) -> None:
-            self.start_time = None
-            self.end_time = None
+            self.start_time: float | None = None
+            self.end_time: float | None = None
 
         def start(self) -> None:
             self.start_time = time.perf_counter()

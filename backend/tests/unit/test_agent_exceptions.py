@@ -17,7 +17,7 @@ from domain.agent.exceptions import (
 class TestAgentError:
     """Test base AgentError class."""
 
-    def test_agent_error_is_base_class(self):
+    def test_agent_error_is_base_class(self) -> None:
         """Test that AgentError can be instantiated."""
         error = AgentError("Test agent error")
         assert str(error) == "Test agent error"
@@ -26,7 +26,7 @@ class TestAgentError:
 class TestAgentNotFoundError:
     """Test AgentNotFoundError exception."""
 
-    def test_agent_not_found_error_creation(self):
+    def test_agent_not_found_error_creation(self) -> None:
         """Test creation of AgentNotFoundError."""
         agent_id = uuid4()
         error = AgentNotFoundError(agent_id)
@@ -36,7 +36,7 @@ class TestAgentNotFoundError:
         assert error.agent_id == agent_id
         assert error.error_code == "AGENT_NOT_FOUND"
 
-    def test_agent_not_found_error_attributes(self):
+    def test_agent_not_found_error_attributes(self) -> None:
         """Test AgentNotFoundError has correct attributes."""
         agent_id = uuid4()
         error = AgentNotFoundError(agent_id)
@@ -49,7 +49,7 @@ class TestAgentNotFoundError:
 class TestAgentNameExistsError:
     """Test AgentNameExistsError exception."""
 
-    def test_agent_name_exists_error_creation(self):
+    def test_agent_name_exists_error_creation(self) -> None:
         """Test creation of AgentNameExistsError."""
         tenant_id = uuid4()
         name = "test-agent"
@@ -62,7 +62,7 @@ class TestAgentNameExistsError:
         assert error.name == name
         assert error.error_code == "AGENT_NAME_EXISTS"
 
-    def test_agent_name_exists_error_attributes(self):
+    def test_agent_name_exists_error_attributes(self) -> None:
         """Test AgentNameExistsError has correct attributes."""
         tenant_id = uuid4()
         error = AgentNameExistsError(tenant_id, "duplicate-agent")
@@ -75,7 +75,7 @@ class TestAgentNameExistsError:
 class TestAgentCertificateExistsError:
     """Test AgentCertificateExistsError exception."""
 
-    def test_agent_certificate_exists_error_creation(self):
+    def test_agent_certificate_exists_error_creation(self) -> None:
         """Test creation of AgentCertificateExistsError."""
         fingerprint = "AA:BB:CC:DD:EE:FF"
         error = AgentCertificateExistsError(fingerprint)
@@ -85,7 +85,7 @@ class TestAgentCertificateExistsError:
         assert error.fingerprint == fingerprint
         assert error.error_code == "AGENT_CERTIFICATE_EXISTS"
 
-    def test_agent_certificate_exists_error_attributes(self):
+    def test_agent_certificate_exists_error_attributes(self) -> None:
         """Test AgentCertificateExistsError has correct attributes."""
         error = AgentCertificateExistsError("11:22:33:44:55:66")
 
@@ -96,7 +96,7 @@ class TestAgentCertificateExistsError:
 class TestAgentCertificateExpiredError:
     """Test AgentCertificateExpiredError exception."""
 
-    def test_agent_certificate_expired_error_creation(self):
+    def test_agent_certificate_expired_error_creation(self) -> None:
         """Test creation of AgentCertificateExpiredError."""
         agent_id = uuid4()
         expiry_date = "2023-01-01"
@@ -109,7 +109,7 @@ class TestAgentCertificateExpiredError:
         assert error.expiry_date == expiry_date
         assert error.error_code == "AGENT_CERTIFICATE_EXPIRED"
 
-    def test_agent_certificate_expired_error_attributes(self):
+    def test_agent_certificate_expired_error_attributes(self) -> None:
         """Test AgentCertificateExpiredError has correct attributes."""
         agent_id = uuid4()
         error = AgentCertificateExpiredError(agent_id, "2024-12-31")
@@ -122,7 +122,7 @@ class TestAgentCertificateExpiredError:
 class TestAgentLimitExceededError:
     """Test AgentLimitExceededError exception."""
 
-    def test_agent_limit_exceeded_error_creation(self):
+    def test_agent_limit_exceeded_error_creation(self) -> None:
         """Test creation of AgentLimitExceededError."""
         tenant_id = uuid4()
         current_count = 105
@@ -138,7 +138,7 @@ class TestAgentLimitExceededError:
         assert error.max_allowed == max_allowed
         assert error.error_code == "AGENT_LIMIT_EXCEEDED"
 
-    def test_agent_limit_exceeded_error_attributes(self):
+    def test_agent_limit_exceeded_error_attributes(self) -> None:
         """Test AgentLimitExceededError has correct attributes."""
         tenant_id = uuid4()
         error = AgentLimitExceededError(tenant_id, 50, 25)
@@ -152,7 +152,7 @@ class TestAgentLimitExceededError:
 class TestAgentPolicyLimitExceededError:
     """Test AgentPolicyLimitExceededError exception."""
 
-    def test_agent_policy_limit_exceeded_error_creation(self):
+    def test_agent_policy_limit_exceeded_error_creation(self) -> None:
         """Test creation of AgentPolicyLimitExceededError."""
         agent_id = uuid4()
         current_count = 15
@@ -168,7 +168,7 @@ class TestAgentPolicyLimitExceededError:
         assert error.max_allowed == max_allowed
         assert error.error_code == "AGENT_POLICY_LIMIT_EXCEEDED"
 
-    def test_agent_policy_limit_exceeded_error_attributes(self):
+    def test_agent_policy_limit_exceeded_error_attributes(self) -> None:
         """Test AgentPolicyLimitExceededError has correct attributes."""
         agent_id = uuid4()
         error = AgentPolicyLimitExceededError(agent_id, 8, 5)
@@ -182,7 +182,7 @@ class TestAgentPolicyLimitExceededError:
 class TestRepositoryError:
     """Test RepositoryError exception."""
 
-    def test_repository_error_creation(self):
+    def test_repository_error_creation(self) -> None:
         """Test creation of RepositoryError."""
         message = "Database connection failed"
         operation = "save"
@@ -192,7 +192,7 @@ class TestRepositoryError:
         assert error.operation == operation
         assert error.error_code == "REPOSITORY_ERROR"
 
-    def test_repository_error_attributes(self):
+    def test_repository_error_attributes(self) -> None:
         """Test RepositoryError has correct attributes."""
         error = RepositoryError("Test error", "delete")
 

@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 from uuid import UUID, uuid4
 
 import pytest
@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 
 @pytest.fixture(scope="session")
-def event_loop():
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     """Create event loop for async tests."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
@@ -54,7 +54,7 @@ async def engine(database_url: str) -> AsyncGenerator[AsyncEngine, None]:
 
 
 @pytest.fixture
-async def clean_database(engine: AsyncEngine):
+async def clean_database(engine: AsyncEngine) -> AsyncGenerator[None, None]:
     """Clean database between tests."""
     async with engine.begin() as conn:
         await conn.execute(text("TRUNCATE TABLE audit_entries CASCADE"))

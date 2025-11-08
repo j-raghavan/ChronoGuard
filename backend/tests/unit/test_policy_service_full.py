@@ -1,6 +1,7 @@
 """Comprehensive tests for PolicyService domain service."""
 
 from datetime import UTC, datetime
+from typing import Any
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -26,7 +27,7 @@ from domain.policy.service import AccessRequest, PolicyEvaluationResult, PolicyS
 class TestPolicyEvaluationResult:
     """Test PolicyEvaluationResult class."""
 
-    def test_policy_evaluation_result_creation(self):
+    def test_policy_evaluation_result_creation(self) -> None:
         """Test creation of PolicyEvaluationResult."""
         policy_id = uuid4()
         result = PolicyEvaluationResult(allowed=True, policy_id=policy_id, reason="Access granted")
@@ -37,7 +38,7 @@ class TestPolicyEvaluationResult:
         assert result.rule_id is None
         assert result.rate_limit_info == {}
 
-    def test_policy_evaluation_result_with_rule_id(self):
+    def test_policy_evaluation_result_with_rule_id(self) -> None:
         """Test PolicyEvaluationResult with rule_id."""
         policy_id = uuid4()
         rule_id = uuid4()
@@ -47,7 +48,7 @@ class TestPolicyEvaluationResult:
 
         assert result.rule_id == rule_id
 
-    def test_policy_evaluation_result_with_rate_limit_info(self):
+    def test_policy_evaluation_result_with_rate_limit_info(self) -> None:
         """Test PolicyEvaluationResult with rate limit info."""
         rate_limit_info = {"requests_remaining": 100, "reset_time": 3600}
         result = PolicyEvaluationResult(
@@ -60,7 +61,7 @@ class TestPolicyEvaluationResult:
 class TestAccessRequest:
     """Test AccessRequest class."""
 
-    def test_access_request_minimal(self):
+    def test_access_request_minimal(self) -> None:
         """Test creation of AccessRequest with minimal parameters."""
         request = AccessRequest(domain="example.com")
 
@@ -74,7 +75,7 @@ class TestAccessRequest:
         assert request.tenant_id is None
         assert request.additional_context == {}
 
-    def test_access_request_full(self):
+    def test_access_request_full(self) -> None:
         """Test creation of AccessRequest with all parameters."""
         agent_id = uuid4()
         tenant_id = uuid4()
@@ -107,7 +108,7 @@ class TestAccessRequest:
 class TestPolicyServiceCreation:
     """Test PolicyService creation and initialization."""
 
-    def test_policy_service_creation(self):
+    def test_policy_service_creation(self) -> None:
         """Test PolicyService initialization."""
         policy_repo = AsyncMock()
         service = PolicyService(policy_repo)
@@ -115,7 +116,7 @@ class TestPolicyServiceCreation:
         assert service._policy_repository == policy_repo
         assert service._agent_repository is None
 
-    def test_policy_service_with_agent_repository(self):
+    def test_policy_service_with_agent_repository(self) -> None:
         """Test PolicyService with agent repository."""
         policy_repo = AsyncMock()
         agent_repo = AsyncMock()
@@ -129,17 +130,19 @@ class TestCreatePolicy:
     """Test policy creation."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_create_policy_success(self, service, policy_repo):
+    async def test_create_policy_success(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test successful policy creation."""
         tenant_id = uuid4()
         created_by = uuid4()
@@ -167,7 +170,9 @@ class TestCreatePolicy:
         policy_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_create_policy_duplicate_name(self, service, policy_repo):
+    async def test_create_policy_duplicate_name(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test policy creation with duplicate name fails."""
         tenant_id = uuid4()
         policy_repo.exists_by_name.return_value = True
@@ -180,7 +185,9 @@ class TestCreatePolicy:
         assert "Policy" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_create_policy_limit_exceeded(self, service, policy_repo):
+    async def test_create_policy_limit_exceeded(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test policy creation fails when limit exceeded."""
         tenant_id = uuid4()
         policy_repo.exists_by_name.return_value = False
@@ -194,7 +201,9 @@ class TestCreatePolicy:
         assert "maximum policy limit" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_create_policy_priority_conflict(self, service, policy_repo):
+    async def test_create_policy_priority_conflict(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test policy creation fails with priority conflict."""
         tenant_id = uuid4()
         existing_policy = Mock(policy_id=uuid4())
@@ -219,17 +228,19 @@ class TestPolicyActivation:
     """Test policy activation."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_activate_policy_success(self, service, policy_repo):
+    async def test_activate_policy_success(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test successful policy activation."""
         policy = Policy(
             tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
@@ -245,7 +256,9 @@ class TestPolicyActivation:
         policy_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_activate_policy_not_found(self, service, policy_repo):
+    async def test_activate_policy_not_found(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test policy activation fails when policy not found."""
         policy_repo.find_by_id.return_value = None
 
@@ -253,7 +266,9 @@ class TestPolicyActivation:
             await service.activate_policy(uuid4())
 
     @pytest.mark.asyncio
-    async def test_activate_empty_policy_fails(self, service, policy_repo):
+    async def test_activate_empty_policy_fails(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test activation fails for empty policy."""
         policy = Policy(
             tenant_id=uuid4(), name="empty-policy", description="Test", created_by=uuid4()
@@ -271,17 +286,19 @@ class TestPolicySuspension:
     """Test policy suspension."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_suspend_policy_success(self, service, policy_repo):
+    async def test_suspend_policy_success(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test successful policy suspension."""
         policy = Policy(
             tenant_id=uuid4(),
@@ -304,22 +321,24 @@ class TestPolicyArchival:
     """Test policy archival."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def agent_repo(self):
+    def agent_repo(self) -> AsyncMock:
         """Create a mock agent repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo, agent_repo):
+    def service(self, policy_repo: AsyncMock, agent_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo, agent_repo)
 
     @pytest.mark.asyncio
-    async def test_archive_policy_success(self, service, policy_repo, agent_repo):
+    async def test_archive_policy_success(
+        self, service: PolicyService, policy_repo: AsyncMock, agent_repo: AsyncMock
+    ) -> None:
         """Test successful policy archival."""
         policy = Policy(
             tenant_id=uuid4(),
@@ -340,8 +359,8 @@ class TestPolicyArchival:
 
     @pytest.mark.asyncio
     async def test_archive_policy_with_agent_references_fails(
-        self, service, policy_repo, agent_repo
-    ):
+        self, service: PolicyService, policy_repo: AsyncMock, agent_repo: AsyncMock
+    ) -> None:
         """Test archival fails when policy is referenced by agents."""
         policy = Policy(
             tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
@@ -360,17 +379,19 @@ class TestPolicyRuleManagement:
     """Test policy rule management."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_add_rule_to_policy_success(self, service, policy_repo):
+    async def test_add_rule_to_policy_success(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test adding rule to policy."""
         policy = Policy(
             tenant_id=uuid4(),
@@ -396,7 +417,9 @@ class TestPolicyRuleManagement:
         policy_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_add_rule_to_active_policy_fails(self, service, policy_repo):
+    async def test_add_rule_to_active_policy_fails(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test adding rule to active policy fails."""
         policy = Policy(
             tenant_id=uuid4(),
@@ -421,7 +444,9 @@ class TestPolicyRuleManagement:
         assert "active policy" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_remove_rule_from_policy_success(self, service, policy_repo):
+    async def test_remove_rule_from_policy_success(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test removing rule from policy."""
         policy = Policy(
             tenant_id=uuid4(),
@@ -448,7 +473,9 @@ class TestPolicyRuleManagement:
         policy_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_remove_rule_from_active_policy_fails(self, service, policy_repo):
+    async def test_remove_rule_from_active_policy_fails(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test removing rule from active policy fails."""
         policy = Policy(
             tenant_id=uuid4(),
@@ -474,7 +501,9 @@ class TestPolicyRuleManagement:
         assert "Cannot modify active policy" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_remove_nonexistent_rule_fails(self, service, policy_repo):
+    async def test_remove_nonexistent_rule_fails(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test removing nonexistent rule fails."""
         policy = Policy(
             tenant_id=uuid4(),
@@ -494,17 +523,17 @@ class TestPolicyDomainManagement:
     """Test policy domain management."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_add_allowed_domain(self, service, policy_repo):
+    async def test_add_allowed_domain(self, service: PolicyService, policy_repo: AsyncMock) -> None:
         """Test adding allowed domain."""
         policy = Policy(
             tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
@@ -520,7 +549,7 @@ class TestPolicyDomainManagement:
         assert "example.com" in updated_policy.allowed_domains
 
     @pytest.mark.asyncio
-    async def test_add_blocked_domain(self, service, policy_repo):
+    async def test_add_blocked_domain(self, service: PolicyService, policy_repo: AsyncMock) -> None:
         """Test adding blocked domain."""
         policy = Policy(
             tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
@@ -540,17 +569,19 @@ class TestPolicyRestrictions:
     """Test policy time and rate restrictions."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_set_time_restrictions(self, service, policy_repo):
+    async def test_set_time_restrictions(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test setting time restrictions."""
         policy = Policy(
             tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
@@ -572,7 +603,7 @@ class TestPolicyRestrictions:
         assert updated_policy.time_restrictions == time_restriction
 
     @pytest.mark.asyncio
-    async def test_set_rate_limits(self, service, policy_repo):
+    async def test_set_rate_limits(self, service: PolicyService, policy_repo: AsyncMock) -> None:
         """Test setting rate limits."""
         policy = Policy(
             tenant_id=uuid4(), name="test-policy", description="Test", created_by=uuid4()
@@ -594,17 +625,19 @@ class TestAccessRequestEvaluation:
     """Test access request evaluation."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_without_tenant_fails(self, service, policy_repo):
+    async def test_evaluate_request_without_tenant_fails(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation fails without tenant."""
         request = AccessRequest(domain="example.com")
 
@@ -614,7 +647,9 @@ class TestAccessRequestEvaluation:
         assert "tenant" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_no_policies(self, service, policy_repo):
+    async def test_evaluate_request_no_policies(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation with no policies returns deny."""
         request = AccessRequest(domain="example.com", tenant_id=uuid4())
         policy_repo.find_policies_for_evaluation.return_value = []
@@ -625,7 +660,9 @@ class TestAccessRequestEvaluation:
         assert "No policies found" in result.reason
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_blocked_domain(self, service, policy_repo):
+    async def test_evaluate_request_blocked_domain(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation with blocked domain."""
         tenant_id = uuid4()
         policy = Policy(
@@ -646,7 +683,9 @@ class TestAccessRequestEvaluation:
         assert "blocked" in result.reason.lower()
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_allowed_domain(self, service, policy_repo):
+    async def test_evaluate_request_allowed_domain(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation with allowed domain."""
         tenant_id = uuid4()
         policy = Policy(
@@ -667,7 +706,9 @@ class TestAccessRequestEvaluation:
         assert "not in allowed list" in result.reason.lower()
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_no_matching_rules(self, service, policy_repo):
+    async def test_evaluate_request_no_matching_rules(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation returns default deny when no rules match."""
         tenant_id = uuid4()
         # Create a policy with no rules and no domain restrictions
@@ -689,7 +730,9 @@ class TestAccessRequestEvaluation:
         assert "No matching policy rules" in result.reason
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_time_restriction_outside_window(self, service, policy_repo):
+    async def test_evaluate_request_time_restriction_outside_window(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation fails outside allowed time window."""
         from domain.common.value_objects import TimeRange
 
@@ -722,7 +765,9 @@ class TestAccessRequestEvaluation:
         assert isinstance(result.allowed, bool)
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_with_disabled_rule(self, service, policy_repo):
+    async def test_evaluate_request_with_disabled_rule(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation skips disabled rules."""
         tenant_id = uuid4()
         policy = Policy(
@@ -752,7 +797,9 @@ class TestAccessRequestEvaluation:
         assert result.allowed is False
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_contains_operator(self, service, policy_repo):
+    async def test_evaluate_request_contains_operator(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation with contains operator."""
         tenant_id = uuid4()
         policy = Policy(
@@ -781,7 +828,9 @@ class TestAccessRequestEvaluation:
         assert result.allowed is True
 
     @pytest.mark.asyncio
-    async def test_evaluate_request_matching_rule(self, service, policy_repo):
+    async def test_evaluate_request_matching_rule(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test evaluation with matching rule."""
         tenant_id = uuid4()
         policy = Policy(
@@ -814,17 +863,19 @@ class TestPolicyStatistics:
     """Test policy statistics."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_get_tenant_policy_statistics(self, service, policy_repo):
+    async def test_get_tenant_policy_statistics(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test getting tenant policy statistics."""
         tenant_id = uuid4()
 
@@ -849,17 +900,19 @@ class TestBulkOperations:
     """Test bulk policy operations."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_bulk_archive_policies(self, service, policy_repo):
+    async def test_bulk_archive_policies(
+        self, service: PolicyService, policy_repo: AsyncMock
+    ) -> None:
         """Test bulk archiving policies."""
         policy_ids = [uuid4(), uuid4(), uuid4()]
         policy_repo.bulk_update_status.return_value = 3
@@ -874,17 +927,17 @@ class TestPolicySearch:
     """Test policy search."""
 
     @pytest.fixture
-    def policy_repo(self):
+    def policy_repo(self) -> AsyncMock:
         """Create a mock policy repository."""
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, policy_repo):
+    def service(self, policy_repo: AsyncMock) -> PolicyService:
         """Create a PolicyService instance."""
         return PolicyService(policy_repo)
 
     @pytest.mark.asyncio
-    async def test_search_policies(self, service, policy_repo):
+    async def test_search_policies(self, service: PolicyService, policy_repo: AsyncMock) -> None:
         """Test searching policies."""
         tenant_id = uuid4()
         policies = [Mock(), Mock()]
