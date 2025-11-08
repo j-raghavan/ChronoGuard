@@ -6,7 +6,6 @@ and Clean Architecture.
 
 from __future__ import annotations
 
-
 from domain.audit.entity import AccessDecision
 from domain.audit.repository import AuditRepository
 

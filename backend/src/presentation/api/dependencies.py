@@ -15,8 +15,6 @@ import os
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Header, HTTPException, status
-
 from application.commands import (
     CreateAgentCommand,
     CreatePolicyCommand,
@@ -24,14 +22,10 @@ from application.commands import (
     UpdateAgentCommand,
     UpdatePolicyCommand,
 )
-from application.queries import (
-    GetAgentQuery,
-    GetPolicyQuery,
-    ListAgentsQuery,
-    ListPoliciesQuery,
-)
+from application.queries import GetAgentQuery, GetPolicyQuery, ListAgentsQuery, ListPoliciesQuery
 from domain.agent.service import AgentService
 from domain.policy.service import PolicyService
+from fastapi import Header, HTTPException, status
 from infrastructure.persistence.postgres.agent_repository import PostgresAgentRepository
 from infrastructure.persistence.postgres.policy_repository import PostgresPolicyRepository
 
