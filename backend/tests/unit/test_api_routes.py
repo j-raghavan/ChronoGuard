@@ -63,7 +63,8 @@ class TestHealthRoutes:
         """Test metrics summary endpoint."""
         tenant_id = "550e8400-e29b-41d4-a716-446655440000"
 
-        from unittest.mock import MagicMock, AsyncMock
+        from unittest.mock import AsyncMock, MagicMock
+
         from domain.agent.entity import Agent, AgentStatus
         from domain.policy.entity import Policy
         from presentation.api.routes import health

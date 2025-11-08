@@ -67,7 +67,6 @@ async def readiness_check() -> HealthResponse:
     # Test database connectivity
     try:
         from presentation.api.dependencies import get_database_url
-
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 

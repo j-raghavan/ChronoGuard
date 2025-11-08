@@ -62,8 +62,8 @@ class TestAuditRouteErrorPaths:
         start = (datetime.now(UTC) - timedelta(days=7)).isoformat()
         end = datetime.now(UTC).isoformat()
 
-        from presentation.api.routes import audit
         from application.queries.temporal_analytics import TemporalAnalyticsQuery
+        from presentation.api.routes import audit
 
         # Mock to raise error
         mock_analytics = MagicMock(spec=TemporalAnalyticsQuery)
@@ -89,8 +89,8 @@ class TestAuditRouteErrorPaths:
         """Test export endpoint error handling."""
         tenant_id = "550e8400-e29b-41d4-a716-446655440000"
 
-        from presentation.api.routes import audit
         from application.queries.audit_export import AuditExporter
+        from presentation.api.routes import audit
 
         # Mock exporter to raise error
         mock_exporter = MagicMock(spec=AuditExporter)
