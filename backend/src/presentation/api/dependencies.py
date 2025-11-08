@@ -22,11 +22,20 @@ from application.commands import (
     UpdateAgentCommand,
     UpdatePolicyCommand,
 )
-from application.queries import GetAgentQuery, GetPolicyQuery, ListAgentsQuery, ListPoliciesQuery
+from application.queries import (
+    GetAgentQuery,
+    GetAuditEntriesQuery,
+    GetPolicyQuery,
+    ListAgentsQuery,
+    ListPoliciesQuery,
+)
+from application.queries.audit_export import AuditExporter
+from application.queries.temporal_analytics import TemporalAnalyticsQuery
 from domain.agent.service import AgentService
 from domain.policy.service import PolicyService
 from fastapi import Header, HTTPException, status
 from infrastructure.persistence.postgres.agent_repository import PostgresAgentRepository
+from infrastructure.persistence.postgres.audit_repository import PostgresAuditRepository
 from infrastructure.persistence.postgres.policy_repository import PostgresPolicyRepository
 
 
@@ -48,6 +57,7 @@ def get_database_url() -> str:
 # Repository instances (singleton pattern for connection pooling)
 _agent_repository: PostgresAgentRepository | None = None
 _policy_repository: PostgresPolicyRepository | None = None
+_audit_repository: PostgresAuditRepository | None = None
 
 
 def get_agent_repository() -> PostgresAgentRepository:
@@ -78,6 +88,21 @@ def get_policy_repository() -> PostgresPolicyRepository:
     if _policy_repository is None:
         _policy_repository = PostgresPolicyRepository(get_database_url())
     return _policy_repository
+
+
+def get_audit_repository() -> PostgresAuditRepository:
+    """Get or create AuditRepository instance.
+
+    Returns:
+        PostgresAuditRepository connected to database
+
+    Note:
+        Uses singleton pattern to reuse connection pool across requests.
+    """
+    global _audit_repository
+    if _audit_repository is None:
+        _audit_repository = PostgresAuditRepository(get_database_url())
+    return _audit_repository
 
 
 async def get_tenant_id(
@@ -235,3 +260,33 @@ def get_list_policies_query() -> ListPoliciesQuery:
     """
     policy_repository = get_policy_repository()
     return ListPoliciesQuery(policy_repository)
+
+
+def get_temporal_analytics_query() -> TemporalAnalyticsQuery:
+    """Provide TemporalAnalyticsQuery with real AuditRepository.
+
+    Returns:
+        TemporalAnalyticsQuery instance with production dependencies
+    """
+    audit_repository = get_audit_repository()
+    return TemporalAnalyticsQuery(audit_repository)
+
+
+def get_audit_exporter() -> AuditExporter:
+    """Provide AuditExporter with real AuditRepository.
+
+    Returns:
+        AuditExporter instance with production dependencies
+    """
+    audit_repository = get_audit_repository()
+    return AuditExporter(audit_repository)
+
+
+def get_audit_entries_query() -> GetAuditEntriesQuery:
+    """Provide GetAuditEntriesQuery with real AuditRepository.
+
+    Returns:
+        GetAuditEntriesQuery instance with production dependencies
+    """
+    audit_repository = get_audit_repository()
+    return GetAuditEntriesQuery(audit_repository)

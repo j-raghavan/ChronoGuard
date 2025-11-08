@@ -59,6 +59,54 @@ class TestHealthRoutes:
         data = response.json()
         assert data["status"] == "ready"
 
+    def test_metrics_summary(self, client: TestClient) -> None:
+        """Test metrics summary endpoint."""
+        tenant_id = "550e8400-e29b-41d4-a716-446655440000"
+
+        from unittest.mock import MagicMock, AsyncMock
+        from domain.agent.entity import Agent, AgentStatus
+        from domain.policy.entity import Policy
+        from presentation.api.routes import health
+
+        # Mock repositories
+        mock_agent_repo = MagicMock()
+        mock_policy_repo = MagicMock()
+
+        # Create mock agents
+        mock_agents = [
+            MagicMock(status=MagicMock(value="active")),
+            MagicMock(status=MagicMock(value="active")),
+            MagicMock(status=MagicMock(value="suspended")),
+        ]
+        mock_agent_repo.find_by_tenant_id = AsyncMock(return_value=mock_agents)
+
+        # Create mock policies
+        mock_policies = [
+            MagicMock(is_active=lambda: True),
+            MagicMock(is_active=lambda: False),
+        ]
+        mock_policy_repo.find_by_tenant_id = AsyncMock(return_value=mock_policies)
+
+        # Override dependencies
+        original_agent_dep = health.get_agent_repository
+        original_policy_dep = health.get_policy_repository
+        health.get_agent_repository = lambda: mock_agent_repo
+        health.get_policy_repository = lambda: mock_policy_repo
+
+        try:
+            response = client.get("/api/v1/health/metrics", headers={"X-Tenant-ID": tenant_id})
+
+            assert response.status_code == 200
+            data = response.json()
+            assert "agents" in data
+            assert "policies" in data
+            assert data["agents"]["total"] == 3
+            assert data["agents"]["active"] == 2
+            assert data["policies"]["total"] == 2
+        finally:
+            health.get_agent_repository = original_agent_dep
+            health.get_policy_repository = original_policy_dep
+
 
 class TestAgentRoutes:
     """Test agent API routes."""

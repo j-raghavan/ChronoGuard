@@ -1,5 +1,6 @@
 """Policy domain service for business operations and policy evaluation."""
 
+import time
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -18,6 +19,11 @@ from domain.policy.entity import (
     TimeRestriction,
 )
 from domain.policy.repository import PolicyRepository
+from infrastructure.observability.telemetry import get_metrics
+from loguru import logger
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
 
 
 class PolicyEvaluationResult:
@@ -380,39 +386,115 @@ class PolicyService:
         Raises:
             BusinessRuleViolationError: If request cannot be evaluated
         """
-        if not request.tenant_id:
-            raise BusinessRuleViolationError(
-                "Cannot evaluate request without tenant context",
-                rule_name="tenant_required_for_evaluation",
-            )
+        # Start OpenTelemetry span for tracing
+        with tracer.start_as_current_span(
+            "policy.evaluate_access",
+            attributes={
+                "tenant.id": str(request.tenant_id),
+                "agent.id": str(request.agent_id),
+                "domain": request.domain,
+            },
+        ) as span:
+            start_time = time.time()
 
-        # Get active policies for the domain
-        policies = await self._policy_repository.find_policies_for_evaluation(
-            request.tenant_id, request.domain
-        )
+            try:
+                if not request.tenant_id:
+                    raise BusinessRuleViolationError(
+                        "Cannot evaluate request without tenant context",
+                        rule_name="tenant_required_for_evaluation",
+                    )
 
-        if not policies:
-            # Default deny if no policies
-            return PolicyEvaluationResult(
-                allowed=False,
-                policy_id=UUID("00000000-0000-0000-0000-000000000000"),
-                reason="No policies found for domain",
-            )
+                # Get active policies for the domain
+                policies = await self._policy_repository.find_policies_for_evaluation(
+                    request.tenant_id, request.domain
+                )
 
-        # Evaluate policies in priority order
-        for policy in sorted(policies, key=lambda p: p.priority):
-            result = await self._evaluate_policy(policy, request)
-            if result:
+                span.set_attribute("policies.count", len(policies))
+
+                if not policies:
+                    # Default deny if no policies
+                    result = PolicyEvaluationResult(
+                        allowed=False,
+                        policy_id=UUID("00000000-0000-0000-0000-000000000000"),
+                        reason="No policies found for domain",
+                    )
+                    self._record_evaluation_metrics(request, result, time.time() - start_time)
+                    span.set_attribute("decision", "deny")
+                    span.set_attribute("reason", "no_policies")
+                    return result
+
+                # Evaluate policies in priority order
+                for policy in sorted(policies, key=lambda p: p.priority):
+                    with tracer.start_as_current_span("policy.evaluate_single") as policy_span:
+                        policy_span.set_attribute("policy.id", str(policy.policy_id))
+                        policy_span.set_attribute("policy.name", policy.name)
+                        policy_result = await self._evaluate_policy(policy, request)
+                        if policy_result:
+                            self._record_evaluation_metrics(
+                                request, policy_result, time.time() - start_time
+                            )
+                            decision_str = "allow" if policy_result.allowed else "deny"
+                            span.set_attribute("decision", decision_str)
+                            span.set_attribute("matched_policy", str(policy_result.policy_id))
+                            logger.info(
+                                "Policy evaluation complete",
+                                tenant_id=str(request.tenant_id),
+                                agent_id=str(request.agent_id),
+                                decision="allow" if policy_result.allowed else "deny",
+                                policy_id=str(policy_result.policy_id),
+                                duration_seconds=round(time.time() - start_time, 3),
+                            )
+                            return policy_result
+
+                # Default deny if no policy matched
+                result = PolicyEvaluationResult(
+                    allowed=False,
+                    policy_id=(
+                        policies[0].policy_id
+                        if policies
+                        else UUID("00000000-0000-0000-0000-000000000000")
+                    ),
+                    reason="No matching policy rules",
+                )
+                self._record_evaluation_metrics(request, result, time.time() - start_time)
+                span.set_attribute("decision", "deny")
+                span.set_attribute("reason", "no_matching_rules")
                 return result
 
-        # Default deny if no policy matched
-        return PolicyEvaluationResult(
-            allowed=False,
-            policy_id=(
-                policies[0].policy_id if policies else UUID("00000000-0000-0000-0000-000000000000")
-            ),
-            reason="No matching policy rules",
-        )
+            except Exception as e:
+                span.record_exception(e)
+                span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+                logger.error(
+                    "Policy evaluation failed",
+                    tenant_id=str(request.tenant_id),
+                    agent_id=str(request.agent_id),
+                    error=str(e),
+                )
+                raise
+
+    def _record_evaluation_metrics(
+        self, request: AccessRequest, result: PolicyEvaluationResult, duration: float
+    ) -> None:
+        """Record metrics for policy evaluation.
+
+        Args:
+            request: Access request
+            result: Evaluation result
+            duration: Evaluation duration in seconds
+        """
+        metrics = get_metrics()
+        if metrics:
+            metrics.policy_evaluations_total.add(
+                1,
+                {
+                    "tenant_id": str(request.tenant_id),
+                    "policy_id": str(result.policy_id),
+                    "decision": "allow" if result.allowed else "deny",
+                },
+            )
+            metrics.policy_evaluation_duration.record(
+                duration, {"tenant_id": str(request.tenant_id)}
+            )
 
     async def _evaluate_policy(
         self, policy: Policy, request: AccessRequest

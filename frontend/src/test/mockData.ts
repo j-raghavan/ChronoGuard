@@ -1,0 +1,47 @@
+import type { AuditEntryDTO } from '@/types/api';
+
+export const mockAuditEntry: AuditEntryDTO = {
+  entry_id: 'e1',
+  tenant_id: 't1',
+  agent_id: 'a1234567-1234-1234-1234-123456789012',
+  timestamp: '2025-01-15T14:30:00Z',
+  timestamp_nanos: 0,
+  domain: 'api.example.com',
+  decision: 'allow',
+  reason: 'Policy matched: production-policy',
+  policy_id: 'p1',
+  rule_id: 'r1',
+  request_method: 'GET',
+  request_path: '/api/v1/data',
+  user_agent: 'Mozilla/5.0',
+  source_ip: '192.168.1.100',
+  response_status: 200,
+  response_size_bytes: 1024,
+  processing_time_ms: 12.5,
+  timed_access_metadata: {
+    request_timestamp: '2025-01-15T14:30:00Z',
+    processing_timestamp: '2025-01-15T14:30:00Z',
+    timezone_offset: 0,
+    day_of_week: 2,
+    hour_of_day: 14,
+    is_business_hours: true,
+    is_weekend: false,
+    week_of_year: 3,
+    month_of_year: 1,
+    quarter_of_year: 1,
+  },
+  previous_hash: '',
+  current_hash: 'abc123def456',
+  sequence_number: 1,
+  metadata: { environment: 'production' },
+};
+
+export const mockDeniedAuditEntry: AuditEntryDTO = {
+  ...mockAuditEntry,
+  entry_id: 'e2',
+  decision: 'deny',
+  reason: 'Access denied: policy violation',
+  domain: 'blocked.example.com',
+  request_method: 'POST',
+  response_status: 403,
+};

@@ -101,8 +101,23 @@ def create_app() -> FastAPI:
             "timestamp": "2023-09-28T20:00:00Z",
         }
 
-    # Metrics endpoint (provided by OpenTelemetry Prometheus exporter)
-    # Note: /metrics endpoint is automatically provided by PrometheusMetricReader
+    # Prometheus metrics endpoint
+    @app.get("/metrics")
+    async def metrics_endpoint() -> dict[str, str]:
+        """Prometheus metrics endpoint.
+
+        Returns:
+            Metrics information
+
+        Note:
+            Full Prometheus metrics available when OpenTelemetry PrometheusMetricReader
+            is configured. This endpoint provides basic service info.
+        """
+        return {
+            "service": "chronoguard",
+            "version": "1.0.0",
+            "status": "metrics_available",
+        }
 
     return app
 

@@ -1,5 +1,6 @@
 """Audit domain service for secure audit logging and chain verification."""
 
+import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
@@ -13,6 +14,11 @@ from domain.audit.entity import (
 from domain.audit.repository import AuditRepository
 from domain.common.exceptions import BusinessRuleViolationError, ValidationError
 from domain.common.value_objects import DomainName
+from infrastructure.observability.telemetry import get_metrics
+from loguru import logger
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
 
 
 class AccessRequest:
@@ -105,52 +111,101 @@ class AuditService:
             BusinessRuleViolationError: If recording violates business rules
             ValidationError: If request data is invalid
         """
-        # Validate request data
-        self._validate_access_request(request)
+        # Start OpenTelemetry span for tracing
+        with tracer.start_as_current_span(
+            "audit.record_access",
+            attributes={
+                "tenant.id": str(request.tenant_id),
+                "agent.id": str(request.agent_id),
+                "domain": request.domain,
+                "decision": request.decision.value,
+            },
+        ) as span:
+            start_time = time.time()
 
-        # Get previous entry for hash chaining
-        previous_entry = await self._repository.get_latest_entry_for_agent(
-            request.tenant_id, request.agent_id
-        )
+            try:
+                # Validate request data
+                self._validate_access_request(request)
 
-        # Get next sequence number
-        sequence_number = await self._repository.get_next_sequence_number(
-            request.tenant_id, request.agent_id
-        )
+                # Get previous entry for hash chaining
+                previous_entry = await self._repository.get_latest_entry_for_agent(
+                    request.tenant_id, request.agent_id
+                )
 
-        # Create timed access metadata
-        timed_metadata = TimedAccessContext.create_from_timestamp(request.timestamp)
+                # Get next sequence number
+                sequence_number = await self._repository.get_next_sequence_number(
+                    request.tenant_id, request.agent_id
+                )
 
-        # Build audit entry
-        entry = AuditEntry(
-            tenant_id=request.tenant_id,
-            agent_id=request.agent_id,
-            timestamp=request.timestamp,
-            domain=DomainName(value=request.domain),
-            decision=request.decision,
-            reason=request.reason,
-            policy_id=request.policy_id,
-            rule_id=request.rule_id,
-            request_method=request.request_method,
-            request_path=request.request_path,
-            user_agent=request.user_agent,
-            source_ip=request.source_ip,
-            response_status=request.response_status,
-            response_size_bytes=request.response_size_bytes,
-            processing_time_ms=request.processing_time_ms,
-            timed_access_metadata=timed_metadata,
-            sequence_number=sequence_number,
-            metadata=request.metadata,
-        )
+                # Create timed access metadata
+                timed_metadata = TimedAccessContext.create_from_timestamp(request.timestamp)
 
-        # Calculate hash with chaining
-        previous_hash = previous_entry.current_hash if previous_entry else ""
-        entry_with_hash = entry.with_hash(previous_hash, self._secret_key)
+                # Build audit entry
+                entry = AuditEntry(
+                    tenant_id=request.tenant_id,
+                    agent_id=request.agent_id,
+                    timestamp=request.timestamp,
+                    domain=DomainName(value=request.domain),
+                    decision=request.decision,
+                    reason=request.reason,
+                    policy_id=request.policy_id,
+                    rule_id=request.rule_id,
+                    request_method=request.request_method,
+                    request_path=request.request_path,
+                    user_agent=request.user_agent,
+                    source_ip=request.source_ip,
+                    response_status=request.response_status,
+                    response_size_bytes=request.response_size_bytes,
+                    processing_time_ms=request.processing_time_ms,
+                    timed_access_metadata=timed_metadata,
+                    sequence_number=sequence_number,
+                    metadata=request.metadata,
+                )
 
-        # Save entry
-        await self._repository.save(entry_with_hash)
+                # Calculate hash with chaining
+                previous_hash = previous_entry.current_hash if previous_entry else ""
+                entry_with_hash = entry.with_hash(previous_hash, self._secret_key)
 
-        return entry_with_hash
+                # Save entry
+                await self._repository.save(entry_with_hash)
+
+                # Record metrics
+                duration = time.time() - start_time
+                metrics = get_metrics()
+                if metrics:
+                    metrics.audit_entries_total.add(
+                        1, {"tenant_id": str(request.tenant_id), "decision": request.decision.value}
+                    )
+
+                # Add span attributes
+                span.set_attribute("entry.id", str(entry_with_hash.entry_id))
+                span.set_attribute("entry.hash", entry_with_hash.current_hash)
+                span.set_attribute("duration", duration)
+                span.set_attribute("sequence_number", sequence_number)
+
+                logger.info(
+                    "Audit entry recorded",
+                    entry_id=str(entry_with_hash.entry_id),
+                    tenant_id=str(request.tenant_id),
+                    agent_id=str(request.agent_id),
+                    decision=request.decision.value,
+                    duration_seconds=round(duration, 3),
+                )
+
+                return entry_with_hash
+
+            except Exception as e:
+                # Record exception in trace
+                span.record_exception(e)
+                span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+
+                logger.error(
+                    "Failed to record audit entry",
+                    tenant_id=str(request.tenant_id),
+                    agent_id=str(request.agent_id),
+                    error=str(e),
+                )
+                raise
 
     async def verify_agent_chain(
         self,
