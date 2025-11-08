@@ -206,7 +206,3 @@ Coverage: XX.XX%
 6. Test functionality manually (if applicable)
 
 ---
-
-**Generated with Claude Code** 🤖
-
-Co-Authored-By: Claude <noreply@anthropic.com>
