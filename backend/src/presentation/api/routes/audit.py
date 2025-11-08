@@ -1,67 +1,157 @@
 """Audit log API routes.
 
-This module provides REST API endpoints for audit log querying and export.
-
-Note:
-    Audit query and export endpoints require dependency injection configuration
-    and will return 501 Not Implemented until the DI container is properly configured
-    with repository instances. This is intentional to maintain Clean Architecture
-    principles and avoid tight coupling.
+This module provides REST API endpoints for audit log querying, export, and analytics.
 """
 
 from __future__ import annotations
 
-from application.dto import AuditExportRequest, AuditListResponse, AuditQueryRequest
-from fastapi import APIRouter, HTTPException, Response, status
+from datetime import datetime
+from typing import Annotated
+from uuid import UUID
+
+from application.dto import (
+    AuditExportRequest,
+    AuditListResponse,
+    AuditQueryRequest,
+    TemporalPatternDTO,
+)
+from application.queries import GetAuditEntriesQuery
+from application.queries.audit_export import AuditExporter
+from application.queries.temporal_analytics import TemporalAnalyticsQuery
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from presentation.api.dependencies import (
+    get_audit_entries_query,
+    get_audit_exporter,
+    get_temporal_analytics_query,
+    get_tenant_id,
+)
 
 router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
+
+
+@router.get("/analytics", response_model=TemporalPatternDTO)
+async def get_temporal_analytics(
+    tenant_id: Annotated[UUID, Depends(get_tenant_id)],
+    start_time: Annotated[datetime, Query(description="Start of analysis period")],
+    end_time: Annotated[datetime, Query(description="End of analysis period")],
+    analytics_query: Annotated[TemporalAnalyticsQuery, Depends(get_temporal_analytics_query)],
+) -> TemporalPatternDTO:
+    """Get temporal analytics for audit access patterns.
+
+    Args:
+        tenant_id: Tenant identifier from X-Tenant-ID header
+        start_time: Start of analysis period
+        end_time: End of analysis period
+        analytics_query: Temporal analytics query handler
+
+    Returns:
+        Temporal pattern analysis with hourly/daily distributions, anomalies, compliance score
+
+    Raises:
+        HTTPException: 400 if time range is invalid
+    """
+    if end_time <= start_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="end_time must be after start_time",
+        )
+
+    try:
+        pattern = await analytics_query.execute(tenant_id, start_time, end_time)
+        return TemporalPatternDTO(
+            tenant_id=pattern.tenant_id,
+            start_time=pattern.start_time,
+            end_time=pattern.end_time,
+            hourly_distribution=pattern.hourly_distribution,
+            daily_distribution=pattern.daily_distribution,
+            peak_hours=pattern.peak_hours,
+            off_hours_activity_percentage=pattern.off_hours_activity_percentage,
+            weekend_activity_percentage=pattern.weekend_activity_percentage,
+            top_domains=pattern.top_domains,
+            anomalies=pattern.anomalies,
+            compliance_score=pattern.compliance_score,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate temporal analytics: {str(e)}",
+        ) from e
 
 
 @router.post("/query", response_model=AuditListResponse)
 async def query_audit_entries(
     request: AuditQueryRequest,
+    query: Annotated[GetAuditEntriesQuery, Depends(get_audit_entries_query)],
 ) -> AuditListResponse:
     """Query audit log entries with filtering and pagination.
 
     Args:
         request: Query request with filters
+        query: Audit entries query handler
 
     Returns:
         Paginated list of audit entries
 
     Raises:
-        HTTPException: 501 until dependency injection is configured
-
-    Note:
-        This endpoint requires GetAuditEntriesQuery with AuditRepository dependency.
-        Configuration needed in main.py or via DI container.
+        HTTPException: 400 if query parameters are invalid, 500 if query fails
     """
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Audit query endpoint requires dependency injection configuration",
-    )
+    try:
+        return await query.execute(request)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to query audit entries: {str(e)}",
+        ) from e
 
 
 @router.post("/export", response_model=None)
 async def export_audit_entries(
     request: AuditExportRequest,
+    exporter: Annotated[AuditExporter, Depends(get_audit_exporter)],
 ) -> Response:
     """Export audit log entries to CSV or JSON format.
 
     Args:
         request: Export request with time range and format
+        exporter: Audit exporter instance
 
     Returns:
         Exported data in requested format
 
     Raises:
-        HTTPException: 501 until dependency injection is configured
-
-    Note:
-        This endpoint requires AuditExporter with AuditRepository dependency.
-        Configuration needed in main.py or via DI container.
+        HTTPException: 400 if request is invalid, 500 if export fails
     """
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Audit export endpoint requires dependency injection configuration",
-    )
+    try:
+        if request.format == "csv":
+            content = await exporter.export_to_csv(
+                request.tenant_id,
+                request.start_time,
+                request.end_time,
+            )
+            media_type = "text/csv"
+            filename = f"audit_export_{request.start_time.date()}_{request.end_time.date()}.csv"
+        else:  # JSON
+            content = await exporter.export_to_json(
+                request.tenant_id,
+                request.start_time,
+                request.end_time,
+                pretty=request.pretty_json,
+            )
+            media_type = "application/json"
+            filename = f"audit_export_{request.start_time.date()}_{request.end_time.date()}.json"
+
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to export audit logs: {str(e)}",
+        ) from e

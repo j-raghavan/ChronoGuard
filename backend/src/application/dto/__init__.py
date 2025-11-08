@@ -9,6 +9,7 @@ from .audit_dto import (
     AuditExportRequest,
     AuditListResponse,
     AuditQueryRequest,
+    TemporalPatternDTO,
     TimedAccessContextDTO,
 )
 from .mappers import AgentMapper, AuditMapper, PolicyMapper
@@ -46,6 +47,7 @@ __all__ = [
     "AuditQueryRequest",
     "AuditListResponse",
     "AuditExportRequest",
+    "TemporalPatternDTO",
     # Mappers
     "AgentMapper",
     "PolicyMapper",

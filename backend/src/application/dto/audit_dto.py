@@ -13,6 +13,54 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
 
+class TemporalPatternDTO(BaseModel):
+    """Data Transfer Object for Temporal Pattern Analysis.
+
+    Used for API responses containing temporal analytics data.
+    """
+
+    tenant_id: UUID
+    start_time: datetime
+    end_time: datetime
+    hourly_distribution: dict[int, int] = Field(default_factory=dict)
+    daily_distribution: dict[str, int] = Field(default_factory=dict)
+    peak_hours: list[int] = Field(default_factory=list)
+    off_hours_activity_percentage: float = 0.0
+    weekend_activity_percentage: float = 0.0
+    top_domains: list[dict[str, Any]] = Field(default_factory=list)
+    anomalies: list[dict[str, Any]] = Field(default_factory=list)
+    compliance_score: float = 0.0
+
+    class Config:
+        """Pydantic configuration."""
+
+        frozen = True
+        json_schema_extra = {
+            "example": {
+                "tenant_id": "550e8400-e29b-41d4-a716-446655440001",
+                "start_time": "2025-01-01T00:00:00Z",
+                "end_time": "2025-01-31T23:59:59Z",
+                "hourly_distribution": {"9": 120, "10": 145, "14": 132},
+                "daily_distribution": {"2025-01-01": 45, "2025-01-02": 67},
+                "peak_hours": [9, 10, 14],
+                "off_hours_activity_percentage": 15.5,
+                "weekend_activity_percentage": 8.2,
+                "top_domains": [
+                    {"domain": "api.example.com", "count": 523},
+                    {"domain": "app.example.com", "count": 412},
+                ],
+                "anomalies": [
+                    {
+                        "type": "activity_spike",
+                        "severity": "low",
+                        "description": "Unusual activity spike at hour 23",
+                    }
+                ],
+                "compliance_score": 87.5,
+            }
+        }
+
+
 class TimedAccessContextDTO(BaseModel):
     """Data Transfer Object for Timed Access Context."""
 
