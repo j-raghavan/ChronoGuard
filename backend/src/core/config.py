@@ -178,7 +178,10 @@ class APISettings(BaseSettings):
         description="API description",
     )
     version: str = Field(default="1.0.0", description="API version")
-    host: str = Field(default="0.0.0.0", description="API host")  # noqa: S104
+    host: str = Field(
+        default="127.0.0.1",
+        description="API host (use 0.0.0.0 for all interfaces in production with firewall)",
+    )
     port: int = Field(default=8000, ge=1, le=65535, description="API port")
     workers: int = Field(default=4, ge=1, le=16, description="Uvicorn workers")
     reload: bool = Field(default=False, description="Enable auto-reload in development")

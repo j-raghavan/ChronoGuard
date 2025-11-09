@@ -844,14 +844,13 @@ class TestGetCertificateFingerprint:
         assert isinstance(fingerprint, str)
         assert len(fingerprint) == 128  # SHA512 produces 128 hex characters
 
-    def test_get_fingerprint_sha1(self) -> None:
-        """Test getting certificate fingerprint with SHA1."""
+    def test_get_fingerprint_sha1_not_supported(self) -> None:
+        """Test that SHA1 is not supported due to security."""
         cert = create_test_certificate()
 
-        fingerprint = get_certificate_fingerprint(cert, "sha1")
-
-        assert isinstance(fingerprint, str)
-        assert len(fingerprint) == 40  # SHA1 produces 40 hex characters
+        # SHA1 should not be supported
+        with pytest.raises(CertificateValidationError, match="Unsupported hash algorithm"):
+            get_certificate_fingerprint(cert, "sha1")
 
     def test_get_fingerprint_unsupported_algorithm(self) -> None:
         """Test getting fingerprint with unsupported algorithm."""
@@ -978,9 +977,9 @@ class TestIntegration:
         fingerprint = get_certificate_fingerprint(cert)
         assert len(fingerprint) == 64
 
-        # Get different fingerprint
-        fingerprint_sha1 = get_certificate_fingerprint(cert, "sha1")
-        assert fingerprint != fingerprint_sha1
+        # Get different fingerprint with different algorithm
+        fingerprint_sha512 = get_certificate_fingerprint(cert, "sha512")
+        assert fingerprint != fingerprint_sha512
 
 
 class TestEdgeCases:

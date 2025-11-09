@@ -131,7 +131,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             result = await client.check_policy({"domain": "example.com"})
 
             assert result is False
@@ -149,7 +148,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             await client.check_policy({"domain": "example.com"}, policy_path="custom/path")
 
             call_args = mock_session.post.call_args
@@ -175,7 +173,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             result = await client.check_policy({"domain": "example.com"})
 
             assert result is True
@@ -199,7 +196,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             result = await client.check_policy({"domain": "example.com"})
 
             assert result is True
@@ -218,7 +214,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             with pytest.raises(OPAEvaluationError, match="Policy evaluation failed"):
                 await client.check_policy({"domain": "example.com"})
 
@@ -272,7 +267,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             await client.update_policy("test_policy", "package chronoguard")
 
             mock_session.put.assert_called_once()
@@ -292,7 +286,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             await client.update_policy("test_policy", "package chronoguard")
 
             mock_session.put.assert_called_once()
@@ -315,7 +308,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             await client.update_policy("test_policy", "package chronoguard")
 
             assert mock_session.put.call_count == 2
@@ -333,7 +325,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             with pytest.raises(OPAPolicyError, match="Policy update failed"):
                 await client.update_policy("test_policy", "package chronoguard")
 
@@ -366,7 +357,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             result = await client.health_check()
 
             assert result == health_data
@@ -385,7 +375,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             with pytest.raises(OPAConnectionError, match="OPA health check failed"):
                 await client.health_check()
 
@@ -414,7 +403,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             result = await client.get_policy("test_policy")
 
             assert result == rego_code
@@ -431,7 +419,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             with pytest.raises(OPAPolicyError, match="not found"):
                 await client.get_policy("test_policy")
 
@@ -458,7 +445,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             await client.delete_policy("test_policy")
 
             mock_session.delete.assert_called_once()
@@ -475,7 +461,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             await client.delete_policy("test_policy")
 
             mock_session.delete.assert_called_once()
@@ -492,7 +477,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             # Should not raise
             await client.delete_policy("test_policy")
 
@@ -509,7 +493,6 @@ class TestOPAClient:
         with patch.object(
             client, "_get_session", new_callable=AsyncMock, return_value=mock_session
         ):
-
             with pytest.raises(OPAPolicyError, match="Policy deletion failed"):
                 await client.delete_policy("test_policy")
 

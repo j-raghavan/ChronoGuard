@@ -399,15 +399,17 @@ def get_certificate_fingerprint(cert: Certificate, algorithm: str = "sha256") ->
         >>> fingerprint = get_certificate_fingerprint(cert)
         >>> assert len(fingerprint) == 64  # SHA256 produces 64 hex chars
     """
+    # Only secure hash algorithms - SHA1 removed due to cryptographic weakness
     hash_algorithms = {
         "sha256": hashes.SHA256(),
         "sha384": hashes.SHA384(),
         "sha512": hashes.SHA512(),
-        "sha1": hashes.SHA1(),  # For legacy compatibility only  # noqa: S303
     }
 
     if algorithm.lower() not in hash_algorithms:
-        raise CertificateValidationError(f"Unsupported hash algorithm: {algorithm}")
+        raise CertificateValidationError(
+            f"Unsupported hash algorithm: {algorithm}. Use sha256, sha384, or sha512."
+        )
 
     fingerprint = cert.fingerprint(hash_algorithms[algorithm.lower()])
     return fingerprint.hex()

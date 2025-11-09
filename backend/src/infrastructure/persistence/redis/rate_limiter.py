@@ -19,7 +19,7 @@ from loguru import logger
 class RateLimitAlgorithm(str, Enum):
     """Supported rate limiting algorithms."""
 
-    TOKEN_BUCKET = "token_bucket"  # noqa: S105
+    TOKEN_BUCKET = "token_bucket"  # noqa: S105  # nosec B105 - Algorithm name, not password
     SLIDING_WINDOW = "sliding_window"
 
 

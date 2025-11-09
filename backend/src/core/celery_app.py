@@ -579,9 +579,21 @@ def async_audit_export(
 
     # Placeholder for actual export logic
     record_count = 0
-    # Note: In production, use a secure temp directory
-    export_file = (
-        f"/tmp/audit_export_{tenant_id}_{start_date}_{end_date}.{format_type}"  # noqa: S108
+
+    # Use secure temp directory with proper permissions (mode 0o700)
+    import tempfile
+    from pathlib import Path
+
+    # Create secure temp directory
+    secure_temp_dir = Path(tempfile.mkdtemp(prefix="chronoguard_audit_"))
+
+    # Sanitize filename components to prevent path traversal
+    safe_tenant_id = str(tenant_id).replace("/", "_").replace("\\", "_")
+    safe_start = start_date.replace("/", "_")
+    safe_end = end_date.replace("/", "_")
+
+    export_file = str(
+        secure_temp_dir / f"audit_export_{safe_tenant_id}_{safe_start}_{safe_end}.{format_type}"
     )
 
     return {
