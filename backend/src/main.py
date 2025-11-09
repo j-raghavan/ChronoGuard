@@ -3,6 +3,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from core.config import get_settings
 from core.container import configure_container
 from core.database import create_engine, initialize_database
 from core.features import FeatureManager
@@ -11,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from infrastructure.observability.telemetry import initialize_telemetry
 from loguru import logger
+from presentation.api.middleware.auth import AuthMiddleware
 
 
 @asynccontextmanager
@@ -94,16 +96,38 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Configure Authentication Middleware
+    settings = get_settings()
+    app.add_middleware(
+        AuthMiddleware,
+        exempt_paths=[
+            "/health",
+            "/metrics",
+            "/api/v1/health",
+            "/api/v1/health/",
+            "/api/v1/health/ready",
+            "/api/v1/auth/login",
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+        ],
+        enable_mtls=False,  # Can enable for production
+        enable_api_key=False,
+        security_settings=settings.security,
+    )
+
     # Include API routers
     from presentation.api.routes import (
         agents_router,
         audit_router,
+        auth_router,
         health_router,
         internal_router,
         policies_router,
     )
 
     app.include_router(health_router)
+    app.include_router(auth_router)
     app.include_router(agents_router)
     app.include_router(policies_router)
     app.include_router(audit_router)

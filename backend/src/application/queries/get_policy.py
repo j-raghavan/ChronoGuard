@@ -89,8 +89,11 @@ class ListPoliciesQuery:
             tenant_id=tenant_id, offset=offset, limit=page_size, status_filter=status_filter
         )
 
-        # Get total count
-        total_count = await self._repository.count_by_tenant(tenant_id)
+        # Get total count (respect status filters)
+        if status_filter:
+            total_count = await self._repository.count_by_status(tenant_id, status_filter)
+        else:
+            total_count = await self._repository.count_by_tenant(tenant_id)
 
         # Convert to DTOs
         policy_dtos = [PolicyMapper.to_dto(policy) for policy in policies]

@@ -183,6 +183,12 @@ exclude = [
     ".venv",
 ]
 
+# Allow untyped definitions in test files
+[[tool.mypy.overrides]]
+module = "backend.tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
 # Ignore specific error types for library integration
 [[tool.mypy.overrides]]
 module = "src.*"

@@ -234,3 +234,12 @@ export interface HealthResponse {
   version: string;
   database?: string;
 }
+
+// Auth Types
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  tenant_id: string;
+  user_id: string;
+  expires_in: number;
+}

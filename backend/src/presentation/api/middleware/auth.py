@@ -84,6 +84,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             3. Try JWT token authentication
             4. Try API key authentication (if enabled)
         """
+        # Always allow OPTIONS requests (CORS preflight)
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # Check if path is exempt from authentication
         if self._is_exempt_path(request.url.path):
             return await call_next(request)

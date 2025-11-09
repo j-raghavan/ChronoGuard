@@ -9,6 +9,7 @@ from __future__ import annotations
 import secrets
 from functools import cached_property
 from pathlib import Path
+from uuid import UUID
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -119,7 +120,13 @@ class CelerySettings(BaseSettings):
 class SecuritySettings(BaseSettings):
     """Security and authentication configuration."""
 
-    model_config = SettingsConfigDict(env_prefix="CHRONOGUARD_SECURITY_", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_prefix="CHRONOGUARD_SECURITY_",
+        case_sensitive=False,
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     secret_key: str = Field(
         default_factory=lambda: secrets.token_urlsafe(32),
@@ -153,6 +160,22 @@ class SecuritySettings(BaseSettings):
     server_cert_path: Path | None = Field(default=None, description="Server certificate path")
     server_key_path: Path | None = Field(default=None, description="Server private key path")
     verify_client_cert: bool = Field(default=True, description="Verify client certificates")
+    demo_mode_enabled: bool = Field(
+        default=True,
+        description="Enable demo authentication mode using shared password (development only)",
+    )
+    demo_admin_password: str = Field(
+        default="chronoguard-admin-2025",
+        description="Demo administrator password for development login",
+    )
+    demo_tenant_id: UUID = Field(
+        default=UUID("550e8400-e29b-41d4-a716-446655440001"),
+        description="Default tenant ID for demo authentication",
+    )
+    demo_user_id: UUID = Field(
+        default=UUID("550e8400-e29b-41d4-a716-446655440002"),
+        description="Default user ID for demo authentication",
+    )
 
     @field_validator("secret_key")
     @classmethod
@@ -170,6 +193,15 @@ class SecuritySettings(BaseSettings):
         """
         if len(v) < 32:
             raise ValueError("Secret key must be at least 32 characters")
+        return v
+
+    @field_validator("demo_admin_password")
+    @classmethod
+    def validate_demo_password(cls, v: str) -> str:
+        """Ensure demo password is not empty."""
+
+        if not v or not v.strip():
+            raise ValueError("Demo admin password cannot be empty")
         return v
 
 

@@ -593,7 +593,7 @@ class TestDispatch:
         assert response.json()["auth"] == "jwt"
 
     def test_dispatch_preflight_options_exempt(self) -> None:
-        """Test that OPTIONS requests for CORS are handled."""
+        """Test that OPTIONS requests for CORS preflight are always allowed."""
         app = FastAPI()
 
         @app.get("/api/test")
@@ -603,10 +603,12 @@ class TestDispatch:
         app.add_middleware(AuthMiddleware)
 
         client = TestClient(app)
-        # OPTIONS to non-exempt path should still require auth
+        # OPTIONS requests bypass auth (CORS preflight never has auth headers)
         response = client.options("/api/test")
 
-        assert response.status_code == 401
+        # FastAPI returns 405 because endpoint doesn't define OPTIONS handler
+        # The important thing is it's NOT 401 (auth was bypassed)
+        assert response.status_code == 405
 
     def test_dispatch_mtls_success_flow(self) -> None:
         """Test dispatch with successful mTLS authentication."""

@@ -39,13 +39,22 @@ def verify_internal_auth(
         authorization: Bearer token from Authorization header
 
     Raises:
-        HTTPException: 401 if authentication fails
+        HTTPException: 401 if authentication fails, 503 if auth not configured
     """
     expected_token = os.getenv("CHRONOGUARD_INTERNAL_SECRET")
 
+    # SECURITY: Fail closed if secret is not configured
     if not expected_token:
-        logger.warning("CHRONOGUARD_INTERNAL_SECRET not set - internal auth disabled")
-        return
+        logger.error(
+            "CHRONOGUARD_INTERNAL_SECRET not set - internal endpoints are disabled for security"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Internal service authentication not configured. "
+                "Set CHRONOGUARD_INTERNAL_SECRET to enable."
+            ),
+        )
 
     if not authorization:
         raise HTTPException(

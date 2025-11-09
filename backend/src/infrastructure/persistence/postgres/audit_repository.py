@@ -275,6 +275,27 @@ class PostgresAuditRepository(AuditRepository):
             result = await session.execute(stmt)
             return result.scalar_one()
 
+    async def count_entries_by_agent_time_range(
+        self,
+        tenant_id: UUID,
+        agent_id: UUID,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> int:
+        """Count audit entries for a specific agent within a time window."""
+
+        async with self._session_factory() as session:
+            stmt = select(func.count(AuditEntryModel.entry_id)).where(
+                and_(
+                    AuditEntryModel.tenant_id == tenant_id,
+                    AuditEntryModel.agent_id == agent_id,
+                    AuditEntryModel.timestamp >= start_time,
+                    AuditEntryModel.timestamp < end_time,
+                )
+            )
+            result = await session.execute(stmt)
+            return result.scalar_one()
+
     async def get_access_statistics(
         self, tenant_id: UUID, start_time: datetime, end_time: datetime
     ) -> dict[str, int]:

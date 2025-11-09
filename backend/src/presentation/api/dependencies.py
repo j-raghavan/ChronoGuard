@@ -33,6 +33,7 @@ from application.queries import (
 from application.queries.audit_export import AuditExporter
 from application.queries.temporal_analytics import TemporalAnalyticsQuery
 from core.config import ProxySettings
+from core.security import TokenError, decode_token
 from domain.agent.service import AgentService
 from domain.audit.service import AuditService
 from domain.policy.service import PolicyService
@@ -152,61 +153,100 @@ def get_policy_compiler() -> PolicyCompiler:
     return PolicyCompiler(template_dir=template_dir, opa_url=proxy_settings.opa_url)
 
 
-async def get_tenant_id(
-    x_tenant_id: Annotated[str | None, Header()] = None,
-) -> UUID:
-    """Extract tenant ID from request header.
+def _decode_authorization_token(authorization: str | None) -> dict[str, str]:
+    """Decode and validate the Authorization bearer token."""
 
-    Args:
-        x_tenant_id: Tenant ID from X-Tenant-ID header
-
-    Returns:
-        Validated tenant UUID
-
-    Raises:
-        HTTPException: 401 if tenant ID is missing or invalid
-    """
-    if x_tenant_id is None:
+    if authorization is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="X-Tenant-ID header is required",
+            detail="Authorization header is required",
+        )
+
+    scheme, _, token = authorization.partition(" ")
+    if token == "":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Authorization header format",
+        )
+
+    if scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization scheme must be Bearer",
         )
 
     try:
-        return UUID(x_tenant_id)
+        payload = decode_token(token)
+    except TokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid or expired token: {e}",
+        ) from e
+
+    return payload
+
+
+async def get_tenant_id(
+    x_tenant_id: Annotated[str | None, Header()] = None,
+    authorization: Annotated[str | None, Header()] = None,
+) -> UUID:
+    """Extract tenant ID from the bearer token (and optional header)."""
+
+    payload = _decode_authorization_token(authorization)
+    token_tenant_id = payload.get("tenant_id")
+
+    if token_tenant_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing tenant scope",
+        )
+
+    if x_tenant_id and x_tenant_id != token_tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tenant ID mismatch between token and header",
+        )
+
+    tenant_value = x_tenant_id or token_tenant_id
+
+    try:
+        return UUID(tenant_value)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid tenant ID format: {x_tenant_id}",
+            detail=f"Invalid tenant ID format: {tenant_value}",
         ) from e
 
 
 async def get_user_id(
     x_user_id: Annotated[str | None, Header()] = None,
+    authorization: Annotated[str | None, Header()] = None,
 ) -> UUID:
-    """Extract user ID from request header.
+    """Extract user ID from the bearer token (and optional header)."""
 
-    Args:
-        x_user_id: User ID from X-User-ID header
+    payload = _decode_authorization_token(authorization)
+    token_user_id = payload.get("user_id") or payload.get("sub")
 
-    Returns:
-        Validated user UUID
-
-    Raises:
-        HTTPException: 401 if user ID is missing or invalid
-    """
-    if x_user_id is None:
+    if token_user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="X-User-ID header is required",
+            detail="Token missing user subject",
         )
 
+    if x_user_id and x_user_id != token_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID mismatch between token and header",
+        )
+
+    user_value = x_user_id or token_user_id
+
     try:
-        return UUID(x_user_id)
+        return UUID(user_value)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid user ID format: {x_user_id}",
+            detail=f"Invalid user ID format: {user_value}",
         ) from e
 
 

@@ -3,6 +3,7 @@
 from uuid import UUID, uuid4
 
 import pytest
+from core.security import create_access_token
 from fastapi import HTTPException
 from presentation.api.dependencies import (
     get_create_agent_command,
@@ -24,12 +25,23 @@ class TestTenantDependency:
 
     @pytest.mark.asyncio
     async def test_get_tenant_id_valid(self) -> None:
-        """Test extracting valid tenant ID from header."""
-        tenant_id_str = str(uuid4())
-        result = await get_tenant_id(x_tenant_id=tenant_id_str)
+        """Test extracting valid tenant ID from header with JWT."""
+        tenant_id = uuid4()
+        user_id = uuid4()
+
+        # Create valid JWT token
+        token = create_access_token(
+            {
+                "sub": str(user_id),
+                "user_id": str(user_id),
+                "tenant_id": str(tenant_id),
+            }
+        )
+
+        result = await get_tenant_id(x_tenant_id=str(tenant_id), authorization=f"Bearer {token}")
 
         assert isinstance(result, UUID)
-        assert str(result) == tenant_id_str
+        assert result == tenant_id
 
     @pytest.mark.asyncio
     async def test_get_tenant_id_missing(self) -> None:
@@ -42,12 +54,26 @@ class TestTenantDependency:
 
     @pytest.mark.asyncio
     async def test_get_tenant_id_invalid_format(self) -> None:
-        """Test invalid UUID format."""
-        with pytest.raises(HTTPException) as exc_info:
-            await get_tenant_id(x_tenant_id="invalid-uuid")
+        """Test invalid UUID format in header."""
+        tenant_id = uuid4()
+        user_id = uuid4()
 
-        assert exc_info.value.status_code == 400
-        assert "invalid" in exc_info.value.detail.lower()
+        # Create valid JWT token with valid tenant_id
+        token = create_access_token(
+            {
+                "sub": str(user_id),
+                "user_id": str(user_id),
+                "tenant_id": str(tenant_id),
+            }
+        )
+
+        # But provide invalid format in header (mismatch detected before format validation)
+        with pytest.raises(HTTPException) as exc_info:
+            await get_tenant_id(x_tenant_id="invalid-uuid", authorization=f"Bearer {token}")
+
+        # Returns 403 for mismatch (security check happens before UUID format check)
+        assert exc_info.value.status_code == 403
+        assert "mismatch" in exc_info.value.detail.lower()
 
 
 class TestUserDependency:
@@ -55,12 +81,23 @@ class TestUserDependency:
 
     @pytest.mark.asyncio
     async def test_get_user_id_valid(self) -> None:
-        """Test extracting valid user ID from header."""
-        user_id_str = str(uuid4())
-        result = await get_user_id(x_user_id=user_id_str)
+        """Test extracting valid user ID from header with JWT."""
+        tenant_id = uuid4()
+        user_id = uuid4()
+
+        # Create valid JWT token
+        token = create_access_token(
+            {
+                "sub": str(user_id),
+                "user_id": str(user_id),
+                "tenant_id": str(tenant_id),
+            }
+        )
+
+        result = await get_user_id(x_user_id=str(user_id), authorization=f"Bearer {token}")
 
         assert isinstance(result, UUID)
-        assert str(result) == user_id_str
+        assert result == user_id
 
     @pytest.mark.asyncio
     async def test_get_user_id_missing(self) -> None:
@@ -73,12 +110,26 @@ class TestUserDependency:
 
     @pytest.mark.asyncio
     async def test_get_user_id_invalid_format(self) -> None:
-        """Test invalid UUID format."""
-        with pytest.raises(HTTPException) as exc_info:
-            await get_user_id(x_user_id="not-a-uuid")
+        """Test invalid UUID format in header."""
+        tenant_id = uuid4()
+        user_id = uuid4()
 
-        assert exc_info.value.status_code == 400
-        assert "invalid" in exc_info.value.detail.lower()
+        # Create valid JWT token
+        token = create_access_token(
+            {
+                "sub": str(user_id),
+                "user_id": str(user_id),
+                "tenant_id": str(tenant_id),
+            }
+        )
+
+        # But provide invalid format in header (mismatch detected before format validation)
+        with pytest.raises(HTTPException) as exc_info:
+            await get_user_id(x_user_id="not-a-uuid", authorization=f"Bearer {token}")
+
+        # Returns 403 for mismatch (security check happens before UUID format check)
+        assert exc_info.value.status_code == 403
+        assert "mismatch" in exc_info.value.detail.lower()
 
 
 class TestRepositoryProviders:

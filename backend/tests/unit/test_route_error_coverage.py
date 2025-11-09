@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 import pytest
 from application.dto import AuditListResponse
 from application.queries import GetAuditEntriesQuery
+from core.security import create_access_token
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from presentation.api.routes.audit import router as audit_router
@@ -27,8 +28,30 @@ class TestAuditRouteErrorPaths:
         """Create test client."""
         return TestClient(app)
 
+    @pytest.fixture
+    def auth_headers_factory(self):
+        """Factory to build auth headers."""
+
+        def _factory(tenant_id: str | UUID, user_id: UUID | None = None) -> dict[str, str]:
+            tenant_uuid = UUID(str(tenant_id))
+            actual_user = user_id or tenant_uuid
+            token = create_access_token(
+                {
+                    "sub": str(actual_user),
+                    "user_id": str(actual_user),
+                    "tenant_id": str(tenant_uuid),
+                }
+            )
+            return {
+                "Authorization": f"Bearer {token}",
+                "X-Tenant-ID": str(tenant_uuid),
+                "X-User-ID": str(actual_user),
+            }
+
+        return _factory
+
     async def test_audit_query_general_error_handling(
-        self, app: FastAPI, client: TestClient
+        self, app: FastAPI, client: TestClient, auth_headers_factory
     ) -> None:
         """Test audit query endpoint handles general exceptions."""
         tenant_id = "550e8400-e29b-41d4-a716-446655440000"
@@ -50,6 +73,7 @@ class TestAuditRouteErrorPaths:
                     "page": 1,
                     "page_size": 50,
                 },
+                headers=auth_headers_factory(tenant_id),
             )
 
             # Should convert to 500
@@ -58,7 +82,9 @@ class TestAuditRouteErrorPaths:
         finally:
             app.dependency_overrides.clear()
 
-    async def test_temporal_analytics_general_error(self, app: FastAPI, client: TestClient) -> None:
+    async def test_temporal_analytics_general_error(
+        self, app: FastAPI, client: TestClient, auth_headers_factory
+    ) -> None:
         """Test temporal analytics error handling."""
         tenant_id = "550e8400-e29b-41d4-a716-446655440000"
         start = (datetime.now(UTC) - timedelta(days=7)).isoformat()
@@ -78,7 +104,7 @@ class TestAuditRouteErrorPaths:
             response = client.get(
                 "/api/v1/audit/analytics",
                 params={"start_time": start, "end_time": end},
-                headers={"X-Tenant-ID": tenant_id},
+                headers=auth_headers_factory(tenant_id),
             )
 
             # Should convert to 500
@@ -87,7 +113,9 @@ class TestAuditRouteErrorPaths:
         finally:
             app.dependency_overrides.clear()
 
-    async def test_export_csv_error_handling(self, app: FastAPI, client: TestClient) -> None:
+    async def test_export_csv_error_handling(
+        self, app: FastAPI, client: TestClient, auth_headers_factory
+    ) -> None:
         """Test export endpoint error handling."""
         tenant_id = "550e8400-e29b-41d4-a716-446655440000"
 
@@ -110,6 +138,7 @@ class TestAuditRouteErrorPaths:
                     "end_time": "2025-01-31T23:59:59Z",
                     "format": "csv",
                 },
+                headers=auth_headers_factory(tenant_id),
             )
 
             # Should convert to 500

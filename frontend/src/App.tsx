@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Layout } from "./components/Layout";
@@ -24,27 +24,43 @@ function AppContent() {
     },
   }));
 
-  useEffect(() => {
-    // Check if user is already authenticated
-    const authStatus = localStorage.getItem("isAuthenticated");
-    setIsAuthenticated(authStatus === "true");
-  }, []);
-
-  const handleLogin = () => {
+  const handleLogin = useCallback(() => {
     setIsAuthenticated(true);
     // Clear any cached data from previous sessions
     queryClient.clear();
     // Always redirect to Dashboard after login
     navigate("/");
-  };
+  }, [navigate, queryClient]);
 
-  const handleLogout = () => {
-    localStorage.clear(); // Clear all localStorage including tenantId, userId
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("tokenExpiresAt");
+    localStorage.removeItem("tenantId");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("isAuthenticated");
     queryClient.clear(); // Clear React Query cache
     setIsAuthenticated(false);
     // Navigate to root (will show login)
     navigate("/");
-  };
+  }, [navigate, queryClient]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const expiresAtRaw = localStorage.getItem("tokenExpiresAt");
+    const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : undefined;
+
+    if (!token) {
+      setIsAuthenticated(false);
+      return;
+    }
+
+    if (expiresAt && expiresAt <= Date.now()) {
+      handleLogout();
+      return;
+    }
+
+    setIsAuthenticated(true);
+  }, [handleLogout]);
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} />;

@@ -19,6 +19,7 @@ import type {
   TemporalPatternDTO,
   MetricsSummaryResponse,
   HealthResponse,
+  LoginResponse,
 } from "@/types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -32,17 +33,34 @@ const createApiClient = (): AxiosInstance => {
     },
   });
 
-  // Request interceptor to add tenant and user IDs
+  // Request interceptor to add authentication headers
   client.interceptors.request.use(
     (config) => {
       const tenantId = localStorage.getItem("tenantId");
       const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("authToken");
+      const expiresAt = localStorage.getItem("tokenExpiresAt");
+
+      // Check token expiration before request
+      if (expiresAt && parseInt(expiresAt) < Date.now()) {
+        // Token expired - clear auth state
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("tokenExpiresAt");
+        localStorage.removeItem("isAuthenticated");
+        localStorage.removeItem("tenantId");
+        localStorage.removeItem("userId");
+        window.location.href = "/";
+        return Promise.reject(new Error("Token expired"));
+      }
 
       if (tenantId) {
         config.headers["X-Tenant-ID"] = tenantId;
       }
       if (userId) {
         config.headers["X-User-ID"] = userId;
+      }
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
 
       return config;
@@ -55,8 +73,14 @@ const createApiClient = (): AxiosInstance => {
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
-        // Handle unauthorized - could redirect to login
-        console.error("Unauthorized access");
+        // Handle unauthorized - clear auth and redirect to login
+        console.error("Unauthorized access - clearing authentication");
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("tokenExpiresAt");
+        localStorage.removeItem("isAuthenticated");
+        localStorage.removeItem("tenantId");
+        localStorage.removeItem("userId");
+        window.location.href = "/";
       }
       return Promise.reject(error);
     },
@@ -66,6 +90,16 @@ const createApiClient = (): AxiosInstance => {
 };
 
 const apiClient = createApiClient();
+
+// Auth Endpoints
+export const authApi = {
+  login: (password: string, overrides?: { tenantId?: string; userId?: string }) =>
+    apiClient.post<LoginResponse>("/api/v1/auth/login", {
+      password,
+      tenant_id: overrides?.tenantId,
+      user_id: overrides?.userId,
+    }),
+};
 
 // Health Endpoints
 export const healthApi = {

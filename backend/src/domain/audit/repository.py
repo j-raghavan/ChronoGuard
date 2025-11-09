@@ -251,6 +251,18 @@ class AuditRepository(ABC):
         pass
 
     @abstractmethod
+    async def count_entries_by_agent_time_range(
+        self,
+        tenant_id: UUID,
+        agent_id: UUID,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> int:
+        """Count audit entries for an agent within a time range."""
+
+        pass
+
+    @abstractmethod
     async def get_access_statistics(
         self,
         tenant_id: UUID,
