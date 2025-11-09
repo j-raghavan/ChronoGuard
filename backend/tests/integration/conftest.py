@@ -3,16 +3,16 @@
 import asyncio
 import os
 from collections.abc import AsyncGenerator, Generator
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime, timezone
 from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
 
 # Import all models to ensure they're registered with Base.metadata
 from domain.agent.entity import Agent, AgentStatus
 from domain.policy.entity import Policy, PolicyRule, PolicyStatus
+from httpx import AsyncClient
 from infrastructure.persistence.models import AgentModel, Base, PolicyModel  # noqa: F401
 from infrastructure.persistence.timescale import setup_timescaledb
 from sqlalchemy import text

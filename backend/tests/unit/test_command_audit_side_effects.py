@@ -51,9 +51,7 @@ class TestCreateAgentAuditSideEffects:
         return mock
 
     @pytest.fixture
-    def command(
-        self, agent_service: AsyncMock, audit_service: AsyncMock
-    ) -> CreateAgentCommand:
+    def command(self, agent_service: AsyncMock, audit_service: AsyncMock) -> CreateAgentCommand:
         """Create command instance with audit service."""
         return CreateAgentCommand(agent_service, audit_service=audit_service)
 
@@ -181,9 +179,7 @@ class TestUpdateAgentAuditSideEffects:
         return mock
 
     @pytest.fixture
-    def command(
-        self, agent_repository: AsyncMock, audit_service: AsyncMock
-    ) -> UpdateAgentCommand:
+    def command(self, agent_repository: AsyncMock, audit_service: AsyncMock) -> UpdateAgentCommand:
         """Create command instance with audit service."""
         return UpdateAgentCommand(agent_repository, audit_service=audit_service)
 
@@ -308,9 +304,7 @@ class TestCreatePolicyAuditSideEffects:
         return mock
 
     @pytest.fixture
-    def command(
-        self, policy_service: AsyncMock, audit_service: AsyncMock
-    ) -> CreatePolicyCommand:
+    def command(self, policy_service: AsyncMock, audit_service: AsyncMock) -> CreatePolicyCommand:
         """Create command instance with audit service."""
         return CreatePolicyCommand(
             policy_service, opa_client=None, policy_compiler=None, audit_service=audit_service
@@ -515,9 +509,7 @@ class TestDeletePolicyAuditSideEffects:
         self, policy_repository: AsyncMock, audit_service: AsyncMock
     ) -> DeletePolicyCommand:
         """Create command instance with audit service."""
-        return DeletePolicyCommand(
-            policy_repository, opa_client=None, audit_service=audit_service
-        )
+        return DeletePolicyCommand(policy_repository, opa_client=None, audit_service=audit_service)
 
     @pytest.mark.asyncio
     async def test_delete_policy_creates_audit_entry(
