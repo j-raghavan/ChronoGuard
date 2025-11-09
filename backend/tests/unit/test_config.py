@@ -248,7 +248,7 @@ class TestAPISettings:
 
         assert api.title == "ChronoGuard API"
         assert api.version == "1.0.0"
-        assert api.host == "0.0.0.0"
+        assert api.host == "127.0.0.1"  # Secure default - localhost only
         assert api.port == 8000
         assert api.workers == 4
         assert api.reload is False
