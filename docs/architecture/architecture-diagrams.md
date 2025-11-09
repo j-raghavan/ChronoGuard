@@ -1,16 +1,25 @@
 # ChronoGuard Architecture Diagrams
 
+**Note:** This document shows the complete system architecture. Sections marked with ⚠️ indicate features planned but not yet implemented in MVP v0.1.0. See [MISSING.md](../../MISSING.md) and [CHANGELOG.md](../../CHANGELOG.md) for implementation status.
+
 ## 1. System Architecture Overview
+
+**Legend:**
+- ✅ = Implemented in MVP v0.1.0
+- ⚠️ = Planned for future releases (v0.2.0+)
+- 🔧 = Partially implemented
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         CLIENTS & INTERFACES                             │
 ├─────────────┬──────────────────┬────────────────┬──────────────────┤
-│  Web Browser│  Agent (gRPC)    │  Envoy Proxy   │  Admin Dashboard  │
-│  (Frontend) │  (browser bots)  │  (mTLS)        │  (React)          │
+│  Web Browser│  Agent ⚠️(gRPC)  │  Envoy Proxy   │  Admin Dashboard  │
+│  (Frontend) │  (browser bots)  │  ✅(mTLS)      │  ✅(React)        │
 └──────┬──────┴──────────┬───────┴────────┬───────┴──────────┬────────┘
        │                 │                │                  │
-       │ HTTP/REST       │ gRPC          │ xDS              │ WebSocket
+       │ ✅HTTP/REST     │ ⚠️gRPC        │ ⚠️xDS            │ 🔧WebSocket
+       │                 │                │ (static config   │ (handlers
+       │                 │                │  used in MVP)    │  exist)
        │                 │                │                  │
 ┌──────▼─────────────────▼────────────────▼──────────────────▼────────────┐
 │                    CHRONOGUARD BACKEND API                              │
@@ -158,6 +167,37 @@
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+**MVP v0.1.0 Implementation Status:**
+
+✅ **Fully Implemented:**
+- REST API (FastAPI) with all CRUD endpoints
+- Domain Layer (DDD with Clean Architecture)
+- Application Layer (CQRS commands/queries)
+- PostgreSQL + TimescaleDB persistence
+- Redis caching and rate limiting
+- OPA policy engine integration (PolicyCompiler, decision logs)
+- Envoy mTLS forward proxy (static configuration)
+- React dashboard (Vite)
+- Cryptographic signer for audit chain
+- OpenTelemetry observability
+
+⚠️ **Planned (Not Implemented):**
+- **gRPC Server**: Code exists but not exposed (deferred to v0.2.0)
+- **Envoy xDS Server**: Code exists but MVP uses static `envoy.yaml` config
+- **BundleBuilder**: Code exists but policies deployed via OPA Policy API instead
+
+🔧 **Partially Implemented:**
+- **WebSocket**: Handlers and managers exist, events not fully wired
+- **OPAClient.check_policy()**: Exists but not called by Envoy (Envoy→OPA uses ext_authz directly)
+
+**Key Architectural Decision (MVP):**
+- **Envoy → OPA Integration**: Uses ext_authz filter (gRPC port 9192) instead of ChronoGuard→OPA HTTP calls
+- **Decision Logging**: OPA decision_logs plugin → FastAPI `/api/v1/internal/opa/decisions` (asynchronous)
+- **Policy Deployment**: PolicyCompiler → OPA Policy API (not bundles)
+- **Configuration**: Static Envoy configuration (not dynamic xDS)
+
+See [Section 3](#3-request-flow-policy-evaluation-actual-mvp-implementation) for actual request flow diagram.
+
 ---
 
 ## 2. Request Flow: Agent Creation
@@ -269,117 +309,198 @@ RESPONSE to CLIENT
 
 ---
 
-## 3. Request Flow: Policy Evaluation (via Envoy)
+## 3. Request Flow: Policy Evaluation (ACTUAL MVP IMPLEMENTATION)
+
+**Note:** This diagram reflects the actual MVP implementation using Envoy ext_authz → OPA with asynchronous decision logging.
 
 ```
-EXTERNAL CLIENT
+BROWSER AGENT (Playwright, Puppeteer, Selenium)
        │
-       │ HTTPS Request to agent.example.com/api/data
+       │ HTTPS Request to example.com/api/data
+       │ (via configured proxy: https://chronoguard-proxy:8080)
        │
        ↓
 ┌─────────────────────────────────────────────────────────────┐
-│            Envoy Proxy (mTLS termination)                   │
-│  ├─ Verify client certificate (agent cert)                 │
-│  ├─ Extract: agent_id from cert CN                         │
-│  ├─ Extract: request domain, method, path, user-agent      │
-│  ├─ Extract: source IP                                      │
-│  │                                                           │
-│  ├─ Query xDS control plane (ChronoGuard)                   │
-│  │  └─ Get listener & route configuration                  │
-│  │                                                           │
-│  └─ Check policy via gRPC/HTTP to ChronoGuard             │
+│       Envoy Forward Proxy (Port 8080 - mTLS required)       │
+│                                                              │
+│  1. mTLS Authentication:                                     │
+│     ├─ Verify client certificate (agent certificate)        │
+│     ├─ Extract agent_id from certificate CN/SAN             │
+│     └─ Reject if certificate invalid/expired (403)          │
+│                                                              │
+│  2. Extract Request Context:                                │
+│     ├─ Domain: example.com                                  │
+│     ├─ Method: GET                                          │
+│     ├─ Path: /api/data                                      │
+│     ├─ User-Agent: Mozilla/5.0...                           │
+│     ├─ Source IP: 192.168.1.100                             │
+│     └─ Timestamp: 2025-01-08T12:00:00Z                      │
+│                                                              │
+│  3. ext_authz Filter Triggered:                             │
+│     └─ Calls OPA for authorization decision                 │
 └────────┬────────────────────────────────────────────────────┘
          │
-         │ GET /v1/data/chronoguard/policy
-         │ { input: {
-         │     agent_id: "abc-123",
-         │     domain: "agent.example.com",
-         │     method: "GET",
-         │     path: "/api/data",
-         │     timestamp: "2024-01-01T12:00:00Z",
-         │     source_ip: "203.0.113.5",
-         │     user_agent: "Mozilla/5.0..."
+         │ gRPC call to OPA ext_authz endpoint
+         │ envoy.service.auth.v3.CheckRequest
+         │ {
+         │   attributes: {
+         │     source: { principal: "agent-id-from-cert" },
+         │     request: {
+         │       http: {
+         │         host: "example.com",
+         │         method: "GET",
+         │         path: "/api/data",
+         │         headers: { "user-agent": "..." }
+         │       }
+         │     }
          │   }
          │ }
-         ↓
-┌─────────────────────────────────────────────────────────────┐
-│         OPAClient.check_policy() (infrastructure/opa)       │
-│  ├─ POST to OPA REST API (port 8181)                       │
-│  ├─ Retry logic: max 3 attempts                            │
-│  ├─ Timeout: 30 seconds                                     │
-│  └─ Log attempt                                             │
-└────────┬────────────────────────────────────────────────────┘
-         │
-         │ HTTP POST to OPA
-         │ http://opa-server:8181/v1/data/chronoguard/policy
-         │
-         ↓
-    ┌─────────────────────────────┐
-    │  Open Policy Agent (OPA)    │
-    │  (external service)         │
-    │                             │
-    │  Rego Policies:             │
-    │  ├─ Domain matching rules   │
-    │  ├─ Time-based restrictions │
-    │  ├─ Rate limit checks       │
-    │  ├─ User agent validation   │
-    │  └─ Custom rules            │
-    │                             │
-    │  → Evaluates input          │
-    │  ← Returns decision: true/false
-    │                             │
-    │  (Compiled from Policy      │
-    │   entities via             │
-    │   PolicyCompiler)           │
-    └─────────────────────────────┘
-         │
-         │ OPA Decision: ALLOW or DENY
-         │ { result: true } or { result: false }
          │
          ↓
 ┌─────────────────────────────────────────────────────────────┐
-│       Back to ChronoGuard (decision received)               │
+│    Open Policy Agent (OPA) - Port 9192 (gRPC ext_authz)    │
 │                                                              │
-│  1. Create AuditEntry:                                     │
-│     ├─ agent_id (from request)                             │
-│     ├─ domain (from request)                               │
-│     ├─ decision (from OPA)                                 │
-│     ├─ timestamp (UTC now)                                 │
-│     ├─ request details (method, path, user-agent, ip)     │
-│     ├─ timed_access_metadata (calculated)                 │
-│     ├─ risk_score (calculated from decision + context)    │
-│     └─ hash chain (calculated with previous entry)        │
+│  1. Load Rego Policy from /config/policies/chronoguard.rego │
+│     ├─ Policy deployed by PolicyCompiler (Phase 4)          │
+│     └─ Data bundle with agent policies                      │
 │                                                              │
-│  2. Store AuditEntry:                                      │
-│     └─ INSERT into audit_entries table (TimescaleDB)      │
-│        └─ Partitioned by timestamp (7-day chunks)         │
+│  2. Evaluate Policy Rules:                                  │
+│     ├─ agent_authenticated: ✓ (mTLS principal exists)      │
+│     ├─ domain_allowed: Check example.com in allowed_domains │
+│     │  └─ Query: data.policies[agent_id].allowed_domains   │
+│     ├─ domain_blocked: Check NOT in blocked_domains         │
+│     ├─ time_window_valid: Check current time restrictions   │
+│     └─ rate_limit_ok: Check rate limits (placeholder MVP)   │
 │                                                              │
-│  3. Side Effects:                                          │
-│     ├─ Publish WebSocket event (audit-events topic)       │
-│     ├─ Update cache: agent last_seen_at                    │
-│     └─ Redis: increment rate limit counters               │
+│  3. Compute Decision:                                       │
+│     └─ allow = agent_authenticated AND domain_allowed       │
+│                AND time_window_valid AND rate_limit_ok      │
 │                                                              │
-│  4. Return Decision to Envoy:                              │
-│     └─ { decision: "allow" | "deny" }                     │
+│  4. Return to Envoy:                                        │
+│     └─ envoy.service.auth.v3.CheckResponse                 │
+│        ├─ status: OK (allow) or PERMISSION_DENIED (deny)   │
+│        └─ headers: decision metadata                        │
 └────────┬────────────────────────────────────────────────────┘
+         │                                │
+         │ gRPC Response                  │ (PARALLEL - Non-blocking)
+         │ (synchronous)                  │
+         │                                │ OPA decision_logs plugin
+         │                                │ (configured in config.yaml)
+         │                                ↓
+         ↓                    ┌─────────────────────────────────┐
+┌────────────────────────┐   │  POST /api/v1/internal/opa/     │
+│  Envoy Proxy           │   │       decisions                  │
+│  (decision received)   │   │                                  │
+│                        │   │  Authorization: Bearer           │
+│  If ALLOW:             │   │    CHRONOGUARD_INTERNAL_SECRET  │
+│  ├─ Forward to         │   │                                  │
+│  │  example.com        │   │  Body: OPADecisionLog {          │
+│  └─ Return response    │   │    decision_id,                  │
+│     to agent           │   │    timestamp,                    │
+│                        │   │    input: { attributes },        │
+│  If DENY:              │   │    result: { allow: true/false },│
+│  └─ Return 403         │   │    path: "chronoguard/authz"     │
+│     Forbidden          │   │  }                               │
+└────────┬───────────────┘   └────────┬────────────────────────┘
+         │                            │
+         │                            ↓
+         │              ┌──────────────────────────────────────┐
+         │              │  FastAPI Internal Route Handler      │
+         │              │  (routes/internal.py)                │
+         │              │                                       │
+         │              │  async def ingest_opa_decision():    │
+         │              │                                       │
+         │              │  1. Verify Bearer token auth         │
+         │              │     └─ Check CHRONOGUARD_INTERNAL_   │
+         │              │        SECRET matches                │
+         │              │                                       │
+         │              │  2. Parse OPADecisionLog DTO         │
+         │              │     ├─ Extract agent_id from         │
+         │              │     │  input.attributes.source.      │
+         │              │     │  principal                      │
+         │              │     ├─ Extract domain from           │
+         │              │     │  input.attributes.request.     │
+         │              │     │  http.host                      │
+         │              │     └─ Extract decision from         │
+         │              │        result.allow (true/false)     │
+         │              │                                       │
+         │              │  3. Create AccessRequest:            │
+         │              │     └─ Map OPA decision to domain   │
+         │              │        AccessRequest DTO             │
+         │              │                                       │
+         │              │  4. Call AuditService:               │
+         │              │     └─ await audit_service.          │
+         │              │        record_access(request)        │
+         │              └────────┬─────────────────────────────┘
+         │                       │
+         │                       ↓
+         │              ┌──────────────────────────────────────┐
+         │              │  AuditService (domain layer)         │
+         │              │                                       │
+         │              │  1. Create AuditEntry:               │
+         │              │     ├─ entry_id: UUID                │
+         │              │     ├─ agent_id: from request        │
+         │              │     ├─ tenant_id: from request       │
+         │              │     ├─ domain: example.com           │
+         │              │     ├─ decision: ALLOW/DENY          │
+         │              │     ├─ timestamp: UTC now            │
+         │              │     ├─ request metadata              │
+         │              │     ├─ previous_hash: from chain     │
+         │              │     └─ current_hash: SHA256(entry)   │
+         │              │                                       │
+         │              │  2. Save to Repository:              │
+         │              │     └─ await audit_repository.       │
+         │              │        create(audit_entry)           │
+         │              └────────┬─────────────────────────────┘
+         │                       │
+         │                       ↓
+         │              ┌──────────────────────────────────────┐
+         │              │  PostgreSQL + TimescaleDB            │
+         │              │  (audit_entries hypertable)          │
+         │              │                                       │
+         │              │  INSERT INTO audit_entries:          │
+         │              │  ├─ Partitioned by timestamp         │
+         │              │  │  (7-day chunks)                   │
+         │              │  ├─ Hash chain integrity             │
+         │              │  └─ Indexed: agent_id, tenant_id,    │
+         │              │     timestamp                        │
+         │              │                                       │
+         │              │  Audit trail complete ✓              │
+         │              └──────────────────────────────────────┘
+         │
+         │ HTTP 200 OK (if allowed)
+         │ or HTTP 403 Forbidden (if denied)
+         │ + Response from example.com (if allowed)
          │
          ↓
-┌─────────────────────────────────────────────────────────────┐
-│            Envoy Proxy (decision received)                  │
-│  ├─ If decision == ALLOW:                                  │
-│  │  └─ Forward request to upstream backend                 │
-│  │     └─ Wait for response from backend                   │
-│  │                                                           │
-│  └─ If decision == DENY:                                   │
-│     └─ Return 403 Forbidden to client                      │
-│        └─ Include reason in response                       │
-└────────┬────────────────────────────────────────────────────┘
-         │
-         │ Response (200 OK or 403 Forbidden)
-         │
-         ↓
-EXTERNAL CLIENT
+BROWSER AGENT receives response
 ```
+
+**Key Implementation Details:**
+
+1. **Synchronous Path (Blocking):**
+   - Envoy → OPA (gRPC ext_authz) → Decision → Envoy → Forward/Block
+   - This path is FAST (policy evaluation in milliseconds)
+   - Agent receives response immediately
+
+2. **Asynchronous Path (Non-blocking):**
+   - OPA decision_logs plugin → FastAPI → AuditService → PostgreSQL
+   - Runs in PARALLEL, does NOT block the request
+   - Audit entries created after response sent
+   - Configured in `configs/opa/config.yaml`
+
+3. **No Direct ChronoGuard → OPA Call:**
+   - The original design showed FastAPI calling OPA
+   - The MVP implementation uses Envoy ext_authz (more efficient)
+   - PolicyCompiler deploys policies to OPA (Phase 4)
+   - OPA operates independently for decision making
+
+4. **Authentication:**
+   - Agent → Envoy: mTLS with client certificates
+   - Envoy → OPA: gRPC (internal, no auth needed)
+   - OPA → FastAPI: Bearer token (CHRONOGUARD_INTERNAL_SECRET)
+
+---
 
 ---
 

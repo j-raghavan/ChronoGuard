@@ -79,12 +79,19 @@ def create_app() -> FastAPI:
     )
 
     # Include API routers
-    from presentation.api.routes import agents_router, audit_router, health_router, policies_router
+    from presentation.api.routes import (
+        agents_router,
+        audit_router,
+        health_router,
+        internal_router,
+        policies_router,
+    )
 
     app.include_router(health_router)
     app.include_router(agents_router)
     app.include_router(policies_router)
     app.include_router(audit_router)
+    app.include_router(internal_router)
 
     # Legacy health check endpoint (kept for backwards compatibility)
     @app.get("/health")

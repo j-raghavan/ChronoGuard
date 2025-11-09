@@ -12,6 +12,7 @@ Production Implementation:
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
@@ -31,9 +32,13 @@ from application.queries import (
 )
 from application.queries.audit_export import AuditExporter
 from application.queries.temporal_analytics import TemporalAnalyticsQuery
+from core.config import ProxySettings
 from domain.agent.service import AgentService
+from domain.audit.service import AuditService
 from domain.policy.service import PolicyService
 from fastapi import Header, HTTPException, status
+from infrastructure.opa.client import OPAClient
+from infrastructure.opa.policy_compiler import PolicyCompiler
 from infrastructure.persistence.postgres.agent_repository import PostgresAgentRepository
 from infrastructure.persistence.postgres.audit_repository import PostgresAuditRepository
 from infrastructure.persistence.postgres.policy_repository import PostgresPolicyRepository
@@ -105,6 +110,48 @@ def get_audit_repository() -> PostgresAuditRepository:
     return _audit_repository
 
 
+def get_audit_service() -> AuditService:
+    """Get or create AuditService instance.
+
+    Returns:
+        AuditService instance with production dependencies
+    """
+    audit_repository = get_audit_repository()
+    secret_key = os.getenv("AUDIT_SECRET_KEY")
+    secret_key_bytes = secret_key.encode() if secret_key else None
+    return AuditService(
+        audit_repository=audit_repository,
+        secret_key=secret_key_bytes,
+        time_source=None,
+        signer=None,
+    )
+
+
+def get_opa_client() -> OPAClient:
+    """Get or create OPAClient instance.
+
+    Returns:
+        OPAClient configured with OPA URL from environment
+
+    Note:
+        OPA URL defaults to http://localhost:8181 for development
+    """
+    proxy_settings = ProxySettings()
+    return OPAClient(settings=proxy_settings)
+
+
+def get_policy_compiler() -> PolicyCompiler:
+    """Get or create PolicyCompiler instance.
+
+    Returns:
+        PolicyCompiler for converting policies to Rego
+    """
+    # Template directory is in backend/templates/rego
+    template_dir = Path(__file__).parent.parent.parent.parent / "templates" / "rego"
+    proxy_settings = ProxySettings()
+    return PolicyCompiler(template_dir=template_dir, opa_url=proxy_settings.opa_url)
+
+
 async def get_tenant_id(
     x_tenant_id: Annotated[str | None, Header()] = None,
 ) -> UUID:
@@ -174,7 +221,9 @@ def get_create_agent_command() -> CreateAgentCommand:
     """
     agent_repository = get_agent_repository()
     agent_service = AgentService(agent_repository)
-    return CreateAgentCommand(agent_service)
+    audit_service = get_audit_service()
+
+    return CreateAgentCommand(agent_service, audit_service=audit_service)
 
 
 def get_update_agent_command() -> UpdateAgentCommand:
@@ -184,7 +233,9 @@ def get_update_agent_command() -> UpdateAgentCommand:
         UpdateAgentCommand instance with production dependencies
     """
     agent_repository = get_agent_repository()
-    return UpdateAgentCommand(agent_repository)
+    audit_service = get_audit_service()
+
+    return UpdateAgentCommand(agent_repository, audit_service=audit_service)
 
 
 def get_create_policy_command() -> CreatePolicyCommand:
@@ -196,7 +247,20 @@ def get_create_policy_command() -> CreatePolicyCommand:
     policy_repository = get_policy_repository()
     agent_repository = get_agent_repository()
     policy_service = PolicyService(policy_repository, agent_repository)
-    return CreatePolicyCommand(policy_service)
+
+    # Add OPA integration
+    opa_client = get_opa_client()
+    policy_compiler = get_policy_compiler()
+
+    # Add audit service
+    audit_service = get_audit_service()
+
+    return CreatePolicyCommand(
+        policy_service,
+        opa_client=opa_client,
+        policy_compiler=policy_compiler,
+        audit_service=audit_service,
+    )
 
 
 def get_update_policy_command() -> UpdatePolicyCommand:
@@ -206,7 +270,20 @@ def get_update_policy_command() -> UpdatePolicyCommand:
         UpdatePolicyCommand instance with production dependencies
     """
     policy_repository = get_policy_repository()
-    return UpdatePolicyCommand(policy_repository)
+
+    # Add OPA integration
+    opa_client = get_opa_client()
+    policy_compiler = get_policy_compiler()
+
+    # Add audit service
+    audit_service = get_audit_service()
+
+    return UpdatePolicyCommand(
+        policy_repository,
+        opa_client=opa_client,
+        policy_compiler=policy_compiler,
+        audit_service=audit_service,
+    )
 
 
 def get_delete_policy_command() -> DeletePolicyCommand:
@@ -216,7 +293,18 @@ def get_delete_policy_command() -> DeletePolicyCommand:
         DeletePolicyCommand instance with production dependencies
     """
     policy_repository = get_policy_repository()
-    return DeletePolicyCommand(policy_repository)
+
+    # Add OPA integration
+    opa_client = get_opa_client()
+
+    # Add audit service
+    audit_service = get_audit_service()
+
+    return DeletePolicyCommand(
+        policy_repository,
+        opa_client=opa_client,
+        audit_service=audit_service,
+    )
 
 
 # Query providers - Production implementations with real repositories

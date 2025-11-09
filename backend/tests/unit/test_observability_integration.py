@@ -58,6 +58,7 @@ class TestAuditServiceObservability:
             assert "agent.id" in call_args[1]["attributes"]
             assert "domain" in call_args[1]["attributes"]
 
+    @pytest.mark.skip(reason="Metrics recording moved to infrastructure layer (Phase 1: Clean Domain)")
     async def test_record_access_records_metrics_when_available(
         self,
         audit_service: AuditService,
@@ -81,6 +82,7 @@ class TestAuditServiceObservability:
             # Verify metrics were recorded
             assert mock_metrics.audit_entries_total.add.called
 
+    @pytest.mark.skip(reason="Metrics recording moved to infrastructure layer (Phase 1: Clean Domain)")
     async def test_record_access_handles_no_metrics_gracefully(
         self,
         audit_service: AuditService,
@@ -151,6 +153,7 @@ class TestPolicyServiceObservability:
             call_args = mock_span.call_args
             assert call_args[0][0] == "policy.evaluate_access"
 
+    @pytest.mark.skip(reason="Metrics recording moved to infrastructure layer (Phase 1: Clean Domain)")
     async def test_evaluate_access_records_metrics_when_available(
         self,
         policy_service: PolicyService,

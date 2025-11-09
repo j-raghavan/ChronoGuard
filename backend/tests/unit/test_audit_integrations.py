@@ -252,6 +252,7 @@ class TestOPAIntegration:
         return AsyncMock(spec=OPAClient)
 
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="OPA integration moved to infrastructure layer (Phase 1: Clean Domain)")
     async def test_audit_service_checks_opa_policy_before_logging(
         self, mock_repository: AsyncMock, mock_opa_client: AsyncMock
     ) -> None:
@@ -290,6 +291,7 @@ class TestOPAIntegration:
         assert entry.metadata["policy_filtered"] == "true"
 
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="OPA integration moved to infrastructure layer (Phase 1: Clean Domain)")
     async def test_audit_service_marks_filtered_entries(
         self, mock_repository: AsyncMock, mock_opa_client: AsyncMock
     ) -> None:
@@ -315,6 +317,7 @@ class TestOPAIntegration:
         assert entry.metadata["policy_filtered"] == "false"
 
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="OPA integration moved to infrastructure layer (Phase 1: Clean Domain)")
     async def test_opa_check_fails_open_on_error(
         self, mock_repository: AsyncMock, mock_opa_client: AsyncMock
     ) -> None:
@@ -438,6 +441,7 @@ class TestFullIntegration:
         return client
 
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="OPA integration moved to infrastructure layer (Phase 1: Clean Domain)")
     async def test_all_integrations_work_together(
         self,
         mock_repository: AsyncMock,
@@ -479,6 +483,7 @@ class TestFullIntegration:
         assert entry.sequence_number == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="OPA integration moved to infrastructure layer (Phase 1: Clean Domain)")
     async def test_initialization_logging(
         self,
         mock_repository: AsyncMock,

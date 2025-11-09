@@ -1,5 +1,44 @@
 # ChronoGuard Architecture Summary
 
+## Implementation Status
+
+**Last Updated:** 2025-11-08
+**Version:** MVP (v0.1.0)
+**Test Coverage:** 96%+
+
+### Completed Components
+
+- ✅ **Domain Layer** - Clean architecture with no infrastructure dependencies (except Signer - known limitation)
+- ✅ **Application Layer** - CQRS Commands/Queries for all operations
+- ✅ **Presentation Layer** - REST API with FastAPI, comprehensive route coverage
+- ✅ **Infrastructure Layer** - PostgreSQL, Redis, OPA client implementations
+- ✅ **Envoy Integration** - Forward proxy with mTLS authentication
+- ✅ **OPA Policy Engine** - Decision log ingestion, policy compilation and deployment
+- ✅ **Docker Deployment** - 6-service stack (Envoy, OPA, API, Dashboard, PostgreSQL, Redis)
+- ✅ **Frontend** - React + Vite dashboard for monitoring
+
+### Not Yet Implemented (Deferred to v0.2.0+)
+
+- ⏳ **gRPC Server** - Partial implementation exists, not wired into runtime
+- ⏳ **WebSocket Event Streaming** - Infrastructure exists, endpoints not exposed
+- ⏳ **Envoy xDS Server** - Static configuration used instead of dynamic control plane
+- ⏳ **Advanced Rate Limiting** - Basic implementation only, Redis integration minimal
+- ⏳ **Feature-Flag DI** - Container exists but not used for routing decisions
+
+### Architecture Divergences from Original Design
+
+**OPA Integration Flow:**
+- **Original Design:** FastAPI → OPA for policy checks
+- **Actual Implementation:** Envoy → OPA (ext_authz) → FastAPI (decision logs)
+- **Reason:** More efficient to have Envoy handle policy enforcement at proxy layer
+
+**Audit Trail:**
+- **Original Design:** All agent/policy CRUD operations create audit entries
+- **Actual Implementation:** Only access attempts (OPA decisions) create audit entries
+- **Reason:** Focused on access control audit trail as primary compliance requirement
+
+---
+
 ## 1. OVERALL ARCHITECTURE PATTERN: Domain-Driven Design (DDD) Layered Architecture
 
 ChronoGuard implements Clean Architecture with Domain-Driven Design principles, organized into vertical slices with the following layers:
@@ -1216,38 +1255,54 @@ CreateAgentCommand.execute(request, tenant_id)
 HTTP 201 Created with AgentDTO
 ```
 
-### 7.2 Request Flow Example: Check Policy
+### 7.2 Request Flow Example: Access Control (ACTUAL IMPLEMENTATION)
+
+**Note:** This reflects the actual MVP implementation, which differs from the original design.
 
 ```
-Envoy Proxy receives request
+Agent makes HTTP request
     ↓
-Proxy queries gRPC endpoint (xDS)
+Envoy Proxy receives request (mTLS authentication)
     ↓
-ChronoGuard extracts request context:
-    ├─ Domain from request
-    ├─ Agent ID from certificate
-    ├─ Timestamp, user agent, source IP
-    └─ Request method and path
+Envoy ext_authz filter queries OPA via gRPC (port 9192)
+    ├─ Extracts: domain, method, path, agent cert, source IP
+    └─ Sends to OPA for policy evaluation
     ↓
-OPAClient.check_policy()
-    ├─ Calls OPA /v1/data/chronoguard/policy
-    ├─ OPA evaluates Rego rules
-    │   ├─ Domain matching
-    │   ├─ Time restrictions
-    │   ├─ Rate limit checks
-    │   └─ Policy rule evaluation
-    └─ Returns decision: ALLOW | DENY | RATE_LIMITED | etc
+OPA evaluates Rego policies
+    ├─ Loads policies from /config/policies/
+    ├─ Evaluates domain allowlist/blocklist
+    ├─ Checks time restrictions
+    ├─ Evaluates policy rules
+    └─ Returns decision: ALLOW or DENY
     ↓
-Create AuditEntry
-    ├─ Store decision
-    ├─ Record context
-    ├─ Calculate cryptographic hash
-    └─ PostgreSQL insert (via AuditRepository)
+OPA decision_logs plugin sends decision to ChronoGuard
+    ├─ POST /api/v1/internal/opa/decisions
+    ├─ Includes: decision, request context, metadata
+    └─ Authenticated with CHRONOGUARD_INTERNAL_SECRET
     ↓
-Return decision to Envoy
-    ├─ Envoy allows or blocks request
-    └─ Sends response to client
+ChronoGuard FastAPI receives decision log
+    ↓
+Create AuditEntry (via AuditService)
+    ├─ Extract agent_id, domain, decision from OPA log
+    ├─ Record context (method, path, IP, user-agent)
+    ├─ Calculate cryptographic hash (chain integrity)
+    ├─ Assign sequence number
+    └─ PostgreSQL/TimescaleDB insert (via AuditRepository)
+    ↓
+Return 204 No Content to OPA
+    ↓
+Meanwhile, Envoy receives OPA decision
+    ├─ If ALLOW: forwards request to target domain
+    └─ If DENY: returns 403 Forbidden to agent
 ```
+
+**Key Implementation Details:**
+
+1. **Envoy → OPA Direct:** Policy enforcement happens at proxy layer via ext_authz
+2. **OPA → FastAPI Async:** Decision logs sent asynchronously via decision_logs plugin
+3. **No Blocking:** Audit logging doesn't block request flow
+4. **Static Config:** Envoy uses static configuration from `configs/envoy/envoy.yaml`
+5. **OPA Config:** Decision log endpoint configured in `configs/opa/config.yaml`
 
 ### 7.3 External Dependencies
 

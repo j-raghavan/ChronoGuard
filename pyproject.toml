@@ -80,6 +80,9 @@ addopts = [
     "--strict-markers",
     "-vv",
 ]
+markers = [
+    "integration: Integration tests requiring external services (postgres, redis, etc.)",
+]
 
 [tool.coverage.run]
 source = ["backend/src"]

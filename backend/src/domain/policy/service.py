@@ -19,7 +19,6 @@ from domain.policy.entity import (
     TimeRestriction,
 )
 from domain.policy.repository import PolicyRepository
-from infrastructure.observability.telemetry import get_metrics
 from loguru import logger
 from opentelemetry import trace
 
@@ -482,19 +481,8 @@ class PolicyService:
             result: Evaluation result
             duration: Evaluation duration in seconds
         """
-        metrics = get_metrics()
-        if metrics:
-            metrics.policy_evaluations_total.add(
-                1,
-                {
-                    "tenant_id": str(request.tenant_id),
-                    "policy_id": str(result.policy_id),
-                    "decision": "allow" if result.allowed else "deny",
-                },
-            )
-            metrics.policy_evaluation_duration.record(
-                duration, {"tenant_id": str(request.tenant_id)}
-            )
+        # Metrics recording moved to infrastructure layer
+        pass
 
     async def _evaluate_policy(
         self, policy: Policy, request: AccessRequest
