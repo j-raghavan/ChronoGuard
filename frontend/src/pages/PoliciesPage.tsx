@@ -1,6 +1,6 @@
-import { usePolicies } from '@/hooks/useApi';
-import { FileText } from 'lucide-react';
-import { format } from 'date-fns';
+import { usePolicies } from "@/hooks/useApi";
+import { FileText } from "lucide-react";
+import { format } from "date-fns";
 
 export function PoliciesPage() {
   const { data, isLoading, error } = usePolicies();
@@ -53,11 +53,11 @@ export function PoliciesPage() {
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
                         policy.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {policy.is_active ? 'Active' : 'Inactive'}
+                      {policy.is_active ? "Active" : "Inactive"}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       Priority: {policy.priority}
@@ -73,7 +73,7 @@ export function PoliciesPage() {
               </div>
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">
-                  Created {format(new Date(policy.created_at), 'MMM dd, yyyy')}
+                  Created {format(new Date(policy.created_at), "MMM dd, yyyy")}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   Version {policy.version}

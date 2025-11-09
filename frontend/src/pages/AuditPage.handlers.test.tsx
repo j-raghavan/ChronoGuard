@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuditPage } from './AuditPage';
-import * as useApiModule from '@/hooks/useApi';
-import * as apiModule from '@/services/api';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuditPage } from "./AuditPage";
+import * as useApiModule from "@/hooks/useApi";
+import * as apiModule from "@/services/api";
 
-vi.mock('@/hooks/useApi');
-vi.mock('@/services/api');
+vi.mock("@/hooks/useApi");
+vi.mock("@/services/api");
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -17,15 +17,21 @@ const createWrapper = () => {
   );
 };
 
-describe('AuditPage Event Handlers', () => {
+describe("AuditPage Event Handlers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should handle domain search input change', () => {
+  it("should handle domain search input change", () => {
     const refetchMock = vi.fn();
     vi.mocked(useApiModule.useAuditQuery).mockReturnValue({
-      data: { entries: [], total_count: 0, page: 1, page_size: 50, has_more: false },
+      data: {
+        entries: [],
+        total_count: 0,
+        page: 1,
+        page_size: 50,
+        has_more: false,
+      },
       isLoading: false,
       error: null,
       refetch: refetchMock,
@@ -33,16 +39,22 @@ describe('AuditPage Event Handlers', () => {
 
     render(<AuditPage />, { wrapper: createWrapper() });
 
-    const searchInput = screen.getByPlaceholderText('example.com');
-    fireEvent.change(searchInput, { target: { value: 'test.com' } });
+    const searchInput = screen.getByPlaceholderText("example.com");
+    fireEvent.change(searchInput, { target: { value: "test.com" } });
 
-    expect(searchInput).toHaveValue('test.com');
+    expect(searchInput).toHaveValue("test.com");
   });
 
-  it('should handle search button click', async () => {
+  it("should handle search button click", async () => {
     const refetchMock = vi.fn();
     vi.mocked(useApiModule.useAuditQuery).mockReturnValue({
-      data: { entries: [], total_count: 0, page: 1, page_size: 50, has_more: false },
+      data: {
+        entries: [],
+        total_count: 0,
+        page: 1,
+        page_size: 50,
+        has_more: false,
+      },
       isLoading: false,
       error: null,
       refetch: refetchMock,
@@ -50,12 +62,12 @@ describe('AuditPage Event Handlers', () => {
 
     render(<AuditPage />, { wrapper: createWrapper() });
 
-    const searchInput = screen.getByPlaceholderText('example.com');
-    fireEvent.change(searchInput, { target: { value: 'api.test.com' } });
+    const searchInput = screen.getByPlaceholderText("example.com");
+    fireEvent.change(searchInput, { target: { value: "api.test.com" } });
 
-    const searchButtons = screen.getAllByRole('button');
-    const searchButton = searchButtons.find(btn =>
-      btn.className.includes('bg-primary') && btn.querySelector('svg')
+    const searchButtons = screen.getAllByRole("button");
+    const searchButton = searchButtons.find(
+      (btn) => btn.className.includes("bg-primary") && btn.querySelector("svg"),
     );
 
     if (searchButton) {
@@ -64,10 +76,16 @@ describe('AuditPage Event Handlers', () => {
     }
   });
 
-  it('should handle enter key in search input', () => {
+  it("should handle enter key in search input", () => {
     const refetchMock = vi.fn();
     vi.mocked(useApiModule.useAuditQuery).mockReturnValue({
-      data: { entries: [], total_count: 0, page: 1, page_size: 50, has_more: false },
+      data: {
+        entries: [],
+        total_count: 0,
+        page: 1,
+        page_size: 50,
+        has_more: false,
+      },
       isLoading: false,
       error: null,
       refetch: refetchMock,
@@ -75,17 +93,23 @@ describe('AuditPage Event Handlers', () => {
 
     render(<AuditPage />, { wrapper: createWrapper() });
 
-    const searchInput = screen.getByPlaceholderText('example.com');
-    fireEvent.change(searchInput, { target: { value: 'test.com' } });
-    fireEvent.keyDown(searchInput, { key: 'Enter', code: 'Enter' });
+    const searchInput = screen.getByPlaceholderText("example.com");
+    fireEvent.change(searchInput, { target: { value: "test.com" } });
+    fireEvent.keyDown(searchInput, { key: "Enter", code: "Enter" });
 
     expect(refetchMock).toHaveBeenCalled();
   });
 
-  it('should handle decision filter change', () => {
+  it("should handle decision filter change", () => {
     const refetchMock = vi.fn();
     vi.mocked(useApiModule.useAuditQuery).mockReturnValue({
-      data: { entries: [], total_count: 0, page: 1, page_size: 50, has_more: false },
+      data: {
+        entries: [],
+        total_count: 0,
+        page: 1,
+        page_size: 50,
+        has_more: false,
+      },
       isLoading: false,
       error: null,
       refetch: refetchMock,
@@ -93,17 +117,23 @@ describe('AuditPage Event Handlers', () => {
 
     render(<AuditPage />, { wrapper: createWrapper() });
 
-    const selects = screen.getAllByRole('combobox');
+    const selects = screen.getAllByRole("combobox");
     if (selects.length > 0) {
-      fireEvent.change(selects[0], { target: { value: 'allow' } });
-      expect(selects[0]).toHaveValue('allow');
+      fireEvent.change(selects[0], { target: { value: "allow" } });
+      expect(selects[0]).toHaveValue("allow");
     }
   });
 
-  it('should have date range inputs', () => {
+  it("should have date range inputs", () => {
     const refetchMock = vi.fn();
     vi.mocked(useApiModule.useAuditQuery).mockReturnValue({
-      data: { entries: [], total_count: 0, page: 1, page_size: 50, has_more: false },
+      data: {
+        entries: [],
+        total_count: 0,
+        page: 1,
+        page_size: 50,
+        has_more: false,
+      },
       isLoading: false,
       error: null,
       refetch: refetchMock,
@@ -112,13 +142,19 @@ describe('AuditPage Event Handlers', () => {
     render(<AuditPage />, { wrapper: createWrapper() });
 
     // Just verify the labels exist
-    expect(screen.getByText('Start Date')).toBeInTheDocument();
-    expect(screen.getByText('End Date')).toBeInTheDocument();
+    expect(screen.getByText("Start Date")).toBeInTheDocument();
+    expect(screen.getByText("End Date")).toBeInTheDocument();
   });
 
-  it('should test export functionality exists', async () => {
+  it("should test export functionality exists", async () => {
     vi.mocked(useApiModule.useAuditQuery).mockReturnValue({
-      data: { entries: [], total_count: 0, page: 1, page_size: 50, has_more: false },
+      data: {
+        entries: [],
+        total_count: 0,
+        page: 1,
+        page_size: 50,
+        has_more: false,
+      },
       isLoading: false,
       error: null,
       refetch: vi.fn(),

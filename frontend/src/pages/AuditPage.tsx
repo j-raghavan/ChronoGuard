@@ -1,21 +1,21 @@
-import { useState } from 'react';
-import { useAuditQuery } from '@/hooks/useApi';
-import { format, subDays } from 'date-fns';
-import { Search, Download, Filter, CheckCircle, XCircle } from 'lucide-react';
-import { auditApi } from '@/services/api';
+import { useState } from "react";
+import { useAuditQuery } from "@/hooks/useApi";
+import { format, subDays } from "date-fns";
+import { Search, Download, Filter, CheckCircle, XCircle } from "lucide-react";
+import { auditApi } from "@/services/api";
 
 export function AuditPage() {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
-    decision: '',
-    domain: '',
+    decision: "",
+    domain: "",
     startTime: subDays(new Date(), 7).toISOString(),
     endTime: new Date().toISOString(),
   });
-  const [searchDomain, setSearchDomain] = useState('');
+  const [searchDomain, setSearchDomain] = useState("");
 
   // Get tenant ID from localStorage
-  const tenantId = localStorage.getItem('tenantId') || '';
+  const tenantId = localStorage.getItem("tenantId") || "";
 
   // Query audit entries with filters
   const { data, isLoading, error, refetch } = useAuditQuery({
@@ -39,27 +39,33 @@ export function AuditPage() {
     setPage(1);
   };
 
-  const handleExport = async (format: 'csv' | 'json') => {
+  const handleExport = async (format: "csv" | "json") => {
     try {
-      const response = await auditApi.export(format, filters.startTime, filters.endTime);
+      const response = await auditApi.export(
+        format,
+        filters.startTime,
+        filters.endTime,
+      );
       const blob = new Blob([response.data], {
-        type: format === 'csv' ? 'text/csv' : 'application/json',
+        type: format === "csv" ? "text/csv" : "application/json",
       });
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `audit_export_${format}_${Date.now()}.${format}`;
       link.click();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error("Export failed:", error);
     }
   };
 
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-destructive">Error loading audit logs: {error.message}</div>
+        <div className="text-destructive">
+          Error loading audit logs: {error.message}
+        </div>
       </div>
     );
   }
@@ -75,14 +81,14 @@ export function AuditPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => handleExport('csv')}
+            onClick={() => handleExport("csv")}
             className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted"
           >
             <Download className="h-4 w-4" />
             Export CSV
           </button>
           <button
-            onClick={() => handleExport('json')}
+            onClick={() => handleExport("json")}
             className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted"
           >
             <Download className="h-4 w-4" />
@@ -108,7 +114,7 @@ export function AuditPage() {
                 type="text"
                 value={searchDomain}
                 onChange={(e) => setSearchDomain(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="example.com"
                 className="flex-1 px-3 py-2 border border-border rounded-lg bg-background"
               />
@@ -128,7 +134,7 @@ export function AuditPage() {
             </label>
             <select
               value={filters.decision}
-              onChange={(e) => handleFilterChange('decision', e.target.value)}
+              onChange={(e) => handleFilterChange("decision", e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-lg bg-background"
             >
               <option value="">All</option>
@@ -149,7 +155,10 @@ export function AuditPage() {
               type="datetime-local"
               value={filters.startTime.slice(0, 16)}
               onChange={(e) =>
-                handleFilterChange('startTime', new Date(e.target.value).toISOString())
+                handleFilterChange(
+                  "startTime",
+                  new Date(e.target.value).toISOString(),
+                )
               }
               className="w-full px-3 py-2 border border-border rounded-lg bg-background"
             />
@@ -163,7 +172,10 @@ export function AuditPage() {
               type="datetime-local"
               value={filters.endTime.slice(0, 16)}
               onChange={(e) =>
-                handleFilterChange('endTime', new Date(e.target.value).toISOString())
+                handleFilterChange(
+                  "endTime",
+                  new Date(e.target.value).toISOString(),
+                )
               }
               className="w-full px-3 py-2 border border-border rounded-lg bg-background"
             />
@@ -178,7 +190,9 @@ export function AuditPage() {
         </div>
       ) : data?.entries.length === 0 ? (
         <div className="flex items-center justify-center h-96 rounded-lg border border-border bg-card">
-          <div className="text-muted-foreground">No audit entries found for the selected filters</div>
+          <div className="text-muted-foreground">
+            No audit entries found for the selected filters
+          </div>
         </div>
       ) : (
         <>
@@ -213,20 +227,22 @@ export function AuditPage() {
                 {data?.entries.map((entry) => (
                   <tr key={entry.entry_id} className="hover:bg-muted/50">
                     <td className="px-4 py-3 text-sm">
-                      <div>{format(new Date(entry.timestamp), 'MMM dd, HH:mm:ss')}</div>
+                      <div>
+                        {format(new Date(entry.timestamp), "MMM dd, HH:mm:ss")}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        {format(new Date(entry.timestamp), 'yyyy')}
+                        {format(new Date(entry.timestamp), "yyyy")}
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                          entry.decision === 'allow'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                          entry.decision === "allow"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {entry.decision === 'allow' ? (
+                        {entry.decision === "allow" ? (
                           <CheckCircle className="h-3 w-3" />
                         ) : (
                           <XCircle className="h-3 w-3" />
@@ -234,7 +250,9 @@ export function AuditPage() {
                         {entry.decision}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium">{entry.domain}</td>
+                    <td className="px-4 py-3 text-sm font-medium">
+                      {entry.domain}
+                    </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {entry.request_method}
                     </td>

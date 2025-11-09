@@ -1,6 +1,6 @@
-import { expect, afterEach, beforeEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
-import '@testing-library/jest-dom/vitest';
+import { expect, afterEach, beforeEach } from "vitest";
+import { cleanup } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 
 // Cleanup after each test
 afterEach(() => {
@@ -19,7 +19,7 @@ const localStorageMock = {
     delete storage[key];
   },
   clear: () => {
-    Object.keys(storage).forEach(key => delete storage[key]);
+    Object.keys(storage).forEach((key) => delete storage[key]);
   },
   get length() {
     return Object.keys(storage).length;
@@ -31,5 +31,5 @@ global.localStorage = localStorageMock as Storage;
 
 // Set default tenant ID
 beforeEach(() => {
-  localStorage.setItem('tenantId', '550e8400-e29b-41d4-a716-446655440000');
+  localStorage.setItem("tenantId", "550e8400-e29b-41d4-a716-446655440000");
 });

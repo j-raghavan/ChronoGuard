@@ -8,7 +8,7 @@ export interface AgentDTO {
   agent_id: string;
   tenant_id: string;
   name: string;
-  status: 'active' | 'suspended' | 'pending_activation' | 'expired';
+  status: "active" | "suspended" | "pending_activation" | "expired";
   certificate_pem: string;
   certificate_fingerprint: string;
   certificate_serial: string;
@@ -31,7 +31,7 @@ export interface CreateAgentRequest {
 
 export interface UpdateAgentRequest {
   name?: string;
-  status?: 'active' | 'suspended' | 'pending_activation' | 'expired';
+  status?: "active" | "suspended" | "pending_activation" | "expired";
   certificate_pem?: string;
   metadata?: Record<string, string>;
 }
@@ -74,7 +74,7 @@ export interface PolicyRuleDTO {
   rule_id: string;
   name: string;
   priority: number;
-  action: 'allow' | 'deny' | 'rate_limit';
+  action: "allow" | "deny" | "rate_limit";
   conditions: RuleConditionDTO[];
   time_restrictions: TimeRestrictionDTO | null;
   rate_limit: RateLimitDTO | null;
@@ -90,7 +90,7 @@ export interface PolicyDTO {
   rules: PolicyRuleDTO[];
   allowed_domains: string[];
   blocked_domains: string[];
-  default_action: 'allow' | 'deny';
+  default_action: "allow" | "deny";
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -102,7 +102,7 @@ export interface CreatePolicyRequest {
   name: string;
   description: string;
   priority?: number;
-  default_action?: 'allow' | 'deny';
+  default_action?: "allow" | "deny";
   allowed_domains?: string[];
   blocked_domains?: string[];
 }
@@ -113,7 +113,7 @@ export interface UpdatePolicyRequest {
   priority?: number;
   allowed_domains?: string[];
   blocked_domains?: string[];
-  default_action?: 'allow' | 'deny';
+  default_action?: "allow" | "deny";
   is_active?: boolean;
 }
 
@@ -187,7 +187,7 @@ export interface AuditExportRequest {
   tenant_id: string;
   start_time: string;
   end_time: string;
-  format: 'csv' | 'json';
+  format: "csv" | "json";
   include_metadata?: boolean;
   pretty_json?: boolean;
 }
