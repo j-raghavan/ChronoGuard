@@ -334,8 +334,10 @@ class PostgresPolicyRepository(PolicyRepository):
                 if existing:
                     if existing.version != policy.version - 1:
                         raise ConcurrencyError(
-                            f"Version conflict for policy {policy.policy_id}: "
-                            f"expected {existing.version}, got {policy.version - 1}"
+                            entity_type="Policy",
+                            entity_id=policy.policy_id,
+                            expected_version=existing.version,
+                            actual_version=policy.version - 1,
                         )
 
                     existing.tenant_id = policy.tenant_id

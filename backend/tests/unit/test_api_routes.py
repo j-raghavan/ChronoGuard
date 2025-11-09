@@ -74,18 +74,21 @@ class TestHealthRoutes:
         mock_policy_repo = MagicMock()
 
         # Create mock agents
-        mock_agents = [
-            MagicMock(status=MagicMock(value="active")),
-            MagicMock(status=MagicMock(value="active")),
-            MagicMock(status=MagicMock(value="suspended")),
-        ]
+        mock_agent_1 = MagicMock()
+        mock_agent_1.status = "active"
+        mock_agent_2 = MagicMock()
+        mock_agent_2.status = "active"
+        mock_agent_3 = MagicMock()
+        mock_agent_3.status = "suspended"
+        mock_agents = [mock_agent_1, mock_agent_2, mock_agent_3]
         mock_agent_repo.find_by_tenant_id = AsyncMock(return_value=mock_agents)
 
         # Create mock policies
-        mock_policies = [
-            MagicMock(is_active=lambda: True),
-            MagicMock(is_active=lambda: False),
-        ]
+        mock_policy_1 = MagicMock()
+        mock_policy_1.is_active.return_value = True
+        mock_policy_2 = MagicMock()
+        mock_policy_2.is_active.return_value = False
+        mock_policies = [mock_policy_1, mock_policy_2]
         mock_policy_repo.find_by_tenant_id = AsyncMock(return_value=mock_policies)
 
         # Override dependencies

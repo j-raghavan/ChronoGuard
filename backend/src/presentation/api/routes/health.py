@@ -133,9 +133,9 @@ async def metrics_summary(
         all_agents = await agent_repo.find_by_tenant_id(tenant_id)
         agent_stats = {
             "total": len(all_agents),
-            "active": sum(1 for a in all_agents if a.status.value == "active"),
-            "suspended": sum(1 for a in all_agents if a.status.value == "suspended"),
-            "pending": sum(1 for a in all_agents if a.status.value == "pending_activation"),
+            "active": sum(1 for a in all_agents if a.status == "active"),
+            "suspended": sum(1 for a in all_agents if a.status == "suspended"),
+            "pending": sum(1 for a in all_agents if a.status == "pending"),
         }
 
         # Get policy counts

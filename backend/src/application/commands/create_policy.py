@@ -6,6 +6,7 @@ and Clean Architecture.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import UUID
 
 from domain.audit.entity import AccessDecision
@@ -76,20 +77,19 @@ class CreatePolicyCommand:
             priority=request.priority,
         )
 
-        # Apply additional settings using domain entity methods
-        # This ensures validation and metadata updates via _update_metadata()
-        for domain in request.allowed_domains:
-            created_policy.add_allowed_domain(domain)
+        # Apply additional settings by directly setting the fields to avoid version increments
+        # We're still creating the policy, so we shouldn't increment version multiple times
+        created_policy.allowed_domains = set(request.allowed_domains)
+        created_policy.blocked_domains = set(request.blocked_domains)
 
-        for domain in request.blocked_domains:
-            created_policy.add_blocked_domain(domain)
-
-        # Update custom metadata dict directly (no dedicated domain method exists)
+        # Update custom metadata dict directly
         if request.metadata:
             created_policy.metadata.update(request.metadata)
-            created_policy._update_metadata()  # Ensure version/timestamp updated
 
-        # Save the updated policy
+        # Update metadata once at the end to set final timestamp and ensure version is 1
+        created_policy.updated_at = datetime.now(UTC)
+
+        # Save the new policy (version should still be 1)
         await self._policy_service._policy_repository.save(created_policy)
 
         # Deploy to OPA if policy is ACTIVE and OPA integration is available

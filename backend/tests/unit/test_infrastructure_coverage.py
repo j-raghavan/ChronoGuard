@@ -236,9 +236,9 @@ class TestTelemetryCoverage:
 
         telemetry._setup_instrumentation()
 
-        # Verify instrumentation was called
-        mock_fastapi_instr.instrument.assert_called_once()
-        mock_sql_instr.instrument.assert_called_once()
+        # Verify instrumentation was called (instance methods)
+        mock_fastapi_instr.return_value.instrument.assert_called_once()
+        mock_sql_instr.return_value.instrument.assert_called_once()
 
     @patch("infrastructure.observability.telemetry.FastAPIInstrumentor")
     @patch("infrastructure.observability.telemetry.SQLAlchemyInstrumentor")

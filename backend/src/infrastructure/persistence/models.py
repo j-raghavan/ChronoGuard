@@ -96,7 +96,7 @@ class AuditEntryModel(Base):
     entry_id = Column(PG_UUID(as_uuid=True), primary_key=True)
     tenant_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
     agent_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
-    timestamp = Column(DateTime, nullable=False, index=True)
+    timestamp = Column(DateTime(timezone=True), nullable=False, primary_key=True)
     timestamp_nanos = Column(BigInteger, nullable=False)
     domain = Column(String(500), nullable=False)
     decision: Column[AccessDecision] = Column(Enum(AccessDecision), nullable=False, index=True)

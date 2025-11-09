@@ -22,6 +22,20 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import Pool
 
 
+def get_database_url() -> str:
+    """Get the synchronous database URL from settings.
+
+    Returns:
+        PostgreSQL sync connection string
+
+    Example:
+        >>> url = get_database_url()
+        >>> assert url.startswith("postgresql://")
+    """
+    settings = get_settings()
+    return settings.database.sync_url
+
+
 class DatabaseError(Exception):
     """Base exception for database operations."""
 

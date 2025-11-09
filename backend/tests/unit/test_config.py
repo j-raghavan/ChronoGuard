@@ -27,8 +27,25 @@ from pydantic import ValidationError
 class TestDatabaseSettings:
     """Tests for DatabaseSettings configuration."""
 
-    def test_default_values(self) -> None:
+    def test_default_values(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that default database settings are correctly initialized."""
+        # Clear any environment variables that could affect defaults
+        for key in [
+            "CHRONOGUARD_DB_HOST",
+            "CHRONOGUARD_DB_PORT",
+            "CHRONOGUARD_DB_USER",
+            "CHRONOGUARD_DB_PASSWORD",
+            "CHRONOGUARD_DB_DATABASE",
+        ]:
+            monkeypatch.delenv(key, raising=False)
+
+        # Prevent loading from .env file
+        monkeypatch.setenv("CHRONOGUARD_DB_HOST", "localhost")
+        monkeypatch.setenv("CHRONOGUARD_DB_PORT", "5432")
+        monkeypatch.setenv("CHRONOGUARD_DB_USER", "chronoguard")
+        monkeypatch.setenv("CHRONOGUARD_DB_PASSWORD", "chronoguard")
+        monkeypatch.setenv("CHRONOGUARD_DB_DATABASE", "chronoguard")
+
         db = DatabaseSettings()
 
         assert db.host == "localhost"
@@ -41,15 +58,23 @@ class TestDatabaseSettings:
         assert db.pool_recycle == 3600
         assert db.echo is False
 
-    def test_async_url_generation(self) -> None:
+    def test_async_url_generation(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test async PostgreSQL connection URL generation."""
+        # Override environment to ensure consistent defaults
+        monkeypatch.setenv("CHRONOGUARD_DB_HOST", "localhost")
+        monkeypatch.setenv("CHRONOGUARD_DB_PORT", "5432")
+
         db = DatabaseSettings(user="testuser", password="testpass", database="testdb")
 
         expected_url = "postgresql+asyncpg://testuser:testpass@localhost:5432/testdb"
         assert db.async_url == expected_url
 
-    def test_sync_url_generation(self) -> None:
+    def test_sync_url_generation(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test sync PostgreSQL connection URL generation."""
+        # Override environment to ensure consistent defaults
+        monkeypatch.setenv("CHRONOGUARD_DB_HOST", "localhost")
+        monkeypatch.setenv("CHRONOGUARD_DB_PORT", "5432")
+
         db = DatabaseSettings(user="testuser", password="testpass", database="testdb")
 
         expected_url = "postgresql://testuser:testpass@localhost:5432/testdb"

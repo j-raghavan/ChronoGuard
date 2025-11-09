@@ -279,6 +279,29 @@ release-check: check-all docker-build ## Pre-release validation
 	./scripts/verify_foundation.py
 	@echo "$(GREEN)🎉 Ready for release!$(RESET)"
 
+##@ Database Operations
+
+clear-db: ## Clear all database tables (WARNING: deletes all data)
+	@echo "$(RED)⚠️  WARNING: This will delete all data!$(RESET)"
+	@PYTHONPATH=$(BACKEND_DIR)/src poetry run python $(BACKEND_DIR)/scripts/clear_database.py
+
+seed-db: ## Seed database with sample data for development
+	@echo "$(BLUE)🌱 Seeding database with sample data...$(RESET)"
+	@PYTHONPATH=$(BACKEND_DIR)/src poetry run python $(BACKEND_DIR)/scripts/seed_database.py
+	@echo "$(GREEN)✅ Database seeded successfully$(RESET)"
+
+seed-db-reset: ## Reset and re-seed database (WARNING: deletes existing data)
+	@echo "$(RED)⚠️  WARNING: This will delete all existing data!$(RESET)"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "$(BLUE)🗑️  Clearing database...$(RESET)"; \
+		PYTHONPATH=$(BACKEND_DIR)/src poetry run python -c "import asyncio; from sqlalchemy import text; from core.database import get_database_url; from sqlalchemy.ext.asyncio import create_async_engine; async def clear(): engine = create_async_engine(get_database_url().replace('postgresql://', 'postgresql+asyncpg://', 1)); async with engine.begin() as conn: await conn.execute(text('TRUNCATE TABLE audit_entries, agents, policies CASCADE')); await engine.dispose(); asyncio.run(clear())"; \
+		$(MAKE) seed-db; \
+	else \
+		echo "$(YELLOW)Cancelled$(RESET)"; \
+	fi
+
 ##@ Information
 
 show-env: ## Show current environment configuration

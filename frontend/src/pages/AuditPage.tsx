@@ -62,8 +62,8 @@ export function AuditPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-destructive">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "24rem" }}>
+        <div style={{ color: "hsl(var(--danger))" }}>
           Error loading audit logs: {error.message}
         </div>
       </div>
@@ -71,84 +71,164 @@ export function AuditPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", width: "100%", maxWidth: "100%" }}>
+      {/* Page Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Audit Log</h2>
-          <p className="text-muted-foreground">
+          <h2 style={{ fontSize: "1.875rem", fontWeight: "bold", letterSpacing: "-0.025em", color: "hsl(var(--foreground))" }}>
+            Audit Log
+          </h2>
+          <p style={{ color: "hsl(var(--muted-foreground))" }}>
             View and search audit trail entries
           </p>
         </div>
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
             onClick={() => handleExport("csv")}
-            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.5rem 1rem",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: "0.5rem",
+              backgroundColor: "white",
+              cursor: "pointer",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              color: "hsl(var(--foreground))",
+              transition: "background-color 0.2s"
+            }}
           >
-            <Download className="h-4 w-4" />
+            <Download style={{ height: "1rem", width: "1rem" }} />
             Export CSV
           </button>
           <button
             onClick={() => handleExport("json")}
-            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.5rem 1rem",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: "0.5rem",
+              backgroundColor: "white",
+              cursor: "pointer",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              color: "hsl(var(--foreground))",
+              transition: "background-color 0.2s"
+            }}
           >
-            <Download className="h-4 w-4" />
+            <Download style={{ height: "1rem", width: "1rem" }} />
             Export JSON
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="rounded-lg border border-border bg-card p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="h-5 w-5 text-muted-foreground" />
-          <h3 className="font-semibold">Filters</h3>
+      <div style={{
+        borderRadius: "0.5rem",
+        border: "1px solid hsl(var(--border))",
+        backgroundColor: "white",
+        padding: "1rem"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+          <Filter style={{ height: "1.25rem", width: "1.25rem", color: "hsl(var(--muted-foreground))" }} />
+          <h3 style={{ fontWeight: 600, color: "hsl(var(--foreground))" }}>Filters</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "1rem"
+        }}>
           {/* Domain Search */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground block mb-2">
+            <label style={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              color: "hsl(var(--muted-foreground))",
+              display: "block",
+              marginBottom: "0.5rem"
+            }}>
               Domain
             </label>
-            <div className="flex gap-2">
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               <input
                 type="text"
                 value={searchDomain}
                 onChange={(e) => setSearchDomain(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="example.com"
-                className="flex-1 px-3 py-2 border border-border rounded-lg bg-background"
+                style={{
+                  flex: 1,
+                  padding: "0.5rem 0.75rem",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "0.5rem",
+                  backgroundColor: "hsl(var(--background))",
+                  fontSize: "0.875rem",
+                  outline: "none"
+                }}
               />
               <button
                 onClick={handleSearch}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: "hsl(var(--primary))",
+                  color: "white",
+                  borderRadius: "0.5rem",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
               >
-                <Search className="h-4 w-4" />
+                <Search style={{ height: "1rem", width: "1rem" }} />
               </button>
             </div>
           </div>
 
           {/* Decision Filter */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground block mb-2">
+            <label style={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              color: "hsl(var(--muted-foreground))",
+              display: "block",
+              marginBottom: "0.5rem"
+            }}>
               Decision
             </label>
             <select
               value={filters.decision}
               onChange={(e) => handleFilterChange("decision", e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+              style={{
+                width: "100%",
+                padding: "0.5rem 0.75rem",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "0.5rem",
+                backgroundColor: "hsl(var(--background))",
+                fontSize: "0.875rem",
+                outline: "none",
+                cursor: "pointer"
+              }}
             >
               <option value="">All</option>
               <option value="allow">Allow</option>
               <option value="deny">Deny</option>
-              <option value="block">Block</option>
-              <option value="rate_limited">Rate Limited</option>
-              <option value="time_restricted">Time Restricted</option>
             </select>
           </div>
 
-          {/* Date Range */}
+          {/* Start Date */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground block mb-2">
+            <label style={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              color: "hsl(var(--muted-foreground))",
+              display: "block",
+              marginBottom: "0.5rem"
+            }}>
               Start Date
             </label>
             <input
@@ -160,12 +240,27 @@ export function AuditPage() {
                   new Date(e.target.value).toISOString(),
                 )
               }
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+              style={{
+                width: "100%",
+                padding: "0.5rem 0.75rem",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "0.5rem",
+                backgroundColor: "hsl(var(--background))",
+                fontSize: "0.875rem",
+                outline: "none"
+              }}
             />
           </div>
 
+          {/* End Date */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground block mb-2">
+            <label style={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              color: "hsl(var(--muted-foreground))",
+              display: "block",
+              marginBottom: "0.5rem"
+            }}>
               End Date
             </label>
             <input
@@ -177,7 +272,15 @@ export function AuditPage() {
                   new Date(e.target.value).toISOString(),
                 )
               }
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+              style={{
+                width: "100%",
+                padding: "0.5rem 0.75rem",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "0.5rem",
+                backgroundColor: "hsl(var(--background))",
+                fontSize: "0.875rem",
+                outline: "none"
+              }}
             />
           </div>
         </div>
@@ -185,113 +288,261 @@ export function AuditPage() {
 
       {/* Audit Log Table */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-96 rounded-lg border border-border bg-card">
-          <div className="text-muted-foreground">Loading audit logs...</div>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "24rem",
+          borderRadius: "0.5rem",
+          border: "1px solid hsl(var(--border))",
+          backgroundColor: "white"
+        }}>
+          <div style={{ color: "hsl(var(--muted-foreground))" }}>Loading audit logs...</div>
         </div>
       ) : data?.entries.length === 0 ? (
-        <div className="flex items-center justify-center h-96 rounded-lg border border-border bg-card">
-          <div className="text-muted-foreground">
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "24rem",
+          borderRadius: "0.5rem",
+          border: "1px solid hsl(var(--border))",
+          backgroundColor: "white"
+        }}>
+          <div style={{ color: "hsl(var(--muted-foreground))" }}>
             No audit entries found for the selected filters
           </div>
         </div>
       ) : (
         <>
-          <div className="rounded-lg border border-border overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Timestamp
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Decision
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Domain
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Method
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Path
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Reason
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Agent
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-card divide-y divide-border">
-                {data?.entries.map((entry) => (
-                  <tr key={entry.entry_id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3 text-sm">
-                      <div>
-                        {format(new Date(entry.timestamp), "MMM dd, HH:mm:ss")}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {format(new Date(entry.timestamp), "yyyy")}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                          entry.decision === "allow"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {entry.decision === "allow" ? (
-                          <CheckCircle className="h-3 w-3" />
-                        ) : (
-                          <XCircle className="h-3 w-3" />
-                        )}
-                        {entry.decision}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {entry.domain}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {entry.request_method}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-xs truncate">
-                      {entry.request_path}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-md truncate">
-                      {entry.reason}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {entry.agent_id.slice(0, 8)}...
-                    </td>
+          <div style={{
+            borderRadius: "12px",
+            border: "1px solid hsl(var(--border))",
+            overflow: "hidden",
+            backgroundColor: "white",
+            boxShadow: "var(--shadow)"
+          }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ backgroundColor: "hsl(var(--muted))" }}>
+                    <th style={{
+                      padding: "0.75rem 1rem",
+                      textAlign: "left",
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--muted-foreground))",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap"
+                    }}>
+                      Timestamp
+                    </th>
+                    <th style={{
+                      padding: "0.75rem 1rem",
+                      textAlign: "left",
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--muted-foreground))",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap"
+                    }}>
+                      Decision
+                    </th>
+                    <th style={{
+                      padding: "0.75rem 1rem",
+                      textAlign: "left",
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--muted-foreground))",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap"
+                    }}>
+                      Domain
+                    </th>
+                    <th style={{
+                      padding: "0.75rem 1rem",
+                      textAlign: "left",
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--muted-foreground))",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap"
+                    }}>
+                      Method
+                    </th>
+                    <th style={{
+                      padding: "0.75rem 1rem",
+                      textAlign: "left",
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--muted-foreground))",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap"
+                    }}>
+                      Path
+                    </th>
+                    <th style={{
+                      padding: "0.75rem 1rem",
+                      textAlign: "left",
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--muted-foreground))",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap"
+                    }}>
+                      Reason
+                    </th>
+                    <th style={{
+                      padding: "0.75rem 1rem",
+                      textAlign: "left",
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--muted-foreground))",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap"
+                    }}>
+                      Agent
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data?.entries.map((entry, idx) => (
+                    <tr
+                      key={entry.entry_id}
+                      style={{
+                        backgroundColor: "white",
+                        borderTop: idx > 0 ? "1px solid hsl(var(--border))" : "none",
+                        transition: "background-color 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#F9FAFB"}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                    >
+                      <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", whiteSpace: "nowrap" }}>
+                        <div style={{ color: "hsl(var(--foreground))" }}>
+                          {format(new Date(entry.timestamp), "MMM dd, HH:mm:ss")}
+                        </div>
+                        <div style={{ fontSize: "0.75rem", color: "hsl(var(--muted-foreground))" }}>
+                          {format(new Date(entry.timestamp), "yyyy")}
+                        </div>
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem", whiteSpace: "nowrap" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
+                            padding: "0.375rem 0.75rem",
+                            fontSize: "0.75rem",
+                            fontWeight: 500,
+                            borderRadius: "9999px",
+                            backgroundColor: entry.decision === "allow"
+                              ? "rgba(16, 185, 129, 0.1)"
+                              : "rgba(239, 68, 68, 0.1)",
+                            color: entry.decision === "allow" ? "#10B981" : "#EF4444"
+                          }}
+                        >
+                          {entry.decision === "allow" ? (
+                            <CheckCircle style={{ height: "0.75rem", width: "0.75rem" }} />
+                          ) : (
+                            <XCircle style={{ height: "0.75rem", width: "0.75rem" }} />
+                          )}
+                          <span style={{ textTransform: "capitalize" }}>{entry.decision}</span>
+                        </span>
+                      </td>
+                      <td style={{
+                        padding: "0.75rem 1rem",
+                        fontSize: "0.875rem",
+                        fontWeight: 500,
+                        color: "hsl(var(--foreground))",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {entry.domain}
+                      </td>
+                      <td style={{
+                        padding: "0.75rem 1rem",
+                        fontSize: "0.875rem",
+                        color: "hsl(var(--muted-foreground))",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {entry.request_method}
+                      </td>
+                      <td style={{
+                        padding: "0.75rem 1rem",
+                        fontSize: "0.875rem",
+                        color: "hsl(var(--muted-foreground))",
+                        maxWidth: "20rem",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {entry.request_path}
+                      </td>
+                      <td style={{
+                        padding: "0.75rem 1rem",
+                        fontSize: "0.875rem",
+                        color: "hsl(var(--muted-foreground))",
+                        maxWidth: "24rem",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {entry.reason}
+                      </td>
+                      <td style={{
+                        padding: "0.75rem 1rem",
+                        fontSize: "0.75rem",
+                        color: "hsl(var(--muted-foreground))",
+                        fontFamily: "monospace",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {entry.agent_id.slice(0, 8)}...
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Pagination */}
           {data && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
                 Showing {data.entries.length} of {data.total_count} entries
               </div>
-              <div className="flex gap-2">
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-3 py-1 border border-border rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    padding: "0.5rem 0.75rem",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "0.5rem",
+                    backgroundColor: "white",
+                    cursor: page === 1 ? "not-allowed" : "pointer",
+                    opacity: page === 1 ? 0.5 : 1,
+                    fontSize: "0.875rem",
+                    color: "hsl(var(--foreground))"
+                  }}
                 >
                   Previous
                 </button>
-                <span className="px-3 py-1 text-sm text-muted-foreground">
+                <span style={{ padding: "0.5rem 0.75rem", fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
                   Page {page}
                 </span>
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={!data.has_more}
-                  className="px-3 py-1 border border-border rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    padding: "0.5rem 0.75rem",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "0.5rem",
+                    backgroundColor: "white",
+                    cursor: data.has_more ? "pointer" : "not-allowed",
+                    opacity: data.has_more ? 1 : 0.5,
+                    fontSize: "0.875rem",
+                    color: "hsl(var(--foreground))"
+                  }}
                 >
                   Next
                 </button>

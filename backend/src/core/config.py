@@ -17,7 +17,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class DatabaseSettings(BaseSettings):
     """PostgreSQL database configuration with TimescaleDB support."""
 
-    model_config = SettingsConfigDict(env_prefix="CHRONOGUARD_DB_", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_prefix="CHRONOGUARD_DB_",
+        case_sensitive=False,
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     host: str = Field(default="localhost", description="Database host")
     port: int = Field(default=5432, ge=1, le=65535, description="Database port")

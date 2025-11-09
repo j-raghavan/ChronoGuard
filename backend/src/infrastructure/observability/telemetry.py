@@ -148,10 +148,10 @@ class ChronoGuardTelemetry:
             return
 
         # Auto-instrument FastAPI
-        FastAPIInstrumentor.instrument()
+        FastAPIInstrumentor().instrument()
 
         # Auto-instrument SQLAlchemy
-        SQLAlchemyInstrumentor.instrument()
+        SQLAlchemyInstrumentor().instrument()
 
         # Auto-instrument Redis
         RedisInstrumentor().instrument()
