@@ -1,7 +1,6 @@
 """Tests for SDK exceptions."""
 
 import pytest
-
 from chronoguard_sdk.exceptions import (
     APIError,
     AuthenticationError,

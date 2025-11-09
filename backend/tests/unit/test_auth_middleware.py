@@ -26,7 +26,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 from fastapi import FastAPI, Request
-from presentation.api.middleware.auth import AuthMiddleware, AuthenticationError
+from presentation.api.middleware.auth import AuthenticationError, AuthMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.testclient import TestClient
 

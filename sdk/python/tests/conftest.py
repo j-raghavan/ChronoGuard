@@ -7,7 +7,6 @@ from typing import Any
 import httpx
 import pytest
 import respx
-
 from chronoguard_sdk.models import (
     Agent,
     AgentListResponse,

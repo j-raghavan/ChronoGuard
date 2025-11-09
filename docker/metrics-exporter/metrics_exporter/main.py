@@ -2,20 +2,13 @@
 
 import asyncio
 import os
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
-from fastapi import FastAPI
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-)
-from starlette.responses import Response
 import redis.asyncio as redis
+from fastapi import FastAPI
 from loguru import logger
-
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
+from starlette.responses import Response
 
 # Prometheus metrics
 TEMPORAL_ACCESS_TOTAL = Counter(

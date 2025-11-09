@@ -2,11 +2,10 @@
 
 import pytest
 import respx
-from httpx import Response
-
 from chronoguard_sdk import ChronoGuard, ChronoGuardSync
 from chronoguard_sdk.exceptions import NotFoundError, ValidationError
 from chronoguard_sdk.models import Policy, PolicyListResponse
+from httpx import Response
 
 
 class TestPoliciesAPI:

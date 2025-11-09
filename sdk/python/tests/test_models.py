@@ -4,8 +4,6 @@ from datetime import datetime
 from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
-
 from chronoguard_sdk.models import (
     AuditExportRequest,
     AuditQueryRequest,
@@ -14,6 +12,7 @@ from chronoguard_sdk.models import (
     UpdateAgentRequest,
     UpdatePolicyRequest,
 )
+from pydantic import ValidationError
 
 
 class TestAgentModels:
