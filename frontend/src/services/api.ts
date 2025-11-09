@@ -3,8 +3,8 @@
  * Uses axios for HTTP requests with TypeScript types
  */
 
-import axios from 'axios';
-import type { AxiosInstance } from 'axios';
+import axios from "axios";
+import type { AxiosInstance } from "axios";
 import type {
   AgentDTO,
   AgentListResponse,
@@ -19,35 +19,35 @@ import type {
   TemporalPatternDTO,
   MetricsSummaryResponse,
   HealthResponse,
-} from '@/types/api';
+} from "@/types/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // Create axios instance with default configuration
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
     baseURL: API_BASE_URL,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
 
   // Request interceptor to add tenant and user IDs
   client.interceptors.request.use(
     (config) => {
-      const tenantId = localStorage.getItem('tenantId');
-      const userId = localStorage.getItem('userId');
+      const tenantId = localStorage.getItem("tenantId");
+      const userId = localStorage.getItem("userId");
 
       if (tenantId) {
-        config.headers['X-Tenant-ID'] = tenantId;
+        config.headers["X-Tenant-ID"] = tenantId;
       }
       if (userId) {
-        config.headers['X-User-ID'] = userId;
+        config.headers["X-User-ID"] = userId;
       }
 
       return config;
     },
-    (error) => Promise.reject(error)
+    (error) => Promise.reject(error),
   );
 
   // Response interceptor for error handling
@@ -56,10 +56,10 @@ const createApiClient = (): AxiosInstance => {
     (error) => {
       if (error.response?.status === 401) {
         // Handle unauthorized - could redirect to login
-        console.error('Unauthorized access');
+        console.error("Unauthorized access");
       }
       return Promise.reject(error);
-    }
+    },
   );
 
   return client;
@@ -69,15 +69,16 @@ const apiClient = createApiClient();
 
 // Health Endpoints
 export const healthApi = {
-  check: () => apiClient.get<HealthResponse>('/api/v1/health/'),
-  ready: () => apiClient.get<HealthResponse>('/api/v1/health/ready'),
-  metrics: () => apiClient.get<MetricsSummaryResponse>('/api/v1/health/metrics'),
+  check: () => apiClient.get<HealthResponse>("/api/v1/health/"),
+  ready: () => apiClient.get<HealthResponse>("/api/v1/health/ready"),
+  metrics: () =>
+    apiClient.get<MetricsSummaryResponse>("/api/v1/health/metrics"),
 };
 
 // Agent Endpoints
 export const agentApi = {
   list: (page = 1, pageSize = 50) =>
-    apiClient.get<AgentListResponse>('/api/v1/agents/', {
+    apiClient.get<AgentListResponse>("/api/v1/agents/", {
       params: { page, page_size: pageSize },
     }),
 
@@ -85,7 +86,7 @@ export const agentApi = {
     apiClient.get<AgentDTO>(`/api/v1/agents/${agentId}`),
 
   create: (data: CreateAgentRequest) =>
-    apiClient.post<AgentDTO>('/api/v1/agents/', data),
+    apiClient.post<AgentDTO>("/api/v1/agents/", data),
 
   update: (agentId: string, data: UpdateAgentRequest) =>
     apiClient.put<AgentDTO>(`/api/v1/agents/${agentId}`, data),
@@ -94,7 +95,7 @@ export const agentApi = {
 // Policy Endpoints
 export const policyApi = {
   list: (page = 1, pageSize = 50) =>
-    apiClient.get<PolicyListResponse>('/api/v1/policies/', {
+    apiClient.get<PolicyListResponse>("/api/v1/policies/", {
       params: { page, page_size: pageSize },
     }),
 
@@ -102,7 +103,7 @@ export const policyApi = {
     apiClient.get<PolicyDTO>(`/api/v1/policies/${policyId}`),
 
   create: (data: CreatePolicyRequest) =>
-    apiClient.post<PolicyDTO>('/api/v1/policies/', data),
+    apiClient.post<PolicyDTO>("/api/v1/policies/", data),
 
   update: (policyId: string, data: UpdatePolicyRequest) =>
     apiClient.put<PolicyDTO>(`/api/v1/policies/${policyId}`, data),
@@ -114,20 +115,20 @@ export const policyApi = {
 // Audit Endpoints
 export const auditApi = {
   query: (params: AuditQueryRequest) =>
-    apiClient.post<AuditListResponse>('/api/v1/audit/query', params),
+    apiClient.post<AuditListResponse>("/api/v1/audit/query", params),
 
   analytics: (startTime: string, endTime: string) =>
-    apiClient.get<TemporalPatternDTO>('/api/v1/audit/analytics', {
+    apiClient.get<TemporalPatternDTO>("/api/v1/audit/analytics", {
       params: {
         start_time: startTime,
         end_time: endTime,
       },
     }),
 
-  export: (format: 'csv' | 'json', startTime: string, endTime: string) => {
-    const tenantId = localStorage.getItem('tenantId');
+  export: (format: "csv" | "json", startTime: string, endTime: string) => {
+    const tenantId = localStorage.getItem("tenantId");
     return apiClient.post(
-      '/api/v1/audit/export',
+      "/api/v1/audit/export",
       {
         tenant_id: tenantId,
         start_time: startTime,
@@ -135,8 +136,8 @@ export const auditApi = {
         format,
       },
       {
-        responseType: 'blob',
-      }
+        responseType: "blob",
+      },
     );
   },
 };

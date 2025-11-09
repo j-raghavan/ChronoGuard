@@ -137,18 +137,21 @@ test-performance: ## Run performance tests
 
 ##@ Pre-commit and Quality Gates
 
-quality: ## Run comprehensive quality checks (ruff, black, mypy)
+quality: ## Run comprehensive quality checks (ruff, black, isort, mypy)
 	@echo "$(BLUE)🔍 Running comprehensive quality checks...$(RESET)"
-	@echo "$(BLUE)  1/4 Running ruff...$(RESET)"
+	@echo "$(BLUE)  1/5 Running ruff...$(RESET)"
 	@poetry run ruff check backend/src/ backend/tests/
 	@echo "$(GREEN)    ✅ Ruff passed$(RESET)"
-	@echo "$(BLUE)  2/4 Running black...$(RESET)"
+	@echo "$(BLUE)  2/5 Running black...$(RESET)"
 	@poetry run black --check backend/src/ backend/tests/
 	@echo "$(GREEN)    ✅ Black passed$(RESET)"
-	@echo "$(BLUE)  3/4 Running mypy...$(RESET)"
+	@echo "$(BLUE)  3/5 Running isort...$(RESET)"
+	@poetry run isort --check-only backend/src/ backend/tests/
+	@echo "$(GREEN)    ✅ Isort passed$(RESET)"
+	@echo "$(BLUE)  4/5 Running mypy...$(RESET)"
 	@poetry run mypy backend/src/ backend/tests/ --show-error-codes --show-error-context
 	@echo "$(GREEN)    ✅ Mypy passed$(RESET)"
-	@echo "$(BLUE)  4/4 Checking database migrations...$(RESET)"
+	@echo "$(BLUE)  5/5 Checking database migrations...$(RESET)"
 	@if [ -d "backend/alembic/versions" ]; then \
 		echo "$(GREEN)    ✅ Alembic migrations directory exists$(RESET)"; \
 	else \

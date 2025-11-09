@@ -90,8 +90,6 @@ jobs:
   frontend-quality:
     name: Frontend Code Quality
     runs-on: ubuntu-latest
-    # Disabled until frontend is implemented
-    if: false
 
     steps:
       - name: Checkout code

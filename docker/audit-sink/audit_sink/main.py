@@ -1,13 +1,12 @@
 """ChronoGuard Audit Sink - Ingests decisions and creates hash-chained audit records."""
 
-from datetime import datetime, UTC
-
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from loguru import logger
+from datetime import UTC, datetime
 
 from domain.audit.entity import AccessDecision, AuditEntry
 from domain.audit.service import AccessRequest
+from fastapi import FastAPI, HTTPException
+from loguru import logger
+from pydantic import BaseModel
 
 
 class DecisionLogEntry(BaseModel):

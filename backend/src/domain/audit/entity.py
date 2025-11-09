@@ -11,6 +11,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from domain.common.exceptions import ValidationError
+from domain.common.time import TimeSource
 from domain.common.value_objects import DomainName
 from pydantic import BaseModel, Field, field_validator
 
@@ -46,11 +47,14 @@ class TimedAccessContext(BaseModel):
         frozen = True
 
     @classmethod
-    def create_from_timestamp(cls, timestamp: datetime) -> TimedAccessContext:
+    def create_from_timestamp(
+        cls, timestamp: datetime, time_source: TimeSource | None = None
+    ) -> TimedAccessContext:
         """Create timed access context from a timestamp.
 
         Args:
             timestamp: Timestamp to create context from
+            time_source: Optional time source for processing timestamp (uses system time if None)
 
         Returns:
             TimedAccessContext instance
@@ -65,9 +69,12 @@ class TimedAccessContext(BaseModel):
         is_business_hours = 9 <= timestamp.hour < 17
         is_weekend = timestamp.weekday() >= 5  # Saturday=5, Sunday=6
 
+        # Use time source for processing timestamp if provided
+        processing_time = time_source.now() if time_source else datetime.now(UTC)
+
         return cls(
             request_timestamp=timestamp,
-            processing_timestamp=datetime.now(UTC),
+            processing_timestamp=processing_time,
             timezone_offset=0,  # Always UTC for consistency
             day_of_week=timestamp.weekday(),
             hour_of_day=timestamp.hour,
@@ -80,7 +87,12 @@ class TimedAccessContext(BaseModel):
 
 
 class AuditEntry(BaseModel):
-    """Immutable audit log entry with cryptographic integrity."""
+    """Immutable audit log entry with cryptographic integrity.
+
+    Note: Default timestamp values use system time. For deterministic testing,
+    pass explicit timestamp and timestamp_nanos values or use a TimeSource
+    when creating entries via AuditService.
+    """
 
     entry_id: UUID = Field(default_factory=uuid4)
     tenant_id: UUID
@@ -103,6 +115,7 @@ class AuditEntry(BaseModel):
     previous_hash: str = ""
     current_hash: str = ""
     sequence_number: int = 0
+    signature: str = ""  # Cryptographic signature from Signer
     metadata: dict[str, str] = Field(default_factory=dict)
 
     class Config:

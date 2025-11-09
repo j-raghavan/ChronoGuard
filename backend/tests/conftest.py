@@ -53,12 +53,8 @@ fake = Faker()
 Faker.seed(42)  # For reproducible tests
 
 
-@pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# Removed deprecated event_loop fixture - pytest-asyncio handles this automatically
+# with asyncio_default_fixture_loop_scope = "function" in pyproject.toml
 
 
 @pytest.fixture
@@ -465,27 +461,64 @@ def security_test_data() -> dict[str, list[str]]:
     }
 
 
+def create_test_certificate(
+    common_name: str = "test.example.com",
+    organization: str = "Test Organization",
+    days_valid: int = 365,
+) -> str:
+    """Create a valid self-signed test certificate.
+
+    Args:
+        common_name: Certificate common name (CN)
+        organization: Organization name (O)
+        days_valid: Number of days the certificate is valid
+
+    Returns:
+        PEM-encoded certificate string
+    """
+    from datetime import timedelta
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+
+    # Generate private key
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+    )
+
+    # Create subject and issuer (same for self-signed)
+    subject = issuer = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COMMON_NAME, common_name),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, organization),
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+        ]
+    )
+
+    # Create certificate
+    now = datetime.now(UTC)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(private_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now)
+        .not_valid_after(now + timedelta(days=days_valid))
+        .add_extension(
+            x509.SubjectAlternativeName([x509.DNSName(common_name)]),
+            critical=False,
+        )
+        .sign(private_key, hashes.SHA256())
+    )
+
+    # Return PEM-encoded certificate
+    return cert.public_bytes(serialization.Encoding.PEM).decode()
+
+
 def _get_test_cert_pem() -> str:
     """Get test certificate PEM data."""
-    return """-----BEGIN CERTIFICATE-----
-MIIC+jCCAeKgAwIBAgIJAJYm37SFocjlMA0GCSqGSIb3DQEBBQUAMF4xCzAJBgNV
-BAYTAlVTMREwDwYDVQQIEwhOZXcgWW9yazERMA0GA1UEBxMITmV3IFlvcmsxEDAO
-BgNVBAoTB0NocmBvR2QxGzAZBgNVBAMTEmNocm9ub2d1YXJkLXRlc3QtY2EwHhcN
-MjMwOTE0MTIwMDAwWhcNMjQwOTE0MTIwMDAwWjBeMQswCQYDVQQGEwJVUzERMA8G
-A1UECBMITmV3IFlvcmsxETAPBgNVBAcTCE5ldyBZb3JrMRAMDgYDVQQKEwdDaHJv
-bm9HZDEbMBkGA1UEAxMSY2hyb25vZ3VhcmQtdGVzdC1jYTCCASIwDQYJKoZIhvcN
-AQEBBQADggEPADCCAQoCggEBALmDmMfljyolcaZjRDxjR8fljyolcaZjRDxjR8fl
-jyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fl
-jyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fl
-jyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fl
-jyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fl
-jyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fljyolcaZjRDxjR8fH
-wIDAQABo1AwTjAdBgNVHQ4EFgQU5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8wHQYDVR0j
-BBwwGoAU5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8wHQwDAYDVR0TBAUwAwEB/zANBgkq
-hkiG9w0BAQUFAAOCAQEAt2YCh8jH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8q
-JXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8q
-JXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8q
-JXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8q
-JXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8q
-JXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8qJXGmY0Q8Y0fH5Y8q
------END CERTIFICATE-----"""
+    return create_test_certificate()

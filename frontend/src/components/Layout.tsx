@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Activity, Shield, FileText, BarChart3 } from 'lucide-react';
+import type { ReactNode } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { Activity, Shield, FileText, BarChart3 } from "lucide-react";
 
 interface LayoutProps {
   children?: ReactNode;
@@ -10,15 +10,15 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation();
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: BarChart3 },
-    { name: 'Agents', href: '/agents', icon: Shield },
-    { name: 'Policies', href: '/policies', icon: FileText },
-    { name: 'Audit Log', href: '/audit', icon: Activity },
+    { name: "Dashboard", href: "/", icon: BarChart3 },
+    { name: "Agents", href: "/agents", icon: Shield },
+    { name: "Policies", href: "/policies", icon: FileText },
+    { name: "Audit Log", href: "/audit", icon: Activity },
   ];
 
   const isActive = (href: string) => {
-    if (href === '/') {
-      return location.pathname === '/';
+    if (href === "/") {
+      return location.pathname === "/";
     }
     return location.pathname.startsWith(href);
   };
@@ -39,8 +39,8 @@ export function Layout({ children }: LayoutProps) {
                 to={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive(item.href)
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -53,9 +53,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="pl-64">
-        <div className="px-8 py-6">
-          {children || <Outlet />}
-        </div>
+        <div className="px-8 py-6">{children || <Outlet />}</div>
       </main>
     </div>
   );

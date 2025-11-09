@@ -1,6 +1,6 @@
-import { useMetrics, useAuditAnalytics } from '@/hooks/useApi';
-import { subDays } from 'date-fns';
-import { Shield, FileText, Activity, TrendingUp } from 'lucide-react';
+import { useMetrics, useAuditAnalytics } from "@/hooks/useApi";
+import { subDays } from "date-fns";
+import { Shield, FileText, Activity, TrendingUp } from "lucide-react";
 
 export function Dashboard() {
   const { data: metrics, isLoading: metricsLoading } = useMetrics();
@@ -10,7 +10,7 @@ export function Dashboard() {
   const startTime = subDays(endTime, 7);
   const { data: analytics, isLoading: analyticsLoading } = useAuditAnalytics(
     startTime.toISOString(),
-    endTime.toISOString()
+    endTime.toISOString(),
   );
 
   if (metricsLoading || analyticsLoading) {
@@ -23,32 +23,32 @@ export function Dashboard() {
 
   const stats = [
     {
-      name: 'Total Agents',
+      name: "Total Agents",
       value: metrics?.agents.total || 0,
       icon: Shield,
       change: `${metrics?.agents.active || 0} active`,
-      changeType: 'positive',
+      changeType: "positive",
     },
     {
-      name: 'Total Policies',
+      name: "Total Policies",
       value: metrics?.policies.total || 0,
       icon: FileText,
       change: `${metrics?.policies.active || 0} active`,
-      changeType: 'positive',
+      changeType: "positive",
     },
     {
-      name: 'Compliance Score',
+      name: "Compliance Score",
       value: `${analytics?.compliance_score.toFixed(1) || 0}%`,
       icon: TrendingUp,
-      change: 'Last 7 days',
-      changeType: 'neutral',
+      change: "Last 7 days",
+      changeType: "neutral",
     },
     {
-      name: 'Peak Activity Hour',
-      value: analytics?.peak_hours[0] || '-',
+      name: "Peak Activity Hour",
+      value: analytics?.peak_hours[0] || "-",
       icon: Activity,
-      change: 'Most active time',
-      changeType: 'neutral',
+      change: "Most active time",
+      changeType: "neutral",
     },
   ];
 
@@ -99,11 +99,11 @@ export function Dashboard() {
               >
                 <div
                   className={`h-2 w-2 mt-2 rounded-full ${
-                    anomaly.severity === 'high'
-                      ? 'bg-red-500'
-                      : anomaly.severity === 'medium'
-                      ? 'bg-yellow-500'
-                      : 'bg-blue-500'
+                    anomaly.severity === "high"
+                      ? "bg-red-500"
+                      : anomaly.severity === "medium"
+                        ? "bg-yellow-500"
+                        : "bg-blue-500"
                   }`}
                 />
                 <div>

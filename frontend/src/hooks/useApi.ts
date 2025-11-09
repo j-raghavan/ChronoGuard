@@ -3,34 +3,35 @@
  * Provides typed hooks with caching and error handling
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { agentApi, policyApi, auditApi, healthApi } from '@/services/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { agentApi, policyApi, auditApi, healthApi } from "@/services/api";
 import type {
   CreateAgentRequest,
   UpdateAgentRequest,
   CreatePolicyRequest,
   UpdatePolicyRequest,
   AuditQueryRequest,
-} from '@/types/api';
+} from "@/types/api";
 
 // Query Keys
 export const queryKeys = {
-  health: ['health'] as const,
-  metrics: ['metrics'] as const,
+  health: ["health"] as const,
+  metrics: ["metrics"] as const,
   agents: {
-    all: ['agents'] as const,
-    list: (page: number) => ['agents', 'list', page] as const,
-    detail: (id: string) => ['agents', 'detail', id] as const,
+    all: ["agents"] as const,
+    list: (page: number) => ["agents", "list", page] as const,
+    detail: (id: string) => ["agents", "detail", id] as const,
   },
   policies: {
-    all: ['policies'] as const,
-    list: (page: number) => ['policies', 'list', page] as const,
-    detail: (id: string) => ['policies', 'detail', id] as const,
+    all: ["policies"] as const,
+    list: (page: number) => ["policies", "list", page] as const,
+    detail: (id: string) => ["policies", "detail", id] as const,
   },
   audit: {
-    all: ['audit'] as const,
-    query: (params: AuditQueryRequest) => ['audit', 'query', params] as const,
-    analytics: (start: string, end: string) => ['audit', 'analytics', start, end] as const,
+    all: ["audit"] as const,
+    query: (params: AuditQueryRequest) => ["audit", "query", params] as const,
+    analytics: (start: string, end: string) =>
+      ["audit", "analytics", start, end] as const,
   },
 };
 
@@ -83,8 +84,13 @@ export const useUpdateAgent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ agentId, data }: { agentId: string; data: UpdateAgentRequest }) =>
-      agentApi.update(agentId, data),
+    mutationFn: ({
+      agentId,
+      data,
+    }: {
+      agentId: string;
+      data: UpdateAgentRequest;
+    }) => agentApi.update(agentId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.agents.all });
     },
@@ -123,8 +129,13 @@ export const useUpdatePolicy = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ policyId, data }: { policyId: string; data: UpdatePolicyRequest }) =>
-      policyApi.update(policyId, data),
+    mutationFn: ({
+      policyId,
+      data,
+    }: {
+      policyId: string;
+      data: UpdatePolicyRequest;
+    }) => policyApi.update(policyId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.policies.all });
     },

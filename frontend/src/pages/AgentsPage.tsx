@@ -1,6 +1,6 @@
-import { useAgents } from '@/hooks/useApi';
-import { Shield } from 'lucide-react';
-import { format } from 'date-fns';
+import { useAgents } from "@/hooks/useApi";
+import { Shield } from "lucide-react";
+import { format } from "date-fns";
 
 export function AgentsPage() {
   const { data, isLoading, error } = useAgents();
@@ -70,11 +70,11 @@ export function AgentsPage() {
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      agent.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : agent.status === 'suspended'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
+                      agent.status === "active"
+                        ? "bg-green-100 text-green-800"
+                        : agent.status === "suspended"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
                     }`}
                   >
                     {agent.status}
@@ -83,12 +83,16 @@ export function AgentsPage() {
                 <td className="px-6 py-4">
                   <div className="text-sm">
                     <div className="font-medium text-muted-foreground">
-                      Expires: {format(new Date(agent.certificate_not_after), 'MMM dd, yyyy')}
+                      Expires:{" "}
+                      {format(
+                        new Date(agent.certificate_not_after),
+                        "MMM dd, yyyy",
+                      )}
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-muted-foreground">
-                  {format(new Date(agent.created_at), 'MMM dd, yyyy')}
+                  {format(new Date(agent.created_at), "MMM dd, yyyy")}
                 </td>
               </tr>
             ))}
@@ -102,7 +106,10 @@ export function AgentsPage() {
             Showing {data.agents.length} of {data.total_count} agents
           </div>
           <div className="flex gap-2">
-            <button className="px-3 py-1 border border-border rounded hover:bg-muted" disabled>
+            <button
+              className="px-3 py-1 border border-border rounded hover:bg-muted"
+              disabled
+            >
               Previous
             </button>
             <button className="px-3 py-1 border border-border rounded hover:bg-muted">

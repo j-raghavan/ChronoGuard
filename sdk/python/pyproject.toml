@@ -1,0 +1,130 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chronoguard-sdk"
+version = "1.0.0"
+description = "Python SDK for ChronoGuard - Zero-trust proxy for browser automation with temporal controls"
+authors = [{name = "ChronoGuard Team", email = "team@chronoguard.com"}]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: Proxy Servers",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+keywords = ["chronoguard", "proxy", "browser-automation", "zero-trust", "security"]
+
+dependencies = [
+    "httpx>=0.26.0",
+    "pydantic>=2.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.14",
+    "black>=24.3.0",
+    "isort>=5.13.2",
+    "respx>=0.20.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/chronoguard/chronoguard"
+Documentation = "https://docs.chronoguard.com"
+Repository = "https://github.com/chronoguard/chronoguard"
+Issues = "https://github.com/chronoguard/chronoguard/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["chronoguard_sdk*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--cov=chronoguard_sdk",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "-vv",
+]
+
+[tool.coverage.run]
+source = ["chronoguard_sdk"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", "__pycache__", ".pytest_cache", ".mypy_cache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "ANN", "S", "B", "A", "C4", "DTZ", "T10", "RET", "SIM"]
+ignore = [
+    "S101",    # Allow assert statements
+    "ANN101",  # Missing type annotation for self in method
+    "ANN102",  # Missing type annotation for cls in classmethod
+    "ANN401",  # Allow typing.Any in specific cases
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "ANN001", "ANN201", "ANN202",
+    "B017", "DTZ001", "DTZ005",
+    "E501", "F401", "F841", "S108",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
