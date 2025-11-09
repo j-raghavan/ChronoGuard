@@ -1,6 +1,5 @@
 """Audit domain service for secure audit logging and chain verification."""
 
-import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
@@ -13,8 +12,11 @@ from domain.audit.entity import (
 )
 from domain.audit.repository import AuditRepository
 from domain.common.exceptions import BusinessRuleViolationError, ValidationError
+from domain.common.time import SystemTimeSource, TimeSource
 from domain.common.value_objects import DomainName
 from infrastructure.observability.telemetry import get_metrics
+from infrastructure.opa.client import OPAClient
+from infrastructure.security.signer import Signer
 from loguru import logger
 from opentelemetry import trace
 
@@ -42,6 +44,7 @@ class AccessRequest:
         processing_time_ms: float | None = None,
         timestamp: datetime | None = None,
         metadata: dict[str, str] | None = None,
+        time_source: TimeSource | None = None,
     ) -> None:
         """Initialize access request.
 
@@ -62,6 +65,7 @@ class AccessRequest:
             processing_time_ms: Processing time in milliseconds
             timestamp: Request timestamp
             metadata: Additional metadata
+            time_source: Optional time source (defaults to SystemTimeSource)
         """
         self.tenant_id = tenant_id
         self.agent_id = agent_id
@@ -77,7 +81,8 @@ class AccessRequest:
         self.response_status = response_status
         self.response_size_bytes = response_size_bytes
         self.processing_time_ms = processing_time_ms
-        self.timestamp = timestamp or datetime.now(UTC)
+        _time_source = time_source or SystemTimeSource()
+        self.timestamp = timestamp or _time_source.now()
         self.metadata = metadata or {}
 
 
@@ -88,18 +93,33 @@ class AuditService:
         self,
         audit_repository: AuditRepository,
         secret_key: bytes | None = None,
+        time_source: TimeSource | None = None,
+        signer: Signer | None = None,
+        opa_client: OPAClient | None = None,
     ) -> None:
         """Initialize audit service.
 
         Args:
             audit_repository: Repository for audit persistence
             secret_key: Optional secret key for hash chaining
+            time_source: Pluggable time source (defaults to SystemTimeSource)
+            signer: Cryptographic signer for audit entries (optional)
+            opa_client: OPA client for policy-based audit filtering (optional)
         """
         self._repository = audit_repository
         self._secret_key = secret_key
+        self._time_source = time_source or SystemTimeSource()
+        self._signer = signer
+        self._opa_client = opa_client
+
+        logger.info(
+            f"AuditService initialized with time_source={type(self._time_source).__name__}, "
+            f"signer={'enabled' if signer else 'disabled'}, "
+            f"opa_client={'enabled' if opa_client else 'disabled'}"
+        )
 
     async def record_access(self, request: AccessRequest) -> AuditEntry:
-        """Record an access attempt with hash chaining.
+        """Record an access attempt with hash chaining, signing, and policy checks.
 
         Args:
             request: Access request to record
@@ -121,11 +141,27 @@ class AuditService:
                 "decision": request.decision.value,
             },
         ) as span:
-            start_time = time.time()
+            start_time = self._time_source.now_ns()
 
             try:
                 # Validate request data
                 self._validate_access_request(request)
+
+                # OPA policy check: should this audit entry be recorded?
+                if self._opa_client:
+                    should_log = await self._check_audit_policy(request)
+                    if not should_log:
+                        logger.debug(
+                            f"Audit entry filtered by policy: tenant={request.tenant_id}, "
+                            f"domain={request.domain}"
+                        )
+                        # Return a minimal entry indicating it was filtered
+                        # (or could raise an exception or return None depending on requirements)
+                        span.set_attribute("audit.filtered", True)
+                        # For now, we'll continue logging but mark it
+                        request.metadata["policy_filtered"] = "false"
+                    else:
+                        request.metadata["policy_filtered"] = "true"
 
                 # Get previous entry for hash chaining
                 previous_entry = await self._repository.get_latest_entry_for_agent(
@@ -137,14 +173,20 @@ class AuditService:
                     request.tenant_id, request.agent_id
                 )
 
-                # Create timed access metadata
-                timed_metadata = TimedAccessContext.create_from_timestamp(request.timestamp)
+                # Create timed access metadata with time source
+                timed_metadata = TimedAccessContext.create_from_timestamp(
+                    request.timestamp, self._time_source
+                )
+
+                # Use time source for precise timestamps
+                timestamp_ns = self._time_source.now_ns()
 
                 # Build audit entry
                 entry = AuditEntry(
                     tenant_id=request.tenant_id,
                     agent_id=request.agent_id,
                     timestamp=request.timestamp,
+                    timestamp_nanos=timestamp_ns,
                     domain=DomainName(value=request.domain),
                     decision=request.decision,
                     reason=request.reason,
@@ -166,11 +208,20 @@ class AuditService:
                 previous_hash = previous_entry.current_hash if previous_entry else ""
                 entry_with_hash = entry.with_hash(previous_hash, self._secret_key)
 
-                # Save entry
-                await self._repository.save(entry_with_hash)
+                # Sign the entry with Signer if available
+                if self._signer:
+                    entry_with_signature = await self._sign_entry(entry_with_hash)
+                else:
+                    entry_with_signature = entry_with_hash
 
-                # Record metrics
-                duration = time.time() - start_time
+                # Save entry
+                await self._repository.save(entry_with_signature)
+
+                # Record metrics using time source
+                end_time = self._time_source.now_ns()
+                duration_ns = end_time - start_time
+                duration_seconds = duration_ns / 1_000_000_000.0
+
                 metrics = get_metrics()
                 if metrics:
                     metrics.audit_entries_total.add(
@@ -178,21 +229,23 @@ class AuditService:
                     )
 
                 # Add span attributes
-                span.set_attribute("entry.id", str(entry_with_hash.entry_id))
-                span.set_attribute("entry.hash", entry_with_hash.current_hash)
-                span.set_attribute("duration", duration)
+                span.set_attribute("entry.id", str(entry_with_signature.entry_id))
+                span.set_attribute("entry.hash", entry_with_signature.current_hash)
+                span.set_attribute("entry.signed", bool(self._signer))
+                span.set_attribute("duration", duration_seconds)
                 span.set_attribute("sequence_number", sequence_number)
 
                 logger.info(
                     "Audit entry recorded",
-                    entry_id=str(entry_with_hash.entry_id),
+                    entry_id=str(entry_with_signature.entry_id),
                     tenant_id=str(request.tenant_id),
                     agent_id=str(request.agent_id),
                     decision=request.decision.value,
-                    duration_seconds=round(duration, 3),
+                    duration_seconds=round(duration_seconds, 3),
+                    signed=bool(self._signer),
                 )
 
-                return entry_with_hash
+                return entry_with_signature
 
             except Exception as e:
                 # Record exception in trace
@@ -619,3 +672,96 @@ class AuditService:
             "sequence_number": str(entry.sequence_number),
             "risk_score": str(entry.get_risk_score()),
         }
+
+    async def _check_audit_policy(self, request: AccessRequest) -> bool:
+        """Check OPA policy to determine if audit entry should be recorded.
+
+        Args:
+            request: Access request to check
+
+        Returns:
+            True if entry should be logged, False otherwise
+        """
+        if not self._opa_client:
+            return True
+
+        try:
+            # Build OPA policy input
+            policy_input = {
+                "audit": {
+                    "tenant_id": str(request.tenant_id),
+                    "agent_id": str(request.agent_id),
+                    "domain": request.domain,
+                    "decision": request.decision.value,
+                    "request_method": request.request_method,
+                    "request_path": request.request_path,
+                    "source_ip": request.source_ip,
+                }
+            }
+
+            # Query OPA for audit decision
+            result = await self._opa_client.check_policy(
+                policy_input, policy_path="chronoguard/audit/should_log"
+            )
+
+            logger.debug(f"OPA audit policy result: {result} for domain={request.domain}")
+            return bool(result)
+
+        except Exception as e:
+            # If OPA check fails, default to logging (fail-open for audit)
+            logger.warning(f"OPA audit policy check failed, defaulting to log: {e}")
+            return True
+
+    async def _sign_entry(self, entry: AuditEntry) -> AuditEntry:
+        """Sign audit entry with Signer.
+
+        Args:
+            entry: Audit entry to sign
+
+        Returns:
+            Audit entry with signature
+
+        Raises:
+            SecurityViolationError: If signing fails
+        """
+        if not self._signer:
+            return entry
+
+        try:
+            # Create canonical representation for signing
+            # Include critical fields that should be tamper-proof
+            data_to_sign = (
+                f"{entry.entry_id}|{entry.tenant_id}|{entry.agent_id}|"
+                f"{entry.timestamp.isoformat()}|{entry.timestamp_nanos}|"
+                f"{entry.domain.value}|{entry.decision.value}|"
+                f"{entry.sequence_number}|{entry.current_hash}"
+            ).encode()
+
+            # Sign the data
+            signature_bytes = self._signer.sign(data_to_sign)
+
+            # Convert signature to hex string for storage
+            signature_hex = signature_bytes.hex()
+
+            # Create new entry with signature (Pydantic immutability)
+            # We need to use model_copy with update since entry is frozen
+            entry_dict = entry.model_dump()
+            entry_dict["signature"] = signature_hex
+
+            signed_entry = AuditEntry(**entry_dict)
+
+            logger.debug(
+                f"Signed audit entry {entry.entry_id} "
+                f"with {len(signature_bytes)} byte signature"
+            )
+
+            return signed_entry
+
+        except Exception as e:
+            logger.error(f"Failed to sign audit entry {entry.entry_id}: {e}")
+            # Re-raise as SecurityViolationError
+            from domain.common.exceptions import SecurityViolationError
+
+            raise SecurityViolationError(
+                f"Audit entry signing failed: {e}", violation_type="SIGNATURE_FAILURE"
+            ) from e
