@@ -1,10 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 describe("API Simple Coverage Tests", () => {
-  beforeEach(() => {
-    localStorage.setItem("tenantId", "550e8400-e29b-41d4-a716-446655440000");
-    localStorage.setItem("userId", "660e8400-e29b-41d4-a716-446655440000");
-  });
+  const tenantId = "550e8400-e29b-41d4-a716-446655440000";
 
   describe("Environment Configuration", () => {
     it("should use API base URL from environment or default", () => {
@@ -17,35 +14,6 @@ describe("API Simple Coverage Tests", () => {
     it("should configure default headers", () => {
       const headers = { "Content-Type": "application/json" };
       expect(headers["Content-Type"]).toBe("application/json");
-    });
-  });
-
-  describe("LocalStorage Access", () => {
-    it("should retrieve tenantId from localStorage", () => {
-      const tenantId = localStorage.getItem("tenantId");
-      expect(tenantId).toBe("550e8400-e29b-41d4-a716-446655440000");
-      expect(tenantId?.length).toBe(36); // UUID length
-    });
-
-    it("should retrieve userId from localStorage", () => {
-      const userId = localStorage.getItem("userId");
-      expect(userId).toBe("660e8400-e29b-41d4-a716-446655440000");
-    });
-
-    it("should handle missing tenantId", () => {
-      localStorage.removeItem("tenantId");
-      const tenantId = localStorage.getItem("tenantId");
-      expect(tenantId).toBeNull();
-      // Restore for other tests
-      localStorage.setItem("tenantId", "550e8400-e29b-41d4-a716-446655440000");
-    });
-
-    it("should handle missing userId", () => {
-      localStorage.removeItem("userId");
-      const userId = localStorage.getItem("userId");
-      expect(userId).toBeNull();
-      // Restore
-      localStorage.setItem("userId", "660e8400-e29b-41d4-a716-446655440000");
     });
   });
 
@@ -121,7 +89,7 @@ describe("API Simple Coverage Tests", () => {
 
     it("should format export request body", () => {
       const body = {
-        tenant_id: localStorage.getItem("tenantId"),
+        tenant_id: tenantId,
         start_time: "2025-01-01T00:00:00Z",
         end_time: "2025-01-31T23:59:59Z",
         format: "csv" as const,
@@ -132,7 +100,7 @@ describe("API Simple Coverage Tests", () => {
 
     it("should format export with JSON format", () => {
       const body = {
-        tenant_id: localStorage.getItem("tenantId"),
+        tenant_id: tenantId,
         start_time: "2025-01-01T00:00:00Z",
         end_time: "2025-01-31T23:59:59Z",
         format: "json" as const,

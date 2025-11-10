@@ -1,0 +1,138 @@
+# configs/envoy/envoy.yaml
+
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
+
+static_resources:
+  listeners:
+  # Forward proxy listener - agents connect here
+  - name: forward_proxy_listener
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 8080
+
+    filter_chains:
+    - filters:
+      # mTLS filter for agent authentication
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: forward_proxy
+          codec_type: AUTO
+
+          # Route configuration
+          route_config:
+            name: forward_proxy_route
+            virtual_hosts:
+            - name: forward_proxy
+              domains: ["*"]
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  # Forward to original destination
+                  cluster: dynamic_forward_proxy_cluster
+
+          # HTTP filters
+          http_filters:
+          # External authorization via OPA
+          - name: envoy.filters.http.ext_authz
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+
+              # Call OPA gRPC endpoint
+              grpc_service:
+                envoy_grpc:
+                  cluster_name: opa_cluster
+                timeout: 1s
+
+              # Include request metadata
+              with_request_body:
+                max_request_bytes: 8192
+                allow_partial_message: true
+
+              # On failure, deny request
+              failure_mode_allow: false
+
+              # Include metadata in check request
+              metadata_context_namespaces:
+              - envoy.filters.http.jwt_authn
+
+          # Dynamic forward proxy filter
+          - name: envoy.filters.http.dynamic_forward_proxy
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_forward_proxy.v3.FilterConfig
+              dns_cache_config:
+                name: dynamic_forward_proxy_cache_config
+                dns_lookup_family: V4_ONLY
+
+          # Router (must be last)
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+      # TLS configuration for mTLS
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+
+          # Require client certificates
+          require_client_certificate: true
+
+          # Common TLS context
+          common_tls_context:
+            # Server certificate
+            tls_certificates:
+            - certificate_chain:
+                filename: /etc/envoy/certs/server-cert.pem
+              private_key:
+                filename: /etc/envoy/certs/server-key.pem
+
+            # Validation for client certificates
+            validation_context:
+              trusted_ca:
+                filename: /etc/envoy/certs/ca-cert.pem
+
+  clusters:
+  # OPA cluster for ext_authz
+  - name: opa_cluster
+    type: STRICT_DNS
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+
+    load_assignment:
+      cluster_name: opa_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: chronoguard-policy-engine
+                port_value: 9192
+
+    # Health check
+    health_checks:
+    - timeout: 1s
+      interval: 10s
+      unhealthy_threshold: 2
+      healthy_threshold: 2
+      grpc_health_check: {}
+
+  # Dynamic forward proxy cluster
+  - name: dynamic_forward_proxy_cluster
+    lb_policy: CLUSTER_PROVIDED
+    cluster_type:
+      name: envoy.clusters.dynamic_forward_proxy
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.clusters.dynamic_forward_proxy.v3.ClusterConfig
+        dns_cache_config:
+          name: dynamic_forward_proxy_cache_config
+          dns_lookup_family: V4_ONLY

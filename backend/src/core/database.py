@@ -10,8 +10,6 @@ import contextlib
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from core.config import DatabaseSettings, get_settings
-from infrastructure.persistence.models import Base
 from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -20,6 +18,23 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import Pool
+
+from core.config import DatabaseSettings, get_settings
+from infrastructure.persistence.models import Base
+
+
+def get_database_url() -> str:
+    """Get the synchronous database URL from settings.
+
+    Returns:
+        PostgreSQL sync connection string
+
+    Example:
+        >>> url = get_database_url()
+        >>> assert url.startswith("postgresql://")
+    """
+    settings = get_settings()
+    return settings.database.sync_url
 
 
 class DatabaseError(Exception):

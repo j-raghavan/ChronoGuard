@@ -8,6 +8,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import and_, desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from domain.audit.entity import (
     AccessDecision,
     AuditEntry,
@@ -16,8 +19,6 @@ from domain.audit.entity import (
 )
 from domain.audit.repository import AuditRepository
 from infrastructure.persistence.models import AuditEntryModel
-from sqlalchemy import and_, desc, func, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 class PostgresAuditRepository(AuditRepository):
@@ -272,6 +273,27 @@ class PostgresAuditRepository(AuditRepository):
             if end_time:
                 stmt = stmt.where(AuditEntryModel.timestamp < end_time)
 
+            result = await session.execute(stmt)
+            return result.scalar_one()
+
+    async def count_entries_by_agent_time_range(
+        self,
+        tenant_id: UUID,
+        agent_id: UUID,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> int:
+        """Count audit entries for a specific agent within a time window."""
+
+        async with self._session_factory() as session:
+            stmt = select(func.count(AuditEntryModel.entry_id)).where(
+                and_(
+                    AuditEntryModel.tenant_id == tenant_id,
+                    AuditEntryModel.agent_id == agent_id,
+                    AuditEntryModel.timestamp >= start_time,
+                    AuditEntryModel.timestamp < end_time,
+                )
+            )
             result = await session.execute(stmt)
             return result.scalar_one()
 

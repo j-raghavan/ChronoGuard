@@ -1,6 +1,7 @@
 """Tests for chronoguard module initialization."""
 
 import chronoguard
+
 from core.container import DependencyContainer
 from core.features import FeatureManager
 

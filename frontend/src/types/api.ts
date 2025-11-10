@@ -8,25 +8,22 @@ export interface AgentDTO {
   agent_id: string;
   tenant_id: string;
   name: string;
-  status: "active" | "suspended" | "pending_activation" | "expired";
-  certificate_pem: string;
+  status: "active" | "suspended" | "pending";
   certificate_fingerprint: string;
-  certificate_serial: string;
   certificate_subject: string;
-  certificate_issuer: string;
-  certificate_not_before: string;
-  certificate_not_after: string;
+  certificate_expiry: string;
+  policy_ids: string[];
   created_at: string;
   updated_at: string;
-  suspended_at: string | null;
-  suspended_by: string | null;
-  metadata: Record<string, string>;
+  last_seen_at: string | null;
+  metadata: Record<string, unknown>;
+  version: number;
 }
 
 export interface CreateAgentRequest {
   name: string;
   certificate_pem: string;
-  metadata?: Record<string, string>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateAgentRequest {
@@ -86,25 +83,27 @@ export interface PolicyDTO {
   tenant_id: string;
   name: string;
   description: string;
-  priority: number;
   rules: PolicyRuleDTO[];
+  time_restrictions: Record<string, unknown> | null;
+  rate_limits: Record<string, unknown> | null;
+  priority: number;
+  status: "active" | "inactive";
   allowed_domains: string[];
   blocked_domains: string[];
-  default_action: "allow" | "deny";
-  is_active: boolean;
   created_at: string;
   updated_at: string;
   created_by: string;
   version: number;
+  metadata: Record<string, unknown>;
 }
 
 export interface CreatePolicyRequest {
   name: string;
   description: string;
   priority?: number;
-  default_action?: "allow" | "deny";
   allowed_domains?: string[];
   blocked_domains?: string[];
+  metadata?: Record<string, string>;
 }
 
 export interface UpdatePolicyRequest {
@@ -234,4 +233,19 @@ export interface HealthResponse {
   service: string;
   version: string;
   database?: string;
+}
+
+// Auth Types
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  tenant_id: string;
+  user_id: string;
+  expires_in: number;
+}
+
+export interface SessionResponse {
+  authenticated: boolean;
+  tenant_id: string;
+  user_id: string;
 }

@@ -14,8 +14,9 @@ from typing import Any, Protocol
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
-from domain.common.exceptions import SecurityViolationError
 from loguru import logger
+
+from domain.common.exceptions import SecurityViolationError
 
 
 class SignerError(SecurityViolationError):

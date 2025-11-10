@@ -5,6 +5,13 @@ from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+from cryptography.x509.oid import NameOID
+
 from application.commands import (
     CreateAgentCommand,
     CreatePolicyCommand,
@@ -20,12 +27,6 @@ from application.dto import (
     UpdateAgentRequest,
     UpdatePolicyRequest,
 )
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from cryptography.x509.oid import NameOID
 from domain.agent.entity import Agent, AgentStatus
 from domain.agent.service import AgentService
 from domain.common.exceptions import DuplicateEntityError, EntityNotFoundError
@@ -241,12 +242,37 @@ class TestCreatePolicyCommand:
     @pytest.fixture
     def policy_service(self) -> AsyncMock:
         """Mock policy service."""
-        return AsyncMock(spec=PolicyService)
+        service = AsyncMock(spec=PolicyService)
+        # Add mock repository to policy service
+        service._policy_repository = AsyncMock()
+        service._policy_repository.save = AsyncMock()
+        return service
+
+    @pytest.fixture
+    def opa_client(self) -> AsyncMock:
+        """Mock OPA client."""
+        from infrastructure.opa.client import OPAClient
+
+        return AsyncMock(spec=OPAClient)
+
+    @pytest.fixture
+    def policy_compiler(self) -> AsyncMock:
+        """Mock policy compiler."""
+        from infrastructure.opa.policy_compiler import PolicyCompiler
+
+        return AsyncMock(spec=PolicyCompiler)
 
     @pytest.fixture
     def command(self, policy_service: AsyncMock) -> CreatePolicyCommand:
-        """Create command instance."""
+        """Create command instance without OPA integration."""
         return CreatePolicyCommand(policy_service)
+
+    @pytest.fixture
+    def command_with_opa(
+        self, policy_service: AsyncMock, opa_client: AsyncMock, policy_compiler: AsyncMock
+    ) -> CreatePolicyCommand:
+        """Create command instance with OPA integration."""
+        return CreatePolicyCommand(policy_service, opa_client, policy_compiler)
 
     @pytest.mark.asyncio
     async def test_create_policy_command_success(
@@ -311,6 +337,121 @@ class TestCreatePolicyCommand:
         assert result.allowed_domains == []
         assert result.blocked_domains == []
 
+    @pytest.mark.asyncio
+    async def test_create_active_policy_deploys_to_opa(
+        self,
+        command_with_opa: CreatePolicyCommand,
+        policy_service: AsyncMock,
+        opa_client: AsyncMock,
+        policy_compiler: AsyncMock,
+    ) -> None:
+        """Test that active policy is deployed to OPA."""
+        tenant_id = uuid4()
+        created_by = uuid4()
+        request = CreatePolicyRequest(
+            name="active-policy",
+            description="Test active policy",
+            priority=500,
+        )
+
+        # Mock service to return ACTIVE policy
+        created_policy = Policy(
+            policy_id=uuid4(),
+            tenant_id=tenant_id,
+            name="active-policy",
+            description="Test active policy",
+            created_by=created_by,
+            status=PolicyStatus.ACTIVE,
+        )
+        policy_service.create_policy.return_value = created_policy
+
+        # Mock OPA integration
+        policy_compiler.compile_policy.return_value = "package chronoguard\nallow = true"
+        opa_client.update_policy.return_value = None
+
+        # Execute
+        result = await command_with_opa.execute(request, tenant_id, created_by)
+
+        # Verify policy was deployed to OPA
+        assert isinstance(result, PolicyDTO)
+        policy_compiler.compile_policy.assert_called_once()
+        opa_client.update_policy.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_create_draft_policy_not_deployed_to_opa(
+        self,
+        command_with_opa: CreatePolicyCommand,
+        policy_service: AsyncMock,
+        opa_client: AsyncMock,
+        policy_compiler: AsyncMock,
+    ) -> None:
+        """Test that draft policy is NOT deployed to OPA."""
+        tenant_id = uuid4()
+        created_by = uuid4()
+        request = CreatePolicyRequest(
+            name="draft-policy",
+            description="Test draft policy",
+        )
+
+        # Mock service to return DRAFT policy
+        created_policy = Policy(
+            policy_id=uuid4(),
+            tenant_id=tenant_id,
+            name="draft-policy",
+            description="Test draft policy",
+            created_by=created_by,
+            status=PolicyStatus.DRAFT,
+        )
+        policy_service.create_policy.return_value = created_policy
+
+        # Execute
+        result = await command_with_opa.execute(request, tenant_id, created_by)
+
+        # Verify policy was NOT deployed to OPA
+        assert isinstance(result, PolicyDTO)
+        policy_compiler.compile_policy.assert_not_called()
+        opa_client.update_policy.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_create_policy_opa_deployment_failure_does_not_fail_command(
+        self,
+        command_with_opa: CreatePolicyCommand,
+        policy_service: AsyncMock,
+        opa_client: AsyncMock,
+        policy_compiler: AsyncMock,
+    ) -> None:
+        """Test that OPA deployment errors are logged but don't fail the command."""
+        tenant_id = uuid4()
+        created_by = uuid4()
+        request = CreatePolicyRequest(
+            name="failing-opa-policy",
+            description="Test OPA failure handling",
+        )
+
+        # Mock service to return ACTIVE policy
+        created_policy = Policy(
+            policy_id=uuid4(),
+            tenant_id=tenant_id,
+            name="failing-opa-policy",
+            description="Test OPA failure handling",
+            created_by=created_by,
+            status=PolicyStatus.ACTIVE,
+        )
+        policy_service.create_policy.return_value = created_policy
+
+        # Mock OPA to fail
+        policy_compiler.compile_policy.return_value = "package chronoguard\nallow = true"
+        opa_client.update_policy.side_effect = Exception("OPA connection failed")
+
+        # Execute - should succeed despite OPA failure
+        result = await command_with_opa.execute(request, tenant_id, created_by)
+
+        # Verify policy was created successfully
+        assert isinstance(result, PolicyDTO)
+        assert result.name == "failing-opa-policy"
+        policy_compiler.compile_policy.assert_called_once()
+        opa_client.update_policy.assert_called_once()
+
 
 class TestUpdatePolicyCommand:
     """Test UpdatePolicyCommand handler."""
@@ -323,9 +464,30 @@ class TestUpdatePolicyCommand:
         return AsyncMock(spec=PolicyRepository)
 
     @pytest.fixture
+    def opa_client(self) -> AsyncMock:
+        """Mock OPA client."""
+        from infrastructure.opa.client import OPAClient
+
+        return AsyncMock(spec=OPAClient)
+
+    @pytest.fixture
+    def policy_compiler(self) -> AsyncMock:
+        """Mock policy compiler."""
+        from infrastructure.opa.policy_compiler import PolicyCompiler
+
+        return AsyncMock(spec=PolicyCompiler)
+
+    @pytest.fixture
     def command(self, policy_repository: AsyncMock) -> UpdatePolicyCommand:
-        """Create command instance."""
+        """Create command instance without OPA integration."""
         return UpdatePolicyCommand(policy_repository)
+
+    @pytest.fixture
+    def command_with_opa(
+        self, policy_repository: AsyncMock, opa_client: AsyncMock, policy_compiler: AsyncMock
+    ) -> UpdatePolicyCommand:
+        """Create command instance with OPA integration."""
+        return UpdatePolicyCommand(policy_repository, opa_client, policy_compiler)
 
     @pytest.mark.asyncio
     async def test_update_policy_name_and_priority(
@@ -382,6 +544,76 @@ class TestUpdatePolicyCommand:
         policy_repository.save.assert_not_called()
         assert result.name == "unchanged"
 
+    @pytest.mark.asyncio
+    async def test_update_active_policy_redeploys_to_opa(
+        self,
+        command_with_opa: UpdatePolicyCommand,
+        policy_repository: AsyncMock,
+        opa_client: AsyncMock,
+        policy_compiler: AsyncMock,
+    ) -> None:
+        """Test that updating active policy redeploys to OPA."""
+        policy_id = uuid4()
+        tenant_id = uuid4()
+        request = UpdatePolicyRequest(name="updated-name", priority=700)
+
+        # Mock repository to return ACTIVE policy
+        existing_policy = Policy(
+            policy_id=policy_id,
+            tenant_id=tenant_id,
+            name="old-name",
+            description="Test",
+            created_by=uuid4(),
+            priority=500,
+            status=PolicyStatus.ACTIVE,
+        )
+        policy_repository.find_by_id.return_value = existing_policy
+
+        # Mock OPA integration
+        policy_compiler.compile_policy.return_value = "package chronoguard\nallow = true"
+        opa_client.update_policy.return_value = None
+
+        # Execute
+        result = await command_with_opa.execute(policy_id, tenant_id, request)
+
+        # Verify policy was redeployed to OPA
+        assert isinstance(result, PolicyDTO)
+        assert result.name == "updated-name"
+        policy_compiler.compile_policy.assert_called_once()
+        opa_client.update_policy.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_update_draft_policy_not_redeployed_to_opa(
+        self,
+        command_with_opa: UpdatePolicyCommand,
+        policy_repository: AsyncMock,
+        opa_client: AsyncMock,
+        policy_compiler: AsyncMock,
+    ) -> None:
+        """Test that updating draft policy does NOT redeploy to OPA."""
+        policy_id = uuid4()
+        tenant_id = uuid4()
+        request = UpdatePolicyRequest(name="updated-name")
+
+        # Mock repository to return DRAFT policy
+        existing_policy = Policy(
+            policy_id=policy_id,
+            tenant_id=tenant_id,
+            name="old-name",
+            description="Test",
+            created_by=uuid4(),
+            status=PolicyStatus.DRAFT,
+        )
+        policy_repository.find_by_id.return_value = existing_policy
+
+        # Execute
+        result = await command_with_opa.execute(policy_id, tenant_id, request)
+
+        # Verify policy was NOT redeployed to OPA
+        assert isinstance(result, PolicyDTO)
+        policy_compiler.compile_policy.assert_not_called()
+        opa_client.update_policy.assert_not_called()
+
 
 class TestDeletePolicyCommand:
     """Test DeletePolicyCommand handler."""
@@ -394,9 +626,23 @@ class TestDeletePolicyCommand:
         return AsyncMock(spec=PolicyRepository)
 
     @pytest.fixture
+    def opa_client(self) -> AsyncMock:
+        """Mock OPA client."""
+        from infrastructure.opa.client import OPAClient
+
+        return AsyncMock(spec=OPAClient)
+
+    @pytest.fixture
     def command(self, policy_repository: AsyncMock) -> DeletePolicyCommand:
-        """Create command instance."""
+        """Create command instance without OPA integration."""
         return DeletePolicyCommand(policy_repository)
+
+    @pytest.fixture
+    def command_with_opa(
+        self, policy_repository: AsyncMock, opa_client: AsyncMock
+    ) -> DeletePolicyCommand:
+        """Create command instance with OPA integration."""
+        return DeletePolicyCommand(policy_repository, opa_client)
 
     @pytest.mark.asyncio
     async def test_delete_policy_success(
@@ -438,3 +684,69 @@ class TestDeletePolicyCommand:
         # Execute and verify error propagation
         with pytest.raises(EntityNotFoundError):
             await command.execute(policy_id, tenant_id)
+
+    @pytest.mark.asyncio
+    async def test_delete_policy_removes_from_opa(
+        self,
+        command_with_opa: DeletePolicyCommand,
+        policy_repository: AsyncMock,
+        opa_client: AsyncMock,
+    ) -> None:
+        """Test that deleting policy also removes it from OPA."""
+        policy_id = uuid4()
+        tenant_id = uuid4()
+
+        # Mock repository
+        existing_policy = Policy(
+            policy_id=policy_id,
+            tenant_id=tenant_id,
+            name="to-delete",
+            description="Test",
+            created_by=uuid4(),
+        )
+        policy_repository.find_by_id.return_value = existing_policy
+        policy_repository.delete.return_value = True
+
+        # Mock OPA
+        opa_client.delete_policy.return_value = None
+
+        # Execute
+        result = await command_with_opa.execute(policy_id, tenant_id)
+
+        # Verify policy was deleted from OPA
+        assert result is True
+        policy_repository.delete.assert_called_once_with(policy_id)
+        opa_client.delete_policy.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_delete_policy_opa_failure_does_not_fail_command(
+        self,
+        command_with_opa: DeletePolicyCommand,
+        policy_repository: AsyncMock,
+        opa_client: AsyncMock,
+    ) -> None:
+        """Test that OPA deletion errors are logged but don't fail the command."""
+        policy_id = uuid4()
+        tenant_id = uuid4()
+
+        # Mock repository
+        existing_policy = Policy(
+            policy_id=policy_id,
+            tenant_id=tenant_id,
+            name="to-delete",
+            description="Test",
+            created_by=uuid4(),
+        )
+        policy_repository.find_by_id.return_value = existing_policy
+        policy_repository.delete.return_value = True
+
+        # Mock OPA to fail
+        opa_client.delete_policy.side_effect = Exception("OPA connection failed")
+
+        # Execute - should succeed despite OPA failure
+        result = await command_with_opa.execute(policy_id, tenant_id)
+
+        # Verify policy was deleted from database
+        assert result is True
+        policy_repository.delete.assert_called_once_with(policy_id)
+        opa_client.delete_policy.assert_called_once()

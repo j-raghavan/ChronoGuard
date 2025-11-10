@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
+
 from application.queries.temporal_analytics import TemporalAnalyticsQuery, TemporalPattern
 from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
 from domain.audit.repository import AuditRepository

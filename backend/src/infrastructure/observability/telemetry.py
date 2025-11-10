@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from core.features import FeatureManager
 from opentelemetry import metrics, trace
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -19,6 +18,8 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
+from core.features import FeatureManager
 
 
 class ChronoGuardTelemetry:
@@ -148,10 +149,10 @@ class ChronoGuardTelemetry:
             return
 
         # Auto-instrument FastAPI
-        FastAPIInstrumentor.instrument()
+        FastAPIInstrumentor().instrument()
 
         # Auto-instrument SQLAlchemy
-        SQLAlchemyInstrumentor.instrument()
+        SQLAlchemyInstrumentor().instrument()
 
         # Auto-instrument Redis
         RedisInstrumentor().instrument()

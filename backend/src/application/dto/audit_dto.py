@@ -256,7 +256,7 @@ class AuditExportRequest(BaseModel):
     Used by API endpoints to configure audit log export parameters.
     """
 
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     start_time: datetime
     end_time: datetime
     format: str = Field(default="csv", pattern="^(csv|json)$")

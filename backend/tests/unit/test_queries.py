@@ -5,6 +5,13 @@ from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+from cryptography.x509.oid import NameOID
+
 from application.dto import (
     AgentDTO,
     AgentListResponse,
@@ -20,12 +27,6 @@ from application.queries import (
     ListAgentsQuery,
     ListPoliciesQuery,
 )
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from cryptography.x509.oid import NameOID
 from domain.agent.entity import Agent, AgentStatus
 from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
 from domain.common.value_objects import DomainName, X509Certificate
@@ -391,16 +392,19 @@ class TestGetAuditEntriesQuery:
             for _ in range(3)
         ]
         audit_repository.find_by_tenant_time_range.return_value = entries
-        audit_repository.count_entries_by_tenant.return_value = 10
+        audit_repository.count_entries_by_tenant.return_value = len(entries)
 
         # Execute query
         result = await query.execute(request)
 
-        # Verify
+        # Verify - count now respects time filters
         assert isinstance(result, AuditListResponse)
         assert len(result.entries) == 3
-        assert result.total_count == 10
-        assert result.has_more is True
+        assert result.total_count == len(entries)
+        assert result.has_more is False
+        audit_repository.count_entries_by_tenant.assert_awaited_once_with(
+            tenant_id, start_time=start_time, end_time=end_time
+        )
 
     @pytest.mark.asyncio
     async def test_get_audit_entries_invalid_page(
@@ -424,11 +428,52 @@ class TestGetAuditEntriesQuery:
 
         # Mock repository
         audit_repository.find_by_decision.return_value = []
-        audit_repository.count_entries_by_tenant.return_value = 0
+        audit_repository.count_entries_by_decision.return_value = 0
 
         # Execute query
         result = await query.execute(request)
 
-        # Verify
+        # Verify - decision counts use dedicated repository method
         assert isinstance(result, AuditListResponse)
-        audit_repository.find_by_decision.assert_called_once()
+        audit_repository.find_by_decision.assert_awaited_once()
+        audit_repository.count_entries_by_decision.assert_awaited_once()
+        assert audit_repository.count_entries_by_decision.await_args.kwargs == {
+            "tenant_id": tenant_id,
+            "decision": AccessDecision.DENY,
+            "start_time": None,
+            "end_time": None,
+        }
+
+    @pytest.mark.asyncio
+    async def test_get_audit_entries_agent_filter(
+        self, query: GetAuditEntriesQuery, audit_repository: AsyncMock
+    ) -> None:
+        """Ensure agent scoped queries use agent/time range count."""
+
+        tenant_id = uuid4()
+        agent_id = uuid4()
+        start_time = datetime.now(UTC) - timedelta(days=1)
+        end_time = datetime.now(UTC)
+
+        request = AuditQueryRequest(
+            tenant_id=tenant_id,
+            agent_id=agent_id,
+            start_time=start_time,
+            end_time=end_time,
+            page=1,
+            page_size=10,
+        )
+
+        audit_repository.find_by_agent_time_range.return_value = []
+        audit_repository.count_entries_by_agent_time_range.return_value = 0
+
+        result = await query.execute(request)
+
+        assert isinstance(result, AuditListResponse)
+        audit_repository.count_entries_by_agent_time_range.assert_awaited_once()
+        assert audit_repository.count_entries_by_agent_time_range.await_args.kwargs == {
+            "tenant_id": tenant_id,
+            "agent_id": agent_id,
+            "start_time": start_time,
+            "end_time": end_time,
+        }

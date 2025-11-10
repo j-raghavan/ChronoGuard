@@ -10,13 +10,14 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from core.config import SecuritySettings, get_settings
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import Certificate
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+
+from core.config import SecuritySettings, get_settings
 
 
 class SecurityError(Exception):

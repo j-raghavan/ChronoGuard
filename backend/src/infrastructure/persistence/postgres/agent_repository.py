@@ -8,14 +8,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from domain.agent.entity import Agent, AgentStatus
 from domain.agent.repository import AgentRepository
 from domain.common.exceptions import ConcurrencyError
 from domain.common.value_objects import X509Certificate
 from infrastructure.persistence.models import AgentModel
-from sqlalchemy import and_, delete, func, or_, select, update
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 class RepositoryError(Exception):
@@ -49,6 +50,12 @@ class PostgresAgentRepository(AgentRepository):
         self._session_factory = async_sessionmaker(
             self._engine, class_=AsyncSession, expire_on_commit=False
         )
+
+    @property
+    def session_factory(self) -> async_sessionmaker[AsyncSession]:
+        """Expose session factory for orchestration scripts."""
+
+        return self._session_factory
 
     async def find_by_id(self, agent_id: UUID) -> Agent | None:
         """Retrieve an agent by its unique identifier.

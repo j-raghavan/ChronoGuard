@@ -97,14 +97,9 @@ describe("API Method Coverage", () => {
       expect(contentType).toBe("application/json");
     });
 
-    it("should use X-Tenant-ID header", () => {
-      const header = "X-Tenant-ID";
-      expect(header).toBe("X-Tenant-ID");
-    });
-
-    it("should use X-User-ID header", () => {
-      const header = "X-User-ID";
-      expect(header).toBe("X-User-ID");
+    it("should enable credentialed requests", () => {
+      const withCredentials = true;
+      expect(withCredentials).toBe(true);
     });
 
     it("should handle blob response type for exports", () => {
@@ -123,20 +118,6 @@ describe("API Method Coverage", () => {
       const envUrl = import.meta.env.VITE_API_URL;
       const finalUrl = envUrl || "http://localhost:8000";
       expect(finalUrl).toBeTruthy();
-    });
-  });
-
-  describe("LocalStorage integration", () => {
-    it("should read tenantId from localStorage", () => {
-      const tenantId = localStorage.getItem("tenantId");
-      expect(tenantId).toBe("550e8400-e29b-41d4-a716-446655440000");
-    });
-
-    it("should read userId from localStorage", () => {
-      const userId = localStorage.getItem("userId");
-      // May be null, just verify it doesn't throw
-      const isStringOrNull = typeof userId === "string" || userId === null;
-      expect(isStringOrNull).toBe(true);
     });
   });
 

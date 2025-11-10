@@ -11,8 +11,9 @@ import asyncio
 from typing import Any
 
 import aiohttp
-from core.config import ProxySettings
 from loguru import logger
+
+from core.config import ProxySettings
 
 
 class OPAClientError(Exception):

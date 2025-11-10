@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+
 from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
 from domain.common.exceptions import ValidationError
 from domain.common.value_objects import DomainName, TimeRange

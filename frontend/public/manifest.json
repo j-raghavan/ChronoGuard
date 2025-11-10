@@ -1,0 +1,15 @@
+{
+  "name": "ChronoGuard",
+  "short_name": "ChronoGuard",
+  "description": "Time-Based Access Control System",
+  "icons": [
+    {
+      "src": "/chronoguard.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "theme_color": "#6366F1",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}

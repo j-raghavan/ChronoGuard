@@ -6,11 +6,23 @@ and Clean Architecture.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import UUID
 
+from loguru import logger
+
+from domain.audit.entity import AccessDecision
+from domain.audit.service import AccessRequest, AuditService
+from domain.policy.entity import PolicyStatus
 from domain.policy.service import PolicyService
+from infrastructure.opa.client import OPAClient
+from infrastructure.opa.policy_compiler import PolicyCompiler
 
 from ..dto import CreatePolicyRequest, PolicyDTO, PolicyMapper
+
+
+# System agent ID for policy operations
+SYSTEM_AGENT_ID = UUID("00000000-0000-0000-0000-000000000000")
 
 
 class CreatePolicyCommand:
@@ -20,13 +32,25 @@ class CreatePolicyCommand:
     the presentation layer (DTOs) and domain layer (entities and services).
     """
 
-    def __init__(self, policy_service: PolicyService) -> None:
+    def __init__(
+        self,
+        policy_service: PolicyService,
+        opa_client: OPAClient | None = None,
+        policy_compiler: PolicyCompiler | None = None,
+        audit_service: AuditService | None = None,
+    ) -> None:
         """Initialize create policy command.
 
         Args:
             policy_service: Domain service for policy operations
+            opa_client: Optional OPA client for policy deployment
+            policy_compiler: Optional policy compiler for Rego generation
+            audit_service: Optional audit service for side effects
         """
         self._policy_service = policy_service
+        self._opa_client = opa_client
+        self._policy_compiler = policy_compiler
+        self._audit_service = audit_service
 
     async def execute(
         self, request: CreatePolicyRequest, tenant_id: UUID, created_by: UUID
@@ -55,19 +79,75 @@ class CreatePolicyCommand:
             priority=request.priority,
         )
 
-        # Apply additional settings using domain entity methods
-        if request.allowed_domains:
-            created_policy = created_policy.model_copy(
-                update={"allowed_domains": set(request.allowed_domains)}
-            )
+        # Apply additional settings by directly setting the fields to avoid version increments
+        # We're still creating the policy, so we shouldn't increment version multiple times
+        created_policy.allowed_domains = set(request.allowed_domains)
+        created_policy.blocked_domains = set(request.blocked_domains)
 
-        if request.blocked_domains:
-            created_policy = created_policy.model_copy(
-                update={"blocked_domains": set(request.blocked_domains)}
-            )
-
+        # Update custom metadata dict directly
         if request.metadata:
-            created_policy = created_policy.model_copy(update={"metadata": request.metadata})
+            created_policy.metadata.update(request.metadata)
+
+        # Update metadata once at the end to set final timestamp and ensure version is 1
+        created_policy.updated_at = datetime.now(UTC)
+
+        # Save the new policy (version should still be 1)
+        await self._policy_service._policy_repository.save(created_policy)
+
+        # Deploy to OPA if policy is ACTIVE and OPA integration is available
+        if (
+            created_policy.status == PolicyStatus.ACTIVE
+            and self._opa_client
+            and self._policy_compiler
+        ):
+            try:
+                # Compile policy to Rego
+                rego_code = await self._policy_compiler.compile_policy(created_policy)
+
+                # Deploy to OPA
+                policy_name = f"policy_{created_policy.policy_id}"
+                await self._opa_client.update_policy(policy_name, rego_code)
+
+                logger.info(
+                    "Successfully deployed policy to OPA",
+                    policy_id=str(created_policy.policy_id),
+                    policy_name=created_policy.name,
+                )
+            except Exception as e:
+                # Log deployment error but don't fail the command
+                # Policy is still created in database
+                logger.error(
+                    "Failed to deploy policy to OPA",
+                    policy_id=str(created_policy.policy_id),
+                    policy_name=created_policy.name,
+                    error=str(e),
+                )
+
+        # Record audit entry as side effect
+        if self._audit_service:
+            try:
+                audit_request = AccessRequest(
+                    tenant_id=created_policy.tenant_id,
+                    agent_id=SYSTEM_AGENT_ID,
+                    domain="system",
+                    decision=AccessDecision.ALLOW,
+                    reason=f"Policy created: {created_policy.name}",
+                    request_method="SYSTEM",
+                    request_path="/policies/create",
+                    metadata={
+                        "operation": "create_policy",
+                        "policy_name": created_policy.name,
+                        "policy_status": created_policy.status.value,
+                    },
+                )
+                await self._audit_service.record_access(audit_request)
+            except Exception as e:
+                # Log warning but don't fail the command
+                logger.warning(
+                    "Failed to record audit entry for policy creation",
+                    policy_id=str(created_policy.policy_id),
+                    error=str(e),
+                )
 
         # Convert domain entity to DTO
         return PolicyMapper.to_dto(created_policy)

@@ -26,6 +26,7 @@ blocked_domains := {{ blocked_domains | tojson }}
 time_restrictions := {
     "enabled": true,
     "timezone": "{{ time_restrictions.timezone }}",
+    "timezone_offset_minutes": {{ time_restrictions.timezone_offset_minutes }},
     "allowed_days": {{ time_restrictions.allowed_days | tojson }},
     "time_ranges": {{ time_restrictions.time_ranges | tojson }}
 }
@@ -99,19 +100,11 @@ domain_allowed if {
 time_allowed if {
     time_restrictions.enabled
 
-    # Check day of week
-    time.weekday(time.now_ns()) in time_restrictions.allowed_days
+    local_weekday() in time_restrictions.allowed_days
 
-    # Check time ranges
-    current_hour := time.clock(time.now_ns())[0]
-    current_minute := time.clock(time.now_ns())[1]
-    current_time := (current_hour * 60) + current_minute
-
+    local_minute := local_minute_of_day()
     some range in time_restrictions.time_ranges
-    start_time := (range.start_hour * 60) + range.start_minute
-    end_time := (range.end_hour * 60) + range.end_minute
-    current_time >= start_time
-    current_time <= end_time
+    within_time_range(range, local_minute)
 }
 {% else %}
 time_allowed if {
@@ -119,19 +112,59 @@ time_allowed if {
 }
 {% endif %}
 
+local_weekday() := weekday if {
+    weekday := ((time.weekday(time.now_ns()) + 6) % 7)
+}
+
+local_minute_of_day() := minute if {
+    utc_clock := time.clock(time.now_ns())
+    utc_minutes := (utc_clock[0] * 60) + utc_clock[1]
+    offset := time_restrictions.timezone_offset_minutes
+    minute := (((utc_minutes + offset) % 1440) + 1440) % 1440
+}
+
+within_time_range(range, minute) if {
+    start_time := (range.start_hour * 60) + range.start_minute
+    end_time := (range.end_hour * 60) + range.end_minute
+    start_time <= end_time
+    minute >= start_time
+    minute <= end_time
+}
+
+within_time_range(range, minute) if {
+    start_time := (range.start_hour * 60) + range.start_minute
+    end_time := (range.end_hour * 60) + range.end_minute
+    start_time > end_time
+    minute >= start_time
+} {
+    minute <= end_time
+}
+
 # Rate limit logic (placeholder - actual implementation would query rate limit service)
 {% if rate_limits.enabled %}
 rate_limit_ok if {
     rate_limits.enabled
-    # In production, this would check against a rate limit service/cache
-    # For now, we allow if rate limits are configured
-    true
+    context := object.get(input, "rate_limit_context", null)
+    context != null
+    within_rate_limits(context)
 }
 {% else %}
 rate_limit_ok if {
     not rate_limits.enabled
 }
 {% endif %}
+
+within_rate_limits(context) if {
+    minute_count := object.get(context, "minute_count", 0)
+    hour_count := object.get(context, "hour_count", 0)
+    day_count := object.get(context, "day_count", 0)
+    burst_count := object.get(context, "burst_count", 0)
+
+    minute_count < rate_limits.requests_per_minute
+    hour_count < rate_limits.requests_per_hour
+    day_count < rate_limits.requests_per_day
+    burst_count < rate_limits.burst_limit
+}
 
 # Rules evaluation
 {% if rules %}

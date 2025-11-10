@@ -3,12 +3,17 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from core.container import configure_container
-from core.features import FeatureManager
-from core.logging import configure_logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
+
+from core.config import get_settings
+from core.container import configure_container
+from core.database import create_engine, initialize_database
+from core.features import FeatureManager
+from core.logging import configure_logging
 from infrastructure.observability.telemetry import initialize_telemetry
+from presentation.api.middleware.auth import AuthMiddleware
 
 
 @asynccontextmanager
@@ -30,6 +35,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         structured=True,
         environment=feature_manager.flags.environment,
     )
+
+    # Initialize database schema
+    engine = None
+    try:
+        logger.info("Initializing database schema...")
+        engine = create_engine()
+        await initialize_database(engine, create_tables=True, create_extensions=True)
+        logger.info("Database schema initialized successfully")
+    except Exception:
+        logger.opt(exception=True).error("Database initialization failed")
+        raise
+    finally:
+        if engine is not None:
+            await engine.dispose()
 
     # Initialize telemetry
     telemetry = initialize_telemetry(
@@ -72,19 +91,53 @@ def create_app() -> FastAPI:
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],  # Frontend URL
+        allow_origins=[
+            "http://localhost:3000",  # Frontend production
+            "http://localhost:5173",  # Frontend dev server (Vite)
+        ],
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
         allow_headers=["*"],
     )
 
+    # Configure Authentication Middleware
+    settings = get_settings()
+    app.add_middleware(
+        AuthMiddleware,
+        exempt_paths=[
+            "/health",
+            "/metrics",
+            "/api/v1/health",
+            "/api/v1/health/",
+            "/api/v1/health/ready",
+            "/api/v1/auth/login",
+            "/api/v1/auth/logout",
+            "/api/v1/internal",  # Internal routes use their own auth
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+        ],
+        enable_mtls=False,  # Can enable for production
+        enable_api_key=False,
+        security_settings=settings.security,
+    )
+
     # Include API routers
-    from presentation.api.routes import agents_router, audit_router, health_router, policies_router
+    from presentation.api.routes import (
+        agents_router,
+        audit_router,
+        auth_router,
+        health_router,
+        internal_router,
+        policies_router,
+    )
 
     app.include_router(health_router)
+    app.include_router(auth_router)
     app.include_router(agents_router)
     app.include_router(policies_router)
     app.include_router(audit_router)
+    app.include_router(internal_router)
 
     # Legacy health check endpoint (kept for backwards compatibility)
     @app.get("/health")

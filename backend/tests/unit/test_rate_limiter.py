@@ -6,6 +6,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from core.config import RedisSettings
 from infrastructure.persistence.redis.rate_limiter import (
     RateLimitAlgorithm,

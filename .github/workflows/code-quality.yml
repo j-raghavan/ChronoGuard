@@ -27,25 +27,15 @@ jobs:
           pip install poetry
           poetry install --no-root
 
-      - name: Run ruff linting
+      - name: Run ruff linting and import sorting
         run: |
-          echo "🔍 Running ruff linting..."
+          echo "🔍 Running ruff linting and import checks..."
           poetry run ruff check backend/src/ backend/tests/ --output-format=github
 
       - name: Run ruff formatting check
         run: |
-          echo "🎨 Checking code formatting..."
+          echo "🎨 Checking code formatting with ruff..."
           poetry run ruff format --check backend/src/ backend/tests/
-
-      - name: Run black formatting check
-        run: |
-          echo "🖤 Running black formatting check..."
-          poetry run black --check --diff backend/src/ backend/tests/
-
-      - name: Run isort import sorting check
-        run: |
-          echo "📦 Checking import sorting..."
-          poetry run isort --check-only --diff backend/src/ backend/tests/
 
       - name: Run mypy type checking
         run: |

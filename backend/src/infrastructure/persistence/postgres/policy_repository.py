@@ -8,6 +8,10 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import and_, delete, desc, func, or_, select, update
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from domain.common.exceptions import ConcurrencyError
 from domain.common.value_objects.time_range import TimeRange
 from domain.policy.entity import (
@@ -20,9 +24,6 @@ from domain.policy.entity import (
 )
 from domain.policy.repository import PolicyRepository
 from infrastructure.persistence.models import PolicyModel
-from sqlalchemy import and_, delete, desc, func, or_, select, update
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 class RepositoryError(Exception):
@@ -334,8 +335,10 @@ class PostgresPolicyRepository(PolicyRepository):
                 if existing:
                     if existing.version != policy.version - 1:
                         raise ConcurrencyError(
-                            f"Version conflict for policy {policy.policy_id}: "
-                            f"expected {existing.version}, got {policy.version - 1}"
+                            entity_type="Policy",
+                            entity_id=policy.policy_id,
+                            expected_version=existing.version,
+                            actual_version=policy.version - 1,
                         )
 
                     existing.tenant_id = policy.tenant_id

@@ -13,6 +13,7 @@ from uuid import UUID
 
 from loguru import logger
 
+
 if TYPE_CHECKING:
     from domain.agent.entity import Agent
 

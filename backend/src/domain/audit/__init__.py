@@ -18,6 +18,7 @@ from .hasher import AuditHashError, EnhancedAuditHasher
 from .repository import AuditRepository
 from .service import AccessRequest, AuditService
 
+
 __all__ = [
     # Entities and Value Objects
     "AuditEntry",

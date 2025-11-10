@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
+
 if TYPE_CHECKING:
     from fastapi import WebSocket
 

@@ -7,9 +7,10 @@ from datetime import datetime
 from typing import Any, TextIO
 from uuid import UUID
 
+from loguru import logger
+
 from domain.audit.entity import AuditEntry
 from domain.audit.repository import AuditRepository
-from loguru import logger
 
 
 class AuditExporter:

@@ -19,6 +19,7 @@ import pytest
 from celery import Task
 from celery.app.control import Inspect
 from celery.exceptions import Retry
+
 from core.celery_app import (
     LoggingTask,
     after_task_publish_handler,

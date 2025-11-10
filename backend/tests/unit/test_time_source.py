@@ -10,6 +10,7 @@ import time as time_module
 from datetime import UTC, datetime, timedelta
 
 import pytest
+
 from domain.common.time import (
     MockTimeSource,
     SystemTimeSource,

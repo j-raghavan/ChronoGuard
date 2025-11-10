@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
+
 from application.queries.audit_export import AuditExporter
 from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
 from domain.audit.repository import AuditRepository

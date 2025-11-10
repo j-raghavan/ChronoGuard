@@ -8,8 +8,9 @@ invalidation, and batch operations.
 from __future__ import annotations
 
 import redis.asyncio as redis
-from core.config import RedisSettings
 from loguru import logger
+
+from core.config import RedisSettings
 
 
 class CacheInvalidationStrategy:

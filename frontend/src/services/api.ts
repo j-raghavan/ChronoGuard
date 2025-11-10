@@ -19,6 +19,8 @@ import type {
   TemporalPatternDTO,
   MetricsSummaryResponse,
   HealthResponse,
+  LoginResponse,
+  SessionResponse,
 } from "@/types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -27,26 +29,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
     baseURL: API_BASE_URL,
+    withCredentials: true,
     headers: {
       "Content-Type": "application/json",
     },
   });
 
-  // Request interceptor to add tenant and user IDs
+  // Request interceptor to add authentication headers
   client.interceptors.request.use(
-    (config) => {
-      const tenantId = localStorage.getItem("tenantId");
-      const userId = localStorage.getItem("userId");
-
-      if (tenantId) {
-        config.headers["X-Tenant-ID"] = tenantId;
-      }
-      if (userId) {
-        config.headers["X-User-ID"] = userId;
-      }
-
-      return config;
-    },
+    (config) => config,
     (error) => Promise.reject(error),
   );
 
@@ -55,8 +46,9 @@ const createApiClient = (): AxiosInstance => {
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
-        // Handle unauthorized - could redirect to login
-        console.error("Unauthorized access");
+        // Handle unauthorized - clear auth and redirect to login
+        console.error("Unauthorized access - clearing authentication");
+        window.location.href = "/";
       }
       return Promise.reject(error);
     },
@@ -66,6 +58,16 @@ const createApiClient = (): AxiosInstance => {
 };
 
 const apiClient = createApiClient();
+
+// Auth Endpoints
+export const authApi = {
+  login: (password: string) =>
+    apiClient.post<LoginResponse>("/api/v1/auth/login", {
+      password,
+    }),
+  logout: () => apiClient.post<void>("/api/v1/auth/logout", {}),
+  session: () => apiClient.get<SessionResponse>("/api/v1/auth/session"),
+};
 
 // Health Endpoints
 export const healthApi = {
@@ -126,11 +128,9 @@ export const auditApi = {
     }),
 
   export: (format: "csv" | "json", startTime: string, endTime: string) => {
-    const tenantId = localStorage.getItem("tenantId");
     return apiClient.post(
       "/api/v1/audit/export",
       {
-        tenant_id: tenantId,
         start_time: startTime,
         end_time: endTime,
         format,

@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from core.config import RedisSettings
 from infrastructure.persistence.redis.cache_repository import (
     CacheInvalidationStrategy,

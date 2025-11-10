@@ -5,11 +5,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from loguru import logger
+from pydantic import BaseModel, Field
+
 from domain.audit.entity import AuditEntry
 from domain.audit.repository import AuditRepository
 from infrastructure.persistence.redis.cache_service import CacheService
-from loguru import logger
-from pydantic import BaseModel, Field
 
 
 class TemporalPattern(BaseModel):
@@ -128,8 +129,13 @@ class TemporalAnalyticsQuery:
         if not entries:
             return
 
+        # Business hours: 9 AM - 5 PM (Mon-Fri)
         off_hours_count = sum(
-            1 for entry in entries if not entry.timed_access_metadata.is_business_hours
+            1
+            for entry in entries
+            if entry.timestamp.hour < 9
+            or entry.timestamp.hour >= 17
+            or entry.timestamp.weekday() >= 5
         )
         pattern.off_hours_activity_percentage = (
             (off_hours_count / len(entries)) * 100 if entries else 0
@@ -142,7 +148,8 @@ class TemporalAnalyticsQuery:
         if not entries:
             return
 
-        weekend_count = sum(1 for entry in entries if entry.timed_access_metadata.is_weekend)
+        # Weekend: Saturday (5) and Sunday (6)
+        weekend_count = sum(1 for entry in entries if entry.timestamp.weekday() >= 5)
         pattern.weekend_activity_percentage = (weekend_count / len(entries)) * 100 if entries else 0
 
     def _detect_anomalies(self, entries: list[AuditEntry], pattern: TemporalPattern) -> None:

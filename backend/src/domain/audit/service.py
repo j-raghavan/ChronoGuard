@@ -4,21 +4,21 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
+from loguru import logger
+from opentelemetry import trace
+
 from domain.audit.entity import (
     AccessDecision,
     AuditEntry,
     ChainVerificationResult,
     TimedAccessContext,
 )
+from domain.audit.interfaces import Signer
 from domain.audit.repository import AuditRepository
 from domain.common.exceptions import BusinessRuleViolationError, ValidationError
 from domain.common.time import SystemTimeSource, TimeSource
 from domain.common.value_objects import DomainName
-from infrastructure.observability.telemetry import get_metrics
-from infrastructure.opa.client import OPAClient
-from infrastructure.security.signer import Signer
-from loguru import logger
-from opentelemetry import trace
+
 
 tracer = trace.get_tracer(__name__)
 
@@ -95,7 +95,6 @@ class AuditService:
         secret_key: bytes | None = None,
         time_source: TimeSource | None = None,
         signer: Signer | None = None,
-        opa_client: OPAClient | None = None,
     ) -> None:
         """Initialize audit service.
 
@@ -104,22 +103,19 @@ class AuditService:
             secret_key: Optional secret key for hash chaining
             time_source: Pluggable time source (defaults to SystemTimeSource)
             signer: Cryptographic signer for audit entries (optional)
-            opa_client: OPA client for policy-based audit filtering (optional)
         """
         self._repository = audit_repository
         self._secret_key = secret_key
         self._time_source = time_source or SystemTimeSource()
         self._signer = signer
-        self._opa_client = opa_client
 
         logger.info(
             f"AuditService initialized with time_source={type(self._time_source).__name__}, "
-            f"signer={'enabled' if signer else 'disabled'}, "
-            f"opa_client={'enabled' if opa_client else 'disabled'}"
+            f"signer={'enabled' if signer else 'disabled'}"
         )
 
     async def record_access(self, request: AccessRequest) -> AuditEntry:
-        """Record an access attempt with hash chaining, signing, and policy checks.
+        """Record an access attempt with hash chaining and signing.
 
         Args:
             request: Access request to record
@@ -146,22 +142,6 @@ class AuditService:
             try:
                 # Validate request data
                 self._validate_access_request(request)
-
-                # OPA policy check: should this audit entry be recorded?
-                if self._opa_client:
-                    should_log = await self._check_audit_policy(request)
-                    if not should_log:
-                        logger.debug(
-                            f"Audit entry filtered by policy: tenant={request.tenant_id}, "
-                            f"domain={request.domain}"
-                        )
-                        # Return a minimal entry indicating it was filtered
-                        # (or could raise an exception or return None depending on requirements)
-                        span.set_attribute("audit.filtered", True)
-                        # For now, we'll continue logging but mark it
-                        request.metadata["policy_filtered"] = "false"
-                    else:
-                        request.metadata["policy_filtered"] = "true"
 
                 # Get previous entry for hash chaining
                 previous_entry = await self._repository.get_latest_entry_for_agent(
@@ -217,16 +197,10 @@ class AuditService:
                 # Save entry
                 await self._repository.save(entry_with_signature)
 
-                # Record metrics using time source
+                # Calculate duration using time source
                 end_time = self._time_source.now_ns()
                 duration_ns = end_time - start_time
                 duration_seconds = duration_ns / 1_000_000_000.0
-
-                metrics = get_metrics()
-                if metrics:
-                    metrics.audit_entries_total.add(
-                        1, {"tenant_id": str(request.tenant_id), "decision": request.decision.value}
-                    )
 
                 # Add span attributes
                 span.set_attribute("entry.id", str(entry_with_signature.entry_id))
@@ -672,45 +646,6 @@ class AuditService:
             "sequence_number": str(entry.sequence_number),
             "risk_score": str(entry.get_risk_score()),
         }
-
-    async def _check_audit_policy(self, request: AccessRequest) -> bool:
-        """Check OPA policy to determine if audit entry should be recorded.
-
-        Args:
-            request: Access request to check
-
-        Returns:
-            True if entry should be logged, False otherwise
-        """
-        if not self._opa_client:
-            return True
-
-        try:
-            # Build OPA policy input
-            policy_input = {
-                "audit": {
-                    "tenant_id": str(request.tenant_id),
-                    "agent_id": str(request.agent_id),
-                    "domain": request.domain,
-                    "decision": request.decision.value,
-                    "request_method": request.request_method,
-                    "request_path": request.request_path,
-                    "source_ip": request.source_ip,
-                }
-            }
-
-            # Query OPA for audit decision
-            result = await self._opa_client.check_policy(
-                policy_input, policy_path="chronoguard/audit/should_log"
-            )
-
-            logger.debug(f"OPA audit policy result: {result} for domain={request.domain}")
-            return bool(result)
-
-        except Exception as e:
-            # If OPA check fails, default to logging (fail-open for audit)
-            logger.warning(f"OPA audit policy check failed, defaulting to log: {e}")
-            return True
 
     async def _sign_entry(self, entry: AuditEntry) -> AuditEntry:
         """Sign audit entry with Signer.

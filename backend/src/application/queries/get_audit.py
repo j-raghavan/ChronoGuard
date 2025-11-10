@@ -124,6 +124,34 @@ class GetAuditEntriesQuery:
         Returns:
             Total count of entries matching filters
         """
+        # Time-based counts (most common)
+        if request.start_time and request.end_time:
+            if request.agent_id and request.tenant_id:
+                return await self._repository.count_entries_by_agent_time_range(
+                    tenant_id=request.tenant_id,
+                    agent_id=request.agent_id,
+                    start_time=request.start_time,
+                    end_time=request.end_time,
+                )
+
+            if request.tenant_id:
+                return await self._repository.count_entries_by_tenant(
+                    request.tenant_id,
+                    start_time=request.start_time,
+                    end_time=request.end_time,
+                )
+
+        # Decision-based counts (supports optional time filters)
+        if request.decision and request.tenant_id:
+            decision = AccessDecision(request.decision)
+            return await self._repository.count_entries_by_decision(
+                tenant_id=request.tenant_id,
+                decision=decision,
+                start_time=request.start_time,
+                end_time=request.end_time,
+            )
+
+        # Fallback to tenant-wide total when no filters supplied
         if request.tenant_id:
             return await self._repository.count_entries_by_tenant(request.tenant_id)
 

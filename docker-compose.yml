@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # 1. Envoy Forward Proxy
+  chronoguard-proxy:
+    image: envoyproxy/envoy:v1.28-latest
+    container_name: chronoguard-proxy
+    restart: unless-stopped
+    ports:
+      - "8080:8080"  # Forward proxy (agents connect here)
+      - "9901:9901"  # Admin interface
+    volumes:
+      - ./configs/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./docker/proxy/certs:/etc/envoy/certs:ro
+    depends_on:
+      chronoguard-policy-engine:
+        condition: service_healthy
+    networks:
+      - chronoguard
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9901/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 2. OPA Policy Engine
+  chronoguard-policy-engine:
+    image: openpolicyagent/opa:latest-envoy
+    container_name: chronoguard-policy-engine
+    restart: unless-stopped
+    ports:
+      - "8181:8181"  # HTTP API
+      - "9192:9192"  # gRPC ext_authz
+    environment:
+      - CHRONOGUARD_API_URL=http://chronoguard-api:8000
+      - CHRONOGUARD_API_SECRET=${CHRONOGUARD_INTERNAL_SECRET}
+    volumes:
+      - ./configs/opa:/config:ro
+    command:
+      - run
+      - --server
+      - --addr=0.0.0.0:8181
+      - --set=plugins.envoy_ext_authz_grpc.addr=:9192
+      - --config-file=/config/config.yaml
+      - /config/policies
+    networks:
+      - chronoguard
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8181/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 3. ChronoGuard API (FastAPI)
+  chronoguard-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chronoguard-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://chronoguard:${DB_PASSWORD:-chronoguard}@postgres:5432/chronoguard
+      - REDIS_URL=redis://redis:6379/0
+      - OPA_URL=http://chronoguard-policy-engine:8181
+      - CHRONOGUARD_INTERNAL_SECRET=${CHRONOGUARD_INTERNAL_SECRET:-change-me-in-production}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - chronoguard
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # 4. Dashboard (Vite/React)
+  chronoguard-dashboard:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: chronoguard-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:80"  # Nginx serves on port 80 internally
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    networks:
+      - chronoguard
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # 5. PostgreSQL + TimescaleDB
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: chronoguard-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=chronoguard
+      - POSTGRES_USER=chronoguard
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-chronoguard}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - chronoguard
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chronoguard -d chronoguard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 6. Redis
+  redis:
+    image: redis:7.2-alpine
+    container_name: chronoguard-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - chronoguard
+
+networks:
+  chronoguard:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local

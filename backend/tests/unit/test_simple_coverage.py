@@ -1,6 +1,7 @@
 """Simple coverage tests to boost test coverage without complex certificates."""
 
 import pytest
+
 from core.container import DependencyContainer
 from core.features import FeatureCategory, FeatureFlag, FeatureManager
 from domain.common.exceptions import (

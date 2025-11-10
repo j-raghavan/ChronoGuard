@@ -9,6 +9,8 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+
 from application.dto import (
     AuditExportRequest,
     AuditListResponse,
@@ -18,13 +20,13 @@ from application.dto import (
 from application.queries import GetAuditEntriesQuery
 from application.queries.audit_export import AuditExporter
 from application.queries.temporal_analytics import TemporalAnalyticsQuery
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from presentation.api.dependencies import (
     get_audit_entries_query,
     get_audit_exporter,
     get_temporal_analytics_query,
     get_tenant_id,
 )
+
 
 router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 
@@ -82,19 +84,32 @@ async def get_temporal_analytics(
 async def query_audit_entries(
     request: AuditQueryRequest,
     query: Annotated[GetAuditEntriesQuery, Depends(get_audit_entries_query)],
+    tenant_id: Annotated[UUID, Depends(get_tenant_id)],
 ) -> AuditListResponse:
     """Query audit log entries with filtering and pagination.
 
     Args:
         request: Query request with filters
         query: Audit entries query handler
+        tenant_id: Authenticated tenant ID from X-Tenant-ID header
 
     Returns:
         Paginated list of audit entries
 
     Raises:
-        HTTPException: 400 if query parameters are invalid, 500 if query fails
+        HTTPException: 400 if query parameters are invalid, 403 if tenant mismatch,
+            500 if query fails
     """
+    # Default tenant_id to authenticated tenant if not provided (backward compatibility)
+    if request.tenant_id is None:
+        request.tenant_id = tenant_id
+    # Validate tenant_id in request body matches authenticated tenant
+    elif request.tenant_id != tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Tenant ID mismatch: cannot query audit logs for tenant {request.tenant_id}",
+        )
+
     try:
         return await query.execute(request)
     except ValueError as e:
@@ -113,19 +128,31 @@ async def query_audit_entries(
 async def export_audit_entries(
     request: AuditExportRequest,
     exporter: Annotated[AuditExporter, Depends(get_audit_exporter)],
+    tenant_id: Annotated[UUID, Depends(get_tenant_id)],
 ) -> Response:
     """Export audit log entries to CSV or JSON format.
 
     Args:
         request: Export request with time range and format
         exporter: Audit exporter instance
+        tenant_id: Authenticated tenant ID from X-Tenant-ID header
 
     Returns:
         Exported data in requested format
 
     Raises:
-        HTTPException: 400 if request is invalid, 500 if export fails
+        HTTPException: 400 if request is invalid, 403 if tenant mismatch, 500 if export fails
     """
+    # Default tenant_id to authenticated tenant if not provided (backward compatibility)
+    if request.tenant_id is None:
+        request.tenant_id = tenant_id
+    # Validate tenant_id in request body matches authenticated tenant
+    elif request.tenant_id != tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Tenant ID mismatch: cannot export audit logs for tenant {request.tenant_id}",
+        )
+
     try:
         if request.format == "csv":
             content = await exporter.export_to_csv(

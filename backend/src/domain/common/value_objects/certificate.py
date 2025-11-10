@@ -6,8 +6,9 @@ from datetime import UTC, datetime
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from domain.common.exceptions import SecurityViolationError, ValidationError
 from pydantic import BaseModel, field_validator
+
+from domain.common.exceptions import SecurityViolationError, ValidationError
 
 
 class X509Certificate(BaseModel):

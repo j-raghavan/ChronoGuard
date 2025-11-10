@@ -9,13 +9,17 @@ from __future__ import annotations
 
 import hashlib
 import time
+import zoneinfo
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
-from domain.policy.exceptions import PolicyCompilationError
 from jinja2 import Environment, FileSystemLoader
 from loguru import logger
+
+from domain.policy.exceptions import PolicyCompilationError
+
 
 if TYPE_CHECKING:
     from domain.policy.entity import Policy, RateLimit, TimeRestriction
@@ -295,10 +299,13 @@ class PolicyCompiler:
         if not restrictions or not restrictions.enabled:
             return {"enabled": False}
 
+        offset_minutes = self._calculate_timezone_offset(restrictions.timezone)
+
         return {
             "enabled": True,
             "timezone": restrictions.timezone,
             "allowed_days": sorted(restrictions.allowed_days_of_week),
+            "timezone_offset_minutes": offset_minutes,
             "time_ranges": [
                 {
                     "start_hour": tr.start_hour,
@@ -363,6 +370,18 @@ class PolicyCompiler:
             )
 
         return sorted(formatted_rules, key=lambda r: r["priority"])
+
+    def _calculate_timezone_offset(self, timezone_name: str) -> int:
+        """Convert timezone to UTC offset in minutes."""
+
+        try:
+            tz = zoneinfo.ZoneInfo(timezone_name)
+        except Exception:
+            return 0
+
+        now_utc = datetime.now(UTC)
+        offset = now_utc.astimezone(tz).utcoffset() or timedelta()
+        return int(offset.total_seconds() // 60)
 
     def _sanitize_name(self, name: str) -> str:
         """Sanitize policy name for use in Rego identifiers.

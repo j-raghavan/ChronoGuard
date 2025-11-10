@@ -80,12 +80,14 @@ def configure_logging(
 
     if structured:
         # JSON logging for production (no backtrace/diagnose for security)
+        # Use simple format string instead of custom serializer to avoid format errors
         logger.add(
             sys.stdout,
-            format=serialize_log,
+            format="{message}",
             level=level,
             backtrace=enable_debug_info,
             diagnose=enable_debug_info,
+            serialize=True,
         )
     else:
         # Human-readable logging for development
@@ -108,13 +110,14 @@ def configure_logging(
     if log_file:
         logger.add(
             log_file,
-            format=serialize_log if structured else None,
+            format="{message}" if structured else None,
             level=level,
             rotation="100 MB",
             retention="30 days",
             compression="gz",
             backtrace=enable_debug_info,
             diagnose=enable_debug_info,
+            serialize=structured,
         )
 
     # Configure specific loggers

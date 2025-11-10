@@ -13,6 +13,15 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
+from fastapi import FastAPI, Request
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.testclient import TestClient
+
 from core.config import SecuritySettings
 from core.security import (
     CertificateValidationError,
@@ -20,15 +29,7 @@ from core.security import (
     create_access_token,
     extract_certificate_info,
 )
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.x509.oid import NameOID
-from fastapi import FastAPI, Request
 from presentation.api.middleware.auth import AuthenticationError, AuthMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.testclient import TestClient
 
 
 def create_test_certificate() -> x509.Certificate:
@@ -218,10 +219,11 @@ class TestAuthenticateJWT:
 
         request = Mock(spec=Request)
         request.headers = {}
+        request.cookies = {}
 
         import asyncio
 
-        with pytest.raises(AuthenticationError, match="Missing Authorization header"):
+        with pytest.raises(AuthenticationError, match="Missing authentication credentials"):
             asyncio.run(middleware._authenticate_jwt(request))
 
     def test_authenticate_jwt_invalid_format(self) -> None:
@@ -231,10 +233,11 @@ class TestAuthenticateJWT:
 
         request = Mock(spec=Request)
         request.headers = {"Authorization": "InvalidFormat token123"}
+        request.cookies = {}
 
         import asyncio
 
-        with pytest.raises(AuthenticationError, match="Invalid Authorization header format"):
+        with pytest.raises(AuthenticationError, match="Missing authentication credentials"):
             asyncio.run(middleware._authenticate_jwt(request))
 
     def test_authenticate_jwt_invalid_token(self) -> None:
@@ -593,7 +596,7 @@ class TestDispatch:
         assert response.json()["auth"] == "jwt"
 
     def test_dispatch_preflight_options_exempt(self) -> None:
-        """Test that OPTIONS requests for CORS are handled."""
+        """Test that OPTIONS requests for CORS preflight are always allowed."""
         app = FastAPI()
 
         @app.get("/api/test")
@@ -603,10 +606,12 @@ class TestDispatch:
         app.add_middleware(AuthMiddleware)
 
         client = TestClient(app)
-        # OPTIONS to non-exempt path should still require auth
+        # OPTIONS requests bypass auth (CORS preflight never has auth headers)
         response = client.options("/api/test")
 
-        assert response.status_code == 401
+        # FastAPI returns 405 because endpoint doesn't define OPTIONS handler
+        # The important thing is it's NOT 401 (auth was bypassed)
+        assert response.status_code == 405
 
     def test_dispatch_mtls_success_flow(self) -> None:
         """Test dispatch with successful mTLS authentication."""
@@ -659,10 +664,11 @@ class TestEdgeCases:
 
         request = Mock(spec=Request)
         request.headers = {"Authorization": ""}
+        request.cookies = {}
 
         import asyncio
 
-        with pytest.raises(AuthenticationError, match="Missing Authorization header"):
+        with pytest.raises(AuthenticationError, match="Missing authentication credentials"):
             asyncio.run(middleware._authenticate_jwt(request))
 
     def test_bearer_without_token(self) -> None:
@@ -672,11 +678,12 @@ class TestEdgeCases:
 
         request = Mock(spec=Request)
         request.headers = {"Authorization": "Bearer "}
+        request.cookies = {}
         request.state = Mock()
 
         import asyncio
 
-        with pytest.raises(AuthenticationError, match="Invalid JWT token"):
+        with pytest.raises(AuthenticationError, match="Missing authentication credentials"):
             asyncio.run(middleware._authenticate_jwt(request))
 
     def test_multiple_exempt_path_prefixes(self) -> None:

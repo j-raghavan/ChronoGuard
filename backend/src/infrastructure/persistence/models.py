@@ -4,13 +4,14 @@ This module defines database models with TimescaleDB support for time-series opt
 These models are tested via integration tests with real PostgreSQL/TimescaleDB.
 """
 
-from domain.agent.entity import AgentStatus
-from domain.audit.entity import AccessDecision
-from domain.policy.entity import PolicyStatus
 from sqlalchemy import BigInteger, Column, DateTime, Enum, Float, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase
+
+from domain.agent.entity import AgentStatus
+from domain.audit.entity import AccessDecision
+from domain.policy.entity import PolicyStatus
 
 
 class Base(DeclarativeBase):
@@ -96,7 +97,7 @@ class AuditEntryModel(Base):
     entry_id = Column(PG_UUID(as_uuid=True), primary_key=True)
     tenant_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
     agent_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
-    timestamp = Column(DateTime, nullable=False, index=True)
+    timestamp = Column(DateTime(timezone=True), nullable=False, primary_key=True)
     timestamp_nanos = Column(BigInteger, nullable=False)
     domain = Column(String(500), nullable=False)
     decision: Column[AccessDecision] = Column(Enum(AccessDecision), nullable=False, index=True)

@@ -14,8 +14,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from core.logging import StructuredLogger
 from loguru import logger
+
+from core.logging import StructuredLogger
 
 
 class DecisionMetadata:

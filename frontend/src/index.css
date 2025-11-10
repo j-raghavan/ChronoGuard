@@ -1,68 +1,215 @@
+/* ChronoGuard Light Dashboard - Webflow Inspired */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  /* Brand Colors from Logo */
+  --brand-indigo: #6366f1;
+  --brand-purple: #8b5cf6;
+  --brand-cyan: #22d3ee;
+  --brand-sky: #38bdf8;
+  --brand-indigo-dark: #4338ca;
+  --brand-cyan-dark: #0e7490;
+
+  /* Light Dashboard Color Palette - Matches Webflow design exactly */
+  --background: 0 0% 96%; /* #F5F5F5 - Light gray background */
+  --foreground: 0 0% 15%; /* #262626 - Darker text for better contrast */
+  --card: 0 0% 100%; /* Pure white cards */
+  --card-foreground: 0 0% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 15%;
+
+  /* Primary - Clean cyan from Light Dashboard */
+  --primary: 191 89% 61%; /* #42CDF8 - Light Dashboard cyan */
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary - Cyan from logo */
+  --secondary: 191 97% 55%; /* #22D3EE */
+  --secondary-foreground: 0 0% 100%;
+
+  /* Accent - Very light gray for hover states */
+  --accent: 0 0% 98%; /* #FAFAFA - Lighter for subtle hover */
+  --accent-foreground: 0 0% 15%;
+
+  /* Success, Warning, Danger */
+  --success: 142 76% 36%; /* Green */
+  --warning: 38 92% 50%; /* Orange */
+  --danger: 0 84% 60%; /* Red */
+
+  /* Muted colors for subtle UI elements */
+  --muted: 0 0% 98%; /* #FAFAFA - Lighter for table headers */
+  --muted-foreground: 0 0% 45%; /* #737373 - Better contrast gray text */
+
+  /* Borders and inputs */
+  --border: 0 0% 90%; /* #E5E5E5 - Subtle borders */
+  --input: 0 0% 98%; /* #FAFAFA */
+  --ring: 191 89% 61%;
+
+  /* Shadows - More subtle like Webflow */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --shadow-md:
+    0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+
+  /* Spacing */
+  --radius: 12px; /* Larger radius for modern look */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  line-height: 1.6;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  color: hsl(var(--foreground));
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+#root {
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Typography - Cleaner, more refined */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 1.3;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.02em;
 }
 
+h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+p {
+  line-height: 1.75;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Links */
+a {
+  font-weight: 500;
+  color: hsl(var(--primary));
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: hsl(var(--secondary));
+}
+
+/* Buttons */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+  border-radius: var(--radius);
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar - More subtle */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Utility classes for shadows */
+.shadow-card {
+  box-shadow: var(--shadow);
+}
+
+.shadow-card-hover {
+  transition: box-shadow 0.2s ease;
+}
+
+.shadow-card-hover:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Table styles */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Input styles */
+input {
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+input::placeholder {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.6;
 }

@@ -6,6 +6,9 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from sqlalchemy.pool import Pool
+
 from core.config import DatabaseSettings
 from core.database import (
     DatabaseConnectionError,
@@ -22,8 +25,6 @@ from core.database import (
     get_session_factory,
     initialize_database,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
-from sqlalchemy.pool import Pool
 
 
 class TestDatabaseExceptions:

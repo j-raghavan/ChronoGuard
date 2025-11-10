@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from loguru import logger
+
 from domain.agent.repository import AgentRepository
+from domain.audit.entity import AccessDecision
+from domain.audit.service import AccessRequest, AuditService
 from domain.common.exceptions import EntityNotFoundError
 from domain.common.value_objects import X509Certificate
 
@@ -22,13 +26,17 @@ class UpdateAgentCommand:
     where only provided fields are modified.
     """
 
-    def __init__(self, agent_repository: AgentRepository) -> None:
+    def __init__(
+        self, agent_repository: AgentRepository, audit_service: AuditService | None = None
+    ) -> None:
         """Initialize update agent command.
 
         Args:
             agent_repository: Repository for agent persistence
+            audit_service: Optional audit service for side effects
         """
         self._repository = agent_repository
+        self._audit_service = audit_service
 
     async def execute(
         self, agent_id: UUID, tenant_id: UUID, request: UpdateAgentRequest
@@ -71,6 +79,34 @@ class UpdateAgentCommand:
             await self._repository.save(updated_agent)
         else:
             updated_agent = agent
+
+        # Record audit entry as side effect
+        if self._audit_service:
+            try:
+                # Collect changes for metadata
+                changes = list(update_data.keys()) if update_data else []
+                audit_request = AccessRequest(
+                    tenant_id=updated_agent.tenant_id,
+                    agent_id=updated_agent.agent_id,
+                    domain="system",
+                    decision=AccessDecision.ALLOW,
+                    reason=f"Agent updated: {updated_agent.name}",
+                    request_method="SYSTEM",
+                    request_path="/agents/update",
+                    metadata={
+                        "operation": "update_agent",
+                        "agent_name": updated_agent.name,
+                        "changes": ",".join(changes),
+                    },
+                )
+                await self._audit_service.record_access(audit_request)
+            except Exception as e:
+                # Log warning but don't fail the command
+                logger.warning(
+                    "Failed to record audit entry for agent update",
+                    agent_id=str(updated_agent.agent_id),
+                    error=str(e),
+                )
 
         # Convert to DTO
         return AgentMapper.to_dto(updated_agent)

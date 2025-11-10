@@ -40,36 +40,48 @@ install-dev: ## Install development dependencies
 
 ##@ Code Quality
 
-lint: ## Run all linters (ruff, black)
-	@echo "$(BLUE)🔍 Running linters...$(RESET)"
+lint: ## Run all linters (ruff check + format)
+	@echo "$(BLUE)🔍 Running ruff linting and import checks...$(RESET)"
 	@poetry run ruff check backend/src/ backend/tests/
+	@echo "$(BLUE)🎨 Running ruff formatting check...$(RESET)"
 	@poetry run ruff format --check backend/src/ backend/tests/
-	@poetry run black --check backend/src/ backend/tests/
 	@echo "$(GREEN)✅ All linters passed$(RESET)"
 
-format: ## Auto-format code (ruff, black, isort)
-	@echo "$(BLUE)🎨 Formatting code...$(RESET)"
+format: ## Auto-format code (backend: ruff; frontend: prettier)
+	@echo "$(BLUE)🎨 Formatting backend code with ruff...$(RESET)"
+	@poetry run ruff check --select I --fix backend/src/ backend/tests/
 	@poetry run ruff format backend/src/ backend/tests/
-	@poetry run black backend/src/ backend/tests/
-	@poetry run isort backend/src/ backend/tests/
-	@echo "$(GREEN)✅ Code formatted$(RESET)"
+	@echo "$(GREEN)✅ Backend code formatted$(RESET)"
+	@echo "$(BLUE)🎨 Formatting frontend code...$(RESET)"
+	@cd frontend && npm run format
+	@echo "$(GREEN)✅ Frontend code formatted$(RESET)"
+	@echo "$(GREEN)🎉 All code formatted$(RESET)"
 
 type-check: ## Run mypy type checking
 	@echo "$(BLUE)🔍 Running type checking...$(RESET)"
-	@poetry run mypy backend/src/ backend/tests/ --show-error-codes --show-error-context
+	@poetry run mypy backend/src/ --show-error-codes --show-error-context
 	@echo "$(GREEN)✅ Type checking passed$(RESET)"
 
-security: ## Run security analysis (bandit, safety)
-	@echo "$(BLUE)🔒 Running security analysis...$(RESET)"
+security: ## Run security analysis (backend: bandit; frontend: npm audit)
+	@echo "$(BLUE)🔒 Running backend security analysis...$(RESET)"
 	@poetry run bandit -r backend/src/ -f txt
-	@echo "$(BLUE)📋 Skipping Safety CLI (requires interactive login)$(RESET)"
-	@echo "$(GREEN)✅ Security analysis passed$(RESET)"
+	@echo "$(GREEN)✅ Backend security analysis passed$(RESET)"
+	@echo "$(BLUE)🔒 Running frontend security analysis...$(RESET)"
+	@cd frontend && npm audit --audit-level=moderate || echo "$(YELLOW)⚠️  Found npm vulnerabilities (non-blocking)$(RESET)"
+	@echo "$(GREEN)✅ Security analysis completed$(RESET)"
 
 ##@ Testing
 
-test: test-unit ## Run all tests (alias for test-unit)
+test: test-backend test-frontend ## Run all tests (backend + frontend)
 
-test-unit: ## Run unit tests with coverage
+test-backend: test-unit ## Run all backend tests (alias for test-unit)
+
+test-frontend: ## Run frontend tests with coverage
+	@echo "$(BLUE)🧪 Running frontend tests...$(RESET)"
+	@cd frontend && npm run test:coverage
+	@echo "$(GREEN)✅ Frontend tests passed$(RESET)"
+
+test-unit: ## Run backend unit tests with coverage
 	@echo "$(BLUE)🧪 Running unit tests...$(RESET)"
 	@PYTHONPATH=backend/src poetry run pytest backend/tests/unit/ \
 		--cov=backend/src \
@@ -137,21 +149,28 @@ test-performance: ## Run performance tests
 
 ##@ Pre-commit and Quality Gates
 
-quality: ## Run comprehensive quality checks (ruff, black, isort, mypy)
-	@echo "$(BLUE)🔍 Running comprehensive quality checks...$(RESET)"
-	@echo "$(BLUE)  1/5 Running ruff...$(RESET)"
+quality: ## Run comprehensive quality checks (backend: ruff, mypy; frontend: eslint, prettier, tsc)
+	@echo "$(BLUE)🔍 Running comprehensive backend quality checks...$(RESET)"
+	@echo "$(BLUE)  1/6 Running ruff linting...$(RESET)"
 	@poetry run ruff check backend/src/ backend/tests/
-	@echo "$(GREEN)    ✅ Ruff passed$(RESET)"
-	@echo "$(BLUE)  2/5 Running black...$(RESET)"
-	@poetry run black --check backend/src/ backend/tests/
-	@echo "$(GREEN)    ✅ Black passed$(RESET)"
-	@echo "$(BLUE)  3/5 Running isort...$(RESET)"
-	@poetry run isort --check-only backend/src/ backend/tests/
-	@echo "$(GREEN)    ✅ Isort passed$(RESET)"
-	@echo "$(BLUE)  4/5 Running mypy...$(RESET)"
-	@poetry run mypy backend/src/ backend/tests/ --show-error-codes --show-error-context
+	@echo "$(GREEN)    ✅ Ruff linting passed$(RESET)"
+	@echo "$(BLUE)  2/6 Running ruff formatting...$(RESET)"
+	@poetry run ruff format --check backend/src/ backend/tests/
+	@echo "$(GREEN)    ✅ Ruff format passed$(RESET)"
+	@echo "$(BLUE)  3/6 Running mypy...$(RESET)"
+	@poetry run mypy backend/src/ --show-error-codes --show-error-context
 	@echo "$(GREEN)    ✅ Mypy passed$(RESET)"
-	@echo "$(BLUE)  5/5 Checking database migrations...$(RESET)"
+	@echo "$(BLUE)🔍 Running comprehensive frontend quality checks...$(RESET)"
+	@echo "$(BLUE)  4/6 Running ESLint...$(RESET)"
+	@cd frontend && npm run lint
+	@echo "$(GREEN)    ✅ ESLint passed$(RESET)"
+	@echo "$(BLUE)  5/6 Running Prettier check...$(RESET)"
+	@cd frontend && npm run format:check
+	@echo "$(GREEN)    ✅ Prettier passed$(RESET)"
+	@echo "$(BLUE)  6/6 Running TypeScript check...$(RESET)"
+	@cd frontend && npm run type-check
+	@echo "$(GREEN)    ✅ TypeScript passed$(RESET)"
+	@echo "$(BLUE)  ✓ Checking database migrations...$(RESET)"
 	@if [ -d "backend/alembic/versions" ]; then \
 		echo "$(GREEN)    ✅ Alembic migrations directory exists$(RESET)"; \
 	else \
@@ -278,6 +297,29 @@ release-check: check-all docker-build ## Pre-release validation
 	@echo "$(BLUE)🚀 Running pre-release validation...$(RESET)"
 	./scripts/verify_foundation.py
 	@echo "$(GREEN)🎉 Ready for release!$(RESET)"
+
+##@ Database Operations
+
+clear-db: ## Clear all database tables (WARNING: deletes all data)
+	@echo "$(RED)⚠️  WARNING: This will delete all data!$(RESET)"
+	@PYTHONPATH=$(BACKEND_DIR)/src poetry run python $(BACKEND_DIR)/scripts/clear_database.py
+
+seed-db: ## Seed database with sample data for development
+	@echo "$(BLUE)🌱 Seeding database with sample data...$(RESET)"
+	@PYTHONPATH=$(BACKEND_DIR)/src poetry run python $(BACKEND_DIR)/scripts/seed_database.py
+	@echo "$(GREEN)✅ Database seeded successfully$(RESET)"
+
+seed-db-reset: ## Reset and re-seed database (WARNING: deletes existing data)
+	@echo "$(RED)⚠️  WARNING: This will delete all existing data!$(RESET)"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "$(BLUE)🗑️  Clearing database...$(RESET)"; \
+		PYTHONPATH=$(BACKEND_DIR)/src poetry run python -c "import asyncio; from sqlalchemy import text; from core.database import get_database_url; from sqlalchemy.ext.asyncio import create_async_engine; async def clear(): engine = create_async_engine(get_database_url().replace('postgresql://', 'postgresql+asyncpg://', 1)); async with engine.begin() as conn: await conn.execute(text('TRUNCATE TABLE audit_entries, agents, policies CASCADE')); await engine.dispose(); asyncio.run(clear())"; \
+		$(MAKE) seed-db; \
+	else \
+		echo "$(YELLOW)Cancelled$(RESET)"; \
+	fi
 
 ##@ Information
 

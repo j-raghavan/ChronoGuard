@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # Test PostgreSQL with TimescaleDB
+  test-postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: chronoguard-test-postgres
+    environment:
+      - POSTGRES_DB=chronoguard_test
+      - POSTGRES_USER=chronoguard
+      - POSTGRES_PASSWORD=testpassword
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chronoguard -d chronoguard_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Test Redis
+  test-redis:
+    image: redis:7.2-alpine
+    container_name: chronoguard-test-redis
+    ports:
+      - "6380:6379"
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+
+networks:
+  default:
+    name: chronoguard-test

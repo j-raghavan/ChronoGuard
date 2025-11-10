@@ -8,6 +8,7 @@ from typing import Any
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
+
 from infrastructure.opa.bundle_builder import (
     BundleBuilder,
     BundleBuilderError,

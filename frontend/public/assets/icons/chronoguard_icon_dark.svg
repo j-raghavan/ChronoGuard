@@ -1,0 +1,63 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGradientDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="clockGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22D3EE;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#38BDF8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Shield outline -->
+  <path d="M 128 20 
+           L 208 50 
+           Q 218 55 218 65
+           L 218 140
+           Q 218 180 200 212
+           Q 182 244 128 260
+           Q 74 244 56 212
+           Q 38 180 38 140
+           L 38 65
+           Q 38 55 48 50
+           Z" 
+        fill="url(#shieldGradientDark)"
+        stroke="#4338CA" 
+        stroke-width="2"/>
+  
+  <!-- Clock circle -->
+  <circle cx="128" cy="140" r="65" 
+          fill="url(#clockGradientDark)"
+          stroke="#0E7490" 
+          stroke-width="2"/>
+  
+  <!-- Clock tick marks -->
+  <g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round">
+    <!-- Main 4 positions -->
+    <line x1="128" y1="82" x2="128" y2="92" />
+    <line x1="186" y1="140" x2="176" y2="140" />
+    <line x1="128" y1="198" x2="128" y2="188" />
+    <line x1="70" y1="140" x2="80" y2="140" />
+  </g>
+  
+  <!-- Clock hands -->
+  <g stroke="#FFFFFF" stroke-linecap="round">
+    <!-- Hour hand -->
+    <line x1="128" y1="140" x2="105" y2="110" stroke-width="7"/>
+    <!-- Minute hand -->
+    <line x1="128" y1="140" x2="160" y2="115" stroke-width="5"/>
+  </g>
+  
+  <!-- Center dot -->
+  <circle cx="128" cy="140" r="6" fill="#FFFFFF"/>
+  
+  <!-- Lock icon at top -->
+  <g transform="translate(118, 45)">
+    <rect x="5" y="12" width="10" height="14" rx="1" fill="#FFFFFF"/>
+    <path d="M 7 12 L 7 7 Q 7 4 10 4 Q 13 4 13 7 L 13 12" 
+          stroke="#FFFFFF" 
+          stroke-width="2.5" 
+          fill="none"/>
+  </g>
+</svg>
