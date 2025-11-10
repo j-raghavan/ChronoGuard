@@ -9,9 +9,10 @@ from __future__ import annotations
 import secrets
 from functools import cached_property
 from pathlib import Path
+from typing import Literal
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -161,11 +162,11 @@ class SecuritySettings(BaseSettings):
     server_key_path: Path | None = Field(default=None, description="Server private key path")
     verify_client_cert: bool = Field(default=True, description="Verify client certificates")
     demo_mode_enabled: bool = Field(
-        default=True,
+        default=False,
         description="Enable demo authentication mode using shared password (development only)",
     )
-    demo_admin_password: str = Field(
-        default="chronoguard-admin-2025",
+    demo_admin_password: str | None = Field(
+        default=None,
         description="Demo administrator password for development login",
     )
     demo_tenant_id: UUID = Field(
@@ -195,14 +196,59 @@ class SecuritySettings(BaseSettings):
             raise ValueError("Secret key must be at least 32 characters")
         return v
 
+    session_cookie_name: str = Field(
+        default="chronoguard_session",
+        description="Name of the secure session cookie used for JWT tokens",
+    )
+    session_cookie_secure: bool = Field(
+        default=True,
+        description="Whether to mark the session cookie as Secure (HTTPS only)",
+    )
+    session_cookie_same_site: Literal["lax", "strict", "none"] = Field(
+        default="lax",
+        description="SameSite attribute for the session cookie",
+    )
+    session_cookie_domain: str | None = Field(
+        default=None,
+        description="Optional cookie domain override",
+    )
+    session_cookie_path: str = Field(
+        default="/",
+        description="Cookie path scope",
+    )
+
     @field_validator("demo_admin_password")
     @classmethod
-    def validate_demo_password(cls, v: str) -> str:
-        """Ensure demo password is not empty."""
+    def validate_demo_password(cls, v: str | None) -> str | None:
+        """Ensure demo password is strong when provided."""
 
-        if not v or not v.strip():
+        if v is None:
+            return None
+
+        password = v.strip()
+        if not password:
             raise ValueError("Demo admin password cannot be empty")
-        return v
+        if len(password) < 16:
+            raise ValueError("Demo admin password must be at least 16 characters")
+        return password
+
+    @model_validator(mode="after")
+    def validate_demo_mode_configuration(self) -> SecuritySettings:
+        """Ensure demo mode has explicit credentials."""
+
+        if self.demo_mode_enabled and not self.demo_admin_password:
+            raise ValueError(
+                "Demo mode requires CHRONOGUARD_SECURITY_DEMO_ADMIN_PASSWORD to be set"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_cookie_security(self) -> SecuritySettings:
+        """Ensure cookie settings are safe."""
+
+        if self.session_cookie_same_site == "none" and not self.session_cookie_secure:
+            raise ValueError("Secure cookies are required when SameSite=None")
+        return self
 
 
 class APISettings(BaseSettings):

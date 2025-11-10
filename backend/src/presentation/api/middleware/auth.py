@@ -140,23 +140,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
         """Authenticate request using JWT token.
 
         Args:
-            request: HTTP request with Authorization header
+            request: HTTP request carrying credentials
 
         Raises:
             AuthenticationError: If JWT authentication fails
 
         Note:
-            Expects Authorization header format: "Bearer <token>"
-            Sets request.state.user with decoded token payload
+            Looks for Authorization bearer token first, then falls back to
+            the secure session cookie configured in security settings.
         """
-        auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            raise AuthenticationError("Missing Authorization header")
-
-        if not auth_header.startswith("Bearer "):
-            raise AuthenticationError("Invalid Authorization header format")
-
-        token = auth_header[7:]  # Remove "Bearer " prefix
+        token = self._extract_bearer_token(request)
+        if not token:
+            raise AuthenticationError("Missing authentication credentials")
 
         try:
             payload = decode_token(token, self.security_settings)
@@ -164,6 +159,21 @@ class AuthMiddleware(BaseHTTPMiddleware):
             request.state.auth_method = "jwt"
         except TokenError as e:
             raise AuthenticationError(f"Invalid JWT token: {e}") from e
+
+    def _extract_bearer_token(self, request: Request) -> str | None:
+        """Extract JWT token from Authorization header or secure cookie."""
+
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            return auth_header[7:]
+
+        cookie_name = getattr(self.security_settings, "session_cookie_name", None)
+        if cookie_name:
+            cookie_value = request.cookies.get(cookie_name)
+            if cookie_value:
+                return cookie_value
+
+        return None
 
     async def _authenticate_mtls(self, request: Request) -> None:
         """Authenticate request using mTLS client certificate.

@@ -10,8 +10,20 @@ export function PoliciesPage() {
 
   if (isLoading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "24rem" }}>
-        <div style={{ color: "hsl(var(--muted-foreground))", fontSize: "1.125rem" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "24rem",
+        }}
+      >
+        <div
+          style={{
+            color: "hsl(var(--muted-foreground))",
+            fontSize: "1.125rem",
+          }}
+        >
           Loading policies...
         </div>
       </div>
@@ -20,7 +32,14 @@ export function PoliciesPage() {
 
   if (error) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "24rem" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "24rem",
+        }}
+      >
         <div style={{ fontSize: "1.125rem", color: "hsl(var(--danger))" }}>
           Error loading policies
         </div>
@@ -29,14 +48,41 @@ export function PoliciesPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", width: "100%", maxWidth: "100%" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "1.5rem",
+        width: "100%",
+        maxWidth: "100%",
+      }}
+    >
       {/* Page Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
         <div>
-          <h2 style={{ fontSize: "1.875rem", fontWeight: "bold", letterSpacing: "-0.025em", color: "hsl(var(--foreground))" }}>
+          <h2
+            style={{
+              fontSize: "1.875rem",
+              fontWeight: "bold",
+              letterSpacing: "-0.025em",
+              color: "hsl(var(--foreground))",
+            }}
+          >
             Policies
           </h2>
-          <p style={{ marginTop: "0.25rem", color: "hsl(var(--muted-foreground))" }}>
+          <p
+            style={{
+              marginTop: "0.25rem",
+              color: "hsl(var(--muted-foreground))",
+            }}
+          >
             Create and manage access policies and rules
           </p>
         </div>
@@ -53,7 +99,7 @@ export function PoliciesPage() {
             background: "linear-gradient(to right, #6AA4E3, #6564E7)",
             border: "none",
             cursor: "pointer",
-            transition: "opacity 0.2s"
+            transition: "opacity 0.2s",
           }}
         >
           <Plus style={{ height: "1rem", width: "1rem" }} />
@@ -72,11 +118,24 @@ export function PoliciesPage() {
               padding: "1.5rem",
               boxShadow: "var(--shadow)",
               border: "1px solid hsl(var(--border))",
-              transition: "box-shadow 0.2s"
+              transition: "box-shadow 0.2s",
             }}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", flex: 1 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "1rem",
+                  flex: 1,
+                }}
+              >
                 <div
                   style={{
                     width: "3rem",
@@ -86,19 +145,45 @@ export function PoliciesPage() {
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
-                    background: "rgba(34, 211, 238, 0.1)"
+                    background: "rgba(34, 211, 238, 0.1)",
                   }}
                 >
-                  <FileText style={{ height: "1.5rem", width: "1.5rem", color: "#22D3EE" }} />
+                  <FileText
+                    style={{
+                      height: "1.5rem",
+                      width: "1.5rem",
+                      color: "#22D3EE",
+                    }}
+                  />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{ fontSize: "1.125rem", fontWeight: 600, color: "hsl(var(--foreground))" }}>
+                  <h3
+                    style={{
+                      fontSize: "1.125rem",
+                      fontWeight: 600,
+                      color: "hsl(var(--foreground))",
+                    }}
+                  >
                     {policy.name}
                   </h3>
-                  <p style={{ fontSize: "0.875rem", marginTop: "0.25rem", color: "hsl(var(--muted-foreground))" }}>
+                  <p
+                    style={{
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
                     {policy.description}
                   </p>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      marginTop: "0.75rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     <span
                       style={{
                         display: "inline-flex",
@@ -108,14 +193,22 @@ export function PoliciesPage() {
                         fontSize: "0.75rem",
                         fontWeight: 500,
                         borderRadius: "9999px",
-                        backgroundColor: policy.status === "active"
-                          ? "rgba(16, 185, 129, 0.1)"
-                          : "rgba(107, 114, 128, 0.1)",
-                        color: policy.status === "active" ? "#10B981" : "#6B7280"
+                        backgroundColor:
+                          policy.status === "active"
+                            ? "rgba(16, 185, 129, 0.1)"
+                            : "rgba(107, 114, 128, 0.1)",
+                        color:
+                          policy.status === "active" ? "#10B981" : "#6B7280",
                       }}
                     >
-                      {policy.status === "active" && <CheckCircle style={{ height: "0.75rem", width: "0.75rem" }} />}
-                      <span style={{ textTransform: "capitalize" }}>{policy.status}</span>
+                      {policy.status === "active" && (
+                        <CheckCircle
+                          style={{ height: "0.75rem", width: "0.75rem" }}
+                        />
+                      )}
+                      <span style={{ textTransform: "capitalize" }}>
+                        {policy.status}
+                      </span>
                     </span>
                     <span
                       style={{
@@ -124,7 +217,7 @@ export function PoliciesPage() {
                         fontWeight: 500,
                         borderRadius: "9999px",
                         backgroundColor: "hsl(var(--muted))",
-                        color: "hsl(var(--foreground))"
+                        color: "hsl(var(--foreground))",
                       }}
                     >
                       Priority: {policy.priority}
@@ -136,10 +229,11 @@ export function PoliciesPage() {
                         fontWeight: 500,
                         borderRadius: "9999px",
                         backgroundColor: "hsl(var(--muted))",
-                        color: "hsl(var(--foreground))"
+                        color: "hsl(var(--foreground))",
                       }}
                     >
-                      {policy.rules.length} {policy.rules.length === 1 ? 'rule' : 'rules'}
+                      {policy.rules.length}{" "}
+                      {policy.rules.length === 1 ? "rule" : "rules"}
                     </span>
                     <span
                       style={{
@@ -148,19 +242,37 @@ export function PoliciesPage() {
                         fontWeight: 500,
                         borderRadius: "9999px",
                         backgroundColor: "rgba(99, 102, 241, 0.1)",
-                        color: "#6366F1"
+                        color: "#6366F1",
                       }}
                     >
-                      {policy.allowed_domains.length} allowed, {policy.blocked_domains.length} blocked
+                      {policy.allowed_domains.length} allowed,{" "}
+                      {policy.blocked_domains.length} blocked
                     </span>
                   </div>
                 </div>
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "1rem" }}>
-                <div style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
+              <div
+                style={{
+                  textAlign: "right",
+                  flexShrink: 0,
+                  marginLeft: "1rem",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "0.875rem",
+                    color: "hsl(var(--muted-foreground))",
+                  }}
+                >
                   {format(new Date(policy.created_at), "MMM dd, yyyy")}
                 </div>
-                <div style={{ fontSize: "0.75rem", marginTop: "0.25rem", color: "hsl(var(--muted-foreground))" }}>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    marginTop: "0.25rem",
+                    color: "hsl(var(--muted-foreground))",
+                  }}
+                >
                   v{policy.version}
                 </div>
               </div>
@@ -168,14 +280,37 @@ export function PoliciesPage() {
 
             {/* Allowed Domains */}
             {policy.allowed_domains.length > 0 && (
-              <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid hsl(var(--border))" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                  <Unlock style={{ height: "1rem", width: "1rem", color: "#10B981" }} />
-                  <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "hsl(var(--foreground))" }}>
+              <div
+                style={{
+                  marginTop: "1rem",
+                  paddingTop: "1rem",
+                  borderTop: "1px solid hsl(var(--border))",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  <Unlock
+                    style={{ height: "1rem", width: "1rem", color: "#10B981" }}
+                  />
+                  <div
+                    style={{
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--foreground))",
+                    }}
+                  >
                     Allowed Domains
                   </div>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                <div
+                  style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}
+                >
                   {policy.allowed_domains.map((domain, idx) => (
                     <span
                       key={idx}
@@ -185,7 +320,7 @@ export function PoliciesPage() {
                         fontWeight: 500,
                         borderRadius: "0.5rem",
                         backgroundColor: "rgba(16, 185, 129, 0.1)",
-                        color: "#10B981"
+                        color: "#10B981",
                       }}
                     >
                       {domain}
@@ -198,13 +333,30 @@ export function PoliciesPage() {
             {/* Blocked Domains */}
             {policy.blocked_domains.length > 0 && (
               <div style={{ marginTop: "0.75rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                  <Lock style={{ height: "1rem", width: "1rem", color: "#EF4444" }} />
-                  <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "hsl(var(--foreground))" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  <Lock
+                    style={{ height: "1rem", width: "1rem", color: "#EF4444" }}
+                  />
+                  <div
+                    style={{
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                      color: "hsl(var(--foreground))",
+                    }}
+                  >
                     Blocked Domains
                   </div>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                <div
+                  style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}
+                >
                   {policy.blocked_domains.map((domain, idx) => (
                     <span
                       key={idx}
@@ -214,7 +366,7 @@ export function PoliciesPage() {
                         fontWeight: 500,
                         borderRadius: "0.5rem",
                         backgroundColor: "rgba(239, 68, 68, 0.1)",
-                        color: "#EF4444"
+                        color: "#EF4444",
                       }}
                     >
                       {domain}
@@ -228,7 +380,9 @@ export function PoliciesPage() {
       </div>
 
       {/* Add Policy Modal */}
-      {showAddModal && <AddPolicyModal onClose={() => setShowAddModal(false)} />}
+      {showAddModal && (
+        <AddPolicyModal onClose={() => setShowAddModal(false)} />
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ from uuid import UUID
 
 from core.config import get_settings
 from core.security import create_access_token
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -30,8 +30,16 @@ class LoginResponse(BaseModel):
     expires_in: int
 
 
+class SessionResponse(BaseModel):
+    """Session validation response."""
+
+    authenticated: bool
+    tenant_id: UUID | None = None
+    user_id: UUID | None = None
+
+
 @router.post("/login", response_model=LoginResponse)
-async def login(request: LoginRequest) -> LoginResponse:
+async def login(request: LoginRequest, response: Response) -> LoginResponse:
     """Exchange the shared demo password for a JWT access token."""
 
     settings = get_settings()
@@ -62,9 +70,55 @@ async def login(request: LoginRequest) -> LoginResponse:
     }
     access_token = create_access_token(token_payload, expires_delta, security_settings)
 
+    response.set_cookie(
+        key=security_settings.session_cookie_name,
+        value=access_token,
+        httponly=True,
+        secure=security_settings.session_cookie_secure,
+        samesite=security_settings.session_cookie_same_site,
+        domain=security_settings.session_cookie_domain,
+        path=security_settings.session_cookie_path,
+        max_age=int(expires_delta.total_seconds()),
+    )
+
     return LoginResponse(
         access_token=access_token,
         tenant_id=tenant_id,
         user_id=user_id,
         expires_in=int(expires_delta.total_seconds()),
     )
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+async def logout(response: Response) -> None:
+    """Clear authentication cookie."""
+
+    security_settings = get_settings().security
+    response.delete_cookie(
+        key=security_settings.session_cookie_name,
+        domain=security_settings.session_cookie_domain,
+        path=security_settings.session_cookie_path,
+    )
+
+
+@router.get("/session", response_model=SessionResponse)
+async def get_session(request: Request) -> SessionResponse:
+    """Return current session context."""
+
+    payload = getattr(request.state, "user", None)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session not found",
+        )
+
+    try:
+        tenant_id = UUID(payload["tenant_id"])
+        user_id = UUID(payload.get("user_id") or payload.get("sub"))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid session payload",
+        ) from exc
+
+    return SessionResponse(authenticated=True, tenant_id=tenant_id, user_id=user_id)

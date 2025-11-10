@@ -28,6 +28,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
     baseURL: API_BASE_URL,
+    withCredentials: true,
     headers: {
       "Content-Type": "application/json",
     },
@@ -35,36 +36,7 @@ const createApiClient = (): AxiosInstance => {
 
   // Request interceptor to add authentication headers
   client.interceptors.request.use(
-    (config) => {
-      const tenantId = localStorage.getItem("tenantId");
-      const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
-      const expiresAt = localStorage.getItem("tokenExpiresAt");
-
-      // Check token expiration before request
-      if (expiresAt && parseInt(expiresAt) < Date.now()) {
-        // Token expired - clear auth state
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("tokenExpiresAt");
-        localStorage.removeItem("isAuthenticated");
-        localStorage.removeItem("tenantId");
-        localStorage.removeItem("userId");
-        window.location.href = "/";
-        return Promise.reject(new Error("Token expired"));
-      }
-
-      if (tenantId) {
-        config.headers["X-Tenant-ID"] = tenantId;
-      }
-      if (userId) {
-        config.headers["X-User-ID"] = userId;
-      }
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-
-      return config;
-    },
+    (config) => config,
     (error) => Promise.reject(error),
   );
 
@@ -75,11 +47,6 @@ const createApiClient = (): AxiosInstance => {
       if (error.response?.status === 401) {
         // Handle unauthorized - clear auth and redirect to login
         console.error("Unauthorized access - clearing authentication");
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("tokenExpiresAt");
-        localStorage.removeItem("isAuthenticated");
-        localStorage.removeItem("tenantId");
-        localStorage.removeItem("userId");
         window.location.href = "/";
       }
       return Promise.reject(error);
@@ -158,11 +125,9 @@ export const auditApi = {
     }),
 
   export: (format: "csv" | "json", startTime: string, endTime: string) => {
-    const tenantId = localStorage.getItem("tenantId");
     return apiClient.post(
       "/api/v1/audit/export",
       {
-        tenant_id: tenantId,
         start_time: startTime,
         end_time: endTime,
         format,

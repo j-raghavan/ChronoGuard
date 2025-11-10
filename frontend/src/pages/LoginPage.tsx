@@ -29,15 +29,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setIsLoading(true);
 
     try {
-      const response = await authApi.login(password);
-      const { access_token, tenant_id, user_id, expires_in } = response.data;
-
-      const expiresAt = Date.now() + expires_in * 1000;
-      localStorage.setItem("authToken", access_token);
-      localStorage.setItem("tokenExpiresAt", expiresAt.toString());
-      localStorage.setItem("tenantId", tenant_id);
-      localStorage.setItem("userId", user_id);
-      localStorage.setItem("isAuthenticated", "true");
+      await authApi.login(password);
 
       setIsLoading(false);
       onLogin();

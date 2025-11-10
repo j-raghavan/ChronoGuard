@@ -24,8 +24,8 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
       return;
     }
 
-    const allowed = allowedDomains.filter(d => d.trim());
-    const blocked = blockedDomains.filter(d => d.trim());
+    const allowed = allowedDomains.filter((d) => d.trim());
+    const blocked = blockedDomains.filter((d) => d.trim());
 
     if (allowed.length === 0 && blocked.length === 0) {
       setError("At least one allowed or blocked domain is required");
@@ -42,7 +42,9 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
       });
       onClose();
     } catch (err: unknown) {
-      const errorMessage = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Failed to create policy";
+      const errorMessage =
+        (err as { response?: { data?: { detail?: string } } }).response?.data
+          ?.detail || "Failed to create policy";
       setError(errorMessage);
     }
   };
@@ -63,7 +65,11 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
     }
   };
 
-  const updateDomain = (type: "allowed" | "blocked", index: number, value: string) => {
+  const updateDomain = (
+    type: "allowed" | "blocked",
+    index: number,
+    value: string,
+  ) => {
     if (type === "allowed") {
       const updated = [...allowedDomains];
       updated[index] = value;
@@ -76,37 +82,49 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
   };
 
   return (
-    <div style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-      padding: "1rem"
-    }}>
-      <div style={{
-        backgroundColor: "white",
-        borderRadius: "12px",
-        width: "100%",
-        maxWidth: "42rem",
-        maxHeight: "90vh",
-        overflow: "auto",
-        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
-      }}>
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        padding: "1rem",
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "12px",
+          width: "100%",
+          maxWidth: "42rem",
+          maxHeight: "90vh",
+          overflow: "auto",
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+        }}
+      >
         {/* Header */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "1.5rem",
-          borderBottom: "1px solid hsl(var(--border))"
-        }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "hsl(var(--foreground))" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "1.5rem",
+            borderBottom: "1px solid hsl(var(--border))",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              color: "hsl(var(--foreground))",
+            }}
+          >
             Create New Policy
           </h2>
           <button
@@ -117,7 +135,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
               border: "none",
               cursor: "pointer",
               color: "hsl(var(--muted-foreground))",
-              borderRadius: "0.25rem"
+              borderRadius: "0.25rem",
             }}
           >
             <X style={{ height: "1.25rem", width: "1.25rem" }} />
@@ -125,16 +143,26 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            padding: "1.5rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.5rem",
+          }}
+        >
           {/* Policy Name */}
           <div>
-            <label style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--foreground))",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--foreground))",
+                marginBottom: "0.5rem",
+              }}
+            >
               Policy Name *
             </label>
             <input
@@ -149,20 +177,22 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                 border: "1px solid hsl(var(--border))",
                 borderRadius: "0.5rem",
                 fontSize: "0.875rem",
-                outline: "none"
+                outline: "none",
               }}
             />
           </div>
 
           {/* Description */}
           <div>
-            <label style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--foreground))",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--foreground))",
+                marginBottom: "0.5rem",
+              }}
+            >
               Description
             </label>
             <textarea
@@ -177,20 +207,22 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                 borderRadius: "0.5rem",
                 fontSize: "0.875rem",
                 outline: "none",
-                resize: "vertical"
+                resize: "vertical",
               }}
             />
           </div>
 
           {/* Priority */}
           <div>
-            <label style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--foreground))",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--foreground))",
+                marginBottom: "0.5rem",
+              }}
+            >
               Priority (lower = higher priority, must be unique)
             </label>
             <input
@@ -205,26 +237,37 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                 border: "1px solid hsl(var(--border))",
                 borderRadius: "0.5rem",
                 fontSize: "0.875rem",
-                outline: "none"
+                outline: "none",
               }}
             />
-            <p style={{
-              fontSize: "0.75rem",
-              color: "hsl(var(--muted-foreground))",
-              marginTop: "0.375rem"
-            }}>
+            <p
+              style={{
+                fontSize: "0.75rem",
+                color: "hsl(var(--muted-foreground))",
+                marginTop: "0.375rem",
+              }}
+            >
               Existing policies: 100, 200, 300, 500. Use a different number.
             </p>
           </div>
 
           {/* Allowed Domains */}
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-              <label style={{
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                color: "hsl(var(--foreground))"
-              }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "0.5rem",
+              }}
+            >
+              <label
+                style={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "hsl(var(--foreground))",
+                }}
+              >
                 Allowed Domains
               </label>
               <button
@@ -240,7 +283,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                   color: "#10B981",
                   border: "none",
                   borderRadius: "0.25rem",
-                  cursor: "pointer"
+                  cursor: "pointer",
                 }}
               >
                 <Plus style={{ height: "0.875rem", width: "0.875rem" }} />
@@ -248,11 +291,20 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
               </button>
             </div>
             {allowedDomains.map((domain, index) => (
-              <div key={index} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
                 <input
                   type="text"
                   value={domain}
-                  onChange={(e) => updateDomain("allowed", index, e.target.value)}
+                  onChange={(e) =>
+                    updateDomain("allowed", index, e.target.value)
+                  }
                   placeholder="example.com"
                   style={{
                     flex: 1,
@@ -260,7 +312,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "0.5rem",
                     fontSize: "0.875rem",
-                    outline: "none"
+                    outline: "none",
                   }}
                 />
                 {allowedDomains.length > 1 && (
@@ -273,7 +325,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "0.5rem",
                       cursor: "pointer",
-                      color: "#EF4444"
+                      color: "#EF4444",
                     }}
                   >
                     <Trash2 style={{ height: "1rem", width: "1rem" }} />
@@ -285,12 +337,21 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
 
           {/* Blocked Domains */}
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-              <label style={{
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                color: "hsl(var(--foreground))"
-              }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "0.5rem",
+              }}
+            >
+              <label
+                style={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "hsl(var(--foreground))",
+                }}
+              >
                 Blocked Domains
               </label>
               <button
@@ -306,7 +367,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                   color: "#EF4444",
                   border: "none",
                   borderRadius: "0.25rem",
-                  cursor: "pointer"
+                  cursor: "pointer",
                 }}
               >
                 <Plus style={{ height: "0.875rem", width: "0.875rem" }} />
@@ -314,11 +375,20 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
               </button>
             </div>
             {blockedDomains.map((domain, index) => (
-              <div key={index} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
                 <input
                   type="text"
                   value={domain}
-                  onChange={(e) => updateDomain("blocked", index, e.target.value)}
+                  onChange={(e) =>
+                    updateDomain("blocked", index, e.target.value)
+                  }
                   placeholder="admin.example.com"
                   style={{
                     flex: 1,
@@ -326,7 +396,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "0.5rem",
                     fontSize: "0.875rem",
-                    outline: "none"
+                    outline: "none",
                   }}
                 />
                 {blockedDomains.length > 1 && (
@@ -339,7 +409,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "0.5rem",
                       cursor: "pointer",
-                      color: "#EF4444"
+                      color: "#EF4444",
                     }}
                   >
                     <Trash2 style={{ height: "1rem", width: "1rem" }} />
@@ -351,16 +421,25 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
 
           {/* Error Message */}
           {error && (
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-              padding: "0.75rem 1rem",
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.3)",
-              borderRadius: "0.5rem"
-            }}>
-              <AlertCircle style={{ height: "1.25rem", width: "1.25rem", color: "#EF4444", flexShrink: 0 }} />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                padding: "0.75rem 1rem",
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: "0.5rem",
+              }}
+            >
+              <AlertCircle
+                style={{
+                  height: "1.25rem",
+                  width: "1.25rem",
+                  color: "#EF4444",
+                  flexShrink: 0,
+                }}
+              />
               <p style={{ fontSize: "0.875rem", color: "#EF4444", margin: 0 }}>
                 {error}
               </p>
@@ -368,7 +447,15 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
           )}
 
           {/* Actions */}
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", paddingTop: "1rem", borderTop: "1px solid hsl(var(--border))" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              justifyContent: "flex-end",
+              paddingTop: "1rem",
+              borderTop: "1px solid hsl(var(--border))",
+            }}
+          >
             <button
               type="button"
               onClick={onClose}
@@ -380,7 +467,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                 fontWeight: 500,
                 borderRadius: "0.5rem",
                 border: "1px solid hsl(var(--border))",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               Cancel
@@ -397,7 +484,7 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
                 borderRadius: "0.5rem",
                 border: "none",
                 cursor: createPolicy.isPending ? "not-allowed" : "pointer",
-                opacity: createPolicy.isPending ? 0.7 : 1
+                opacity: createPolicy.isPending ? 0.7 : 1,
               }}
             >
               {createPolicy.isPending ? "Creating..." : "Create Policy"}

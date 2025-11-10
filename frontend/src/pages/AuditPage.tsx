@@ -14,12 +14,8 @@ export function AuditPage() {
   });
   const [searchDomain, setSearchDomain] = useState("");
 
-  // Get tenant ID from localStorage
-  const tenantId = localStorage.getItem("tenantId") || "";
-
   // Query audit entries with filters
   const { data, isLoading, error, refetch } = useAuditQuery({
-    tenant_id: tenantId,
     domain: filters.domain || undefined,
     decision: filters.decision || undefined,
     start_time: filters.startTime,
@@ -62,7 +58,14 @@ export function AuditPage() {
 
   if (error) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "24rem" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "24rem",
+        }}
+      >
         <div style={{ color: "hsl(var(--danger))" }}>
           Error loading audit logs: {error.message}
         </div>
@@ -71,11 +74,33 @@ export function AuditPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", width: "100%", maxWidth: "100%" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "1.5rem",
+        width: "100%",
+        maxWidth: "100%",
+      }}
+    >
       {/* Page Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
         <div>
-          <h2 style={{ fontSize: "1.875rem", fontWeight: "bold", letterSpacing: "-0.025em", color: "hsl(var(--foreground))" }}>
+          <h2
+            style={{
+              fontSize: "1.875rem",
+              fontWeight: "bold",
+              letterSpacing: "-0.025em",
+              color: "hsl(var(--foreground))",
+            }}
+          >
             Audit Log
           </h2>
           <p style={{ color: "hsl(var(--muted-foreground))" }}>
@@ -97,7 +122,7 @@ export function AuditPage() {
               fontSize: "0.875rem",
               fontWeight: 500,
               color: "hsl(var(--foreground))",
-              transition: "background-color 0.2s"
+              transition: "background-color 0.2s",
             }}
           >
             <Download style={{ height: "1rem", width: "1rem" }} />
@@ -117,7 +142,7 @@ export function AuditPage() {
               fontSize: "0.875rem",
               fontWeight: 500,
               color: "hsl(var(--foreground))",
-              transition: "background-color 0.2s"
+              transition: "background-color 0.2s",
             }}
           >
             <Download style={{ height: "1rem", width: "1rem" }} />
@@ -127,30 +152,51 @@ export function AuditPage() {
       </div>
 
       {/* Filters */}
-      <div style={{
-        borderRadius: "0.5rem",
-        border: "1px solid hsl(var(--border))",
-        backgroundColor: "white",
-        padding: "1rem"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-          <Filter style={{ height: "1.25rem", width: "1.25rem", color: "hsl(var(--muted-foreground))" }} />
-          <h3 style={{ fontWeight: 600, color: "hsl(var(--foreground))" }}>Filters</h3>
+      <div
+        style={{
+          borderRadius: "0.5rem",
+          border: "1px solid hsl(var(--border))",
+          backgroundColor: "white",
+          padding: "1rem",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            marginBottom: "1rem",
+          }}
+        >
+          <Filter
+            style={{
+              height: "1.25rem",
+              width: "1.25rem",
+              color: "hsl(var(--muted-foreground))",
+            }}
+          />
+          <h3 style={{ fontWeight: 600, color: "hsl(var(--foreground))" }}>
+            Filters
+          </h3>
         </div>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "1rem"
-        }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "1rem",
+          }}
+        >
           {/* Domain Search */}
           <div>
-            <label style={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--muted-foreground))",
-              display: "block",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--muted-foreground))",
+                display: "block",
+                marginBottom: "0.5rem",
+              }}
+            >
               Domain
             </label>
             <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -167,7 +213,7 @@ export function AuditPage() {
                   borderRadius: "0.5rem",
                   backgroundColor: "hsl(var(--background))",
                   fontSize: "0.875rem",
-                  outline: "none"
+                  outline: "none",
                 }}
               />
               <button
@@ -181,7 +227,7 @@ export function AuditPage() {
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center"
+                  justifyContent: "center",
                 }}
               >
                 <Search style={{ height: "1rem", width: "1rem" }} />
@@ -191,13 +237,15 @@ export function AuditPage() {
 
           {/* Decision Filter */}
           <div>
-            <label style={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--muted-foreground))",
-              display: "block",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--muted-foreground))",
+                display: "block",
+                marginBottom: "0.5rem",
+              }}
+            >
               Decision
             </label>
             <select
@@ -211,7 +259,7 @@ export function AuditPage() {
                 backgroundColor: "hsl(var(--background))",
                 fontSize: "0.875rem",
                 outline: "none",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               <option value="">All</option>
@@ -222,13 +270,15 @@ export function AuditPage() {
 
           {/* Start Date */}
           <div>
-            <label style={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--muted-foreground))",
-              display: "block",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--muted-foreground))",
+                display: "block",
+                marginBottom: "0.5rem",
+              }}
+            >
               Start Date
             </label>
             <input
@@ -247,20 +297,22 @@ export function AuditPage() {
                 borderRadius: "0.5rem",
                 backgroundColor: "hsl(var(--background))",
                 fontSize: "0.875rem",
-                outline: "none"
+                outline: "none",
               }}
             />
           </div>
 
           {/* End Date */}
           <div>
-            <label style={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--muted-foreground))",
-              display: "block",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--muted-foreground))",
+                display: "block",
+                marginBottom: "0.5rem",
+              }}
+            >
               End Date
             </label>
             <input
@@ -279,7 +331,7 @@ export function AuditPage() {
                 borderRadius: "0.5rem",
                 backgroundColor: "hsl(var(--background))",
                 fontSize: "0.875rem",
-                outline: "none"
+                outline: "none",
               }}
             />
           </div>
@@ -288,119 +340,141 @@ export function AuditPage() {
 
       {/* Audit Log Table */}
       {isLoading ? (
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "24rem",
-          borderRadius: "0.5rem",
-          border: "1px solid hsl(var(--border))",
-          backgroundColor: "white"
-        }}>
-          <div style={{ color: "hsl(var(--muted-foreground))" }}>Loading audit logs...</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "24rem",
+            borderRadius: "0.5rem",
+            border: "1px solid hsl(var(--border))",
+            backgroundColor: "white",
+          }}
+        >
+          <div style={{ color: "hsl(var(--muted-foreground))" }}>
+            Loading audit logs...
+          </div>
         </div>
       ) : data?.entries.length === 0 ? (
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "24rem",
-          borderRadius: "0.5rem",
-          border: "1px solid hsl(var(--border))",
-          backgroundColor: "white"
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "24rem",
+            borderRadius: "0.5rem",
+            border: "1px solid hsl(var(--border))",
+            backgroundColor: "white",
+          }}
+        >
           <div style={{ color: "hsl(var(--muted-foreground))" }}>
             No audit entries found for the selected filters
           </div>
         </div>
       ) : (
         <>
-          <div style={{
-            borderRadius: "12px",
-            border: "1px solid hsl(var(--border))",
-            overflow: "hidden",
-            backgroundColor: "white",
-            boxShadow: "var(--shadow)"
-          }}>
+          <div
+            style={{
+              borderRadius: "12px",
+              border: "1px solid hsl(var(--border))",
+              overflow: "hidden",
+              backgroundColor: "white",
+              boxShadow: "var(--shadow)",
+            }}
+          >
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ backgroundColor: "hsl(var(--muted))" }}>
-                    <th style={{
-                      padding: "0.75rem 1rem",
-                      textAlign: "left",
-                      fontSize: "0.75rem",
-                      fontWeight: 500,
-                      color: "hsl(var(--muted-foreground))",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap"
-                    }}>
+                    <th
+                      style={{
+                        padding: "0.75rem 1rem",
+                        textAlign: "left",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       Timestamp
                     </th>
-                    <th style={{
-                      padding: "0.75rem 1rem",
-                      textAlign: "left",
-                      fontSize: "0.75rem",
-                      fontWeight: 500,
-                      color: "hsl(var(--muted-foreground))",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap"
-                    }}>
+                    <th
+                      style={{
+                        padding: "0.75rem 1rem",
+                        textAlign: "left",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       Decision
                     </th>
-                    <th style={{
-                      padding: "0.75rem 1rem",
-                      textAlign: "left",
-                      fontSize: "0.75rem",
-                      fontWeight: 500,
-                      color: "hsl(var(--muted-foreground))",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap"
-                    }}>
+                    <th
+                      style={{
+                        padding: "0.75rem 1rem",
+                        textAlign: "left",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       Domain
                     </th>
-                    <th style={{
-                      padding: "0.75rem 1rem",
-                      textAlign: "left",
-                      fontSize: "0.75rem",
-                      fontWeight: 500,
-                      color: "hsl(var(--muted-foreground))",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap"
-                    }}>
+                    <th
+                      style={{
+                        padding: "0.75rem 1rem",
+                        textAlign: "left",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       Method
                     </th>
-                    <th style={{
-                      padding: "0.75rem 1rem",
-                      textAlign: "left",
-                      fontSize: "0.75rem",
-                      fontWeight: 500,
-                      color: "hsl(var(--muted-foreground))",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap"
-                    }}>
+                    <th
+                      style={{
+                        padding: "0.75rem 1rem",
+                        textAlign: "left",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       Path
                     </th>
-                    <th style={{
-                      padding: "0.75rem 1rem",
-                      textAlign: "left",
-                      fontSize: "0.75rem",
-                      fontWeight: 500,
-                      color: "hsl(var(--muted-foreground))",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap"
-                    }}>
+                    <th
+                      style={{
+                        padding: "0.75rem 1rem",
+                        textAlign: "left",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       Reason
                     </th>
-                    <th style={{
-                      padding: "0.75rem 1rem",
-                      textAlign: "left",
-                      fontSize: "0.75rem",
-                      fontWeight: 500,
-                      color: "hsl(var(--muted-foreground))",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap"
-                    }}>
+                    <th
+                      style={{
+                        padding: "0.75rem 1rem",
+                        textAlign: "left",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       Agent
                     </th>
                   </tr>
@@ -411,21 +485,45 @@ export function AuditPage() {
                       key={entry.entry_id}
                       style={{
                         backgroundColor: "white",
-                        borderTop: idx > 0 ? "1px solid hsl(var(--border))" : "none",
-                        transition: "background-color 0.2s"
+                        borderTop:
+                          idx > 0 ? "1px solid hsl(var(--border))" : "none",
+                        transition: "background-color 0.2s",
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#F9FAFB"}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#F9FAFB")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
                     >
-                      <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", whiteSpace: "nowrap" }}>
+                      <td
+                        style={{
+                          padding: "0.75rem 1rem",
+                          fontSize: "0.875rem",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         <div style={{ color: "hsl(var(--foreground))" }}>
-                          {format(new Date(entry.timestamp), "MMM dd, HH:mm:ss")}
+                          {format(
+                            new Date(entry.timestamp),
+                            "MMM dd, HH:mm:ss",
+                          )}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "hsl(var(--muted-foreground))" }}>
+                        <div
+                          style={{
+                            fontSize: "0.75rem",
+                            color: "hsl(var(--muted-foreground))",
+                          }}
+                        >
                           {format(new Date(entry.timestamp), "yyyy")}
                         </div>
                       </td>
-                      <td style={{ padding: "0.75rem 1rem", whiteSpace: "nowrap" }}>
+                      <td
+                        style={{
+                          padding: "0.75rem 1rem",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         <span
                           style={{
                             display: "inline-flex",
@@ -435,66 +533,86 @@ export function AuditPage() {
                             fontSize: "0.75rem",
                             fontWeight: 500,
                             borderRadius: "9999px",
-                            backgroundColor: entry.decision === "allow"
-                              ? "rgba(16, 185, 129, 0.1)"
-                              : "rgba(239, 68, 68, 0.1)",
-                            color: entry.decision === "allow" ? "#10B981" : "#EF4444"
+                            backgroundColor:
+                              entry.decision === "allow"
+                                ? "rgba(16, 185, 129, 0.1)"
+                                : "rgba(239, 68, 68, 0.1)",
+                            color:
+                              entry.decision === "allow"
+                                ? "#10B981"
+                                : "#EF4444",
                           }}
                         >
                           {entry.decision === "allow" ? (
-                            <CheckCircle style={{ height: "0.75rem", width: "0.75rem" }} />
+                            <CheckCircle
+                              style={{ height: "0.75rem", width: "0.75rem" }}
+                            />
                           ) : (
-                            <XCircle style={{ height: "0.75rem", width: "0.75rem" }} />
+                            <XCircle
+                              style={{ height: "0.75rem", width: "0.75rem" }}
+                            />
                           )}
-                          <span style={{ textTransform: "capitalize" }}>{entry.decision}</span>
+                          <span style={{ textTransform: "capitalize" }}>
+                            {entry.decision}
+                          </span>
                         </span>
                       </td>
-                      <td style={{
-                        padding: "0.75rem 1rem",
-                        fontSize: "0.875rem",
-                        fontWeight: 500,
-                        color: "hsl(var(--foreground))",
-                        whiteSpace: "nowrap"
-                      }}>
+                      <td
+                        style={{
+                          padding: "0.75rem 1rem",
+                          fontSize: "0.875rem",
+                          fontWeight: 500,
+                          color: "hsl(var(--foreground))",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {entry.domain}
                       </td>
-                      <td style={{
-                        padding: "0.75rem 1rem",
-                        fontSize: "0.875rem",
-                        color: "hsl(var(--muted-foreground))",
-                        whiteSpace: "nowrap"
-                      }}>
+                      <td
+                        style={{
+                          padding: "0.75rem 1rem",
+                          fontSize: "0.875rem",
+                          color: "hsl(var(--muted-foreground))",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {entry.request_method}
                       </td>
-                      <td style={{
-                        padding: "0.75rem 1rem",
-                        fontSize: "0.875rem",
-                        color: "hsl(var(--muted-foreground))",
-                        maxWidth: "20rem",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}>
+                      <td
+                        style={{
+                          padding: "0.75rem 1rem",
+                          fontSize: "0.875rem",
+                          color: "hsl(var(--muted-foreground))",
+                          maxWidth: "20rem",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {entry.request_path}
                       </td>
-                      <td style={{
-                        padding: "0.75rem 1rem",
-                        fontSize: "0.875rem",
-                        color: "hsl(var(--muted-foreground))",
-                        maxWidth: "24rem",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}>
+                      <td
+                        style={{
+                          padding: "0.75rem 1rem",
+                          fontSize: "0.875rem",
+                          color: "hsl(var(--muted-foreground))",
+                          maxWidth: "24rem",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {entry.reason}
                       </td>
-                      <td style={{
-                        padding: "0.75rem 1rem",
-                        fontSize: "0.75rem",
-                        color: "hsl(var(--muted-foreground))",
-                        fontFamily: "monospace",
-                        whiteSpace: "nowrap"
-                      }}>
+                      <td
+                        style={{
+                          padding: "0.75rem 1rem",
+                          fontSize: "0.75rem",
+                          color: "hsl(var(--muted-foreground))",
+                          fontFamily: "monospace",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {entry.agent_id.slice(0, 8)}...
                       </td>
                     </tr>
@@ -506,11 +624,24 @@ export function AuditPage() {
 
           {/* Pagination */}
           {data && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  color: "hsl(var(--muted-foreground))",
+                }}
+              >
                 Showing {data.entries.length} of {data.total_count} entries
               </div>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <div
+                style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
+              >
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
@@ -522,12 +653,18 @@ export function AuditPage() {
                     cursor: page === 1 ? "not-allowed" : "pointer",
                     opacity: page === 1 ? 0.5 : 1,
                     fontSize: "0.875rem",
-                    color: "hsl(var(--foreground))"
+                    color: "hsl(var(--foreground))",
                   }}
                 >
                   Previous
                 </button>
-                <span style={{ padding: "0.5rem 0.75rem", fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
+                <span
+                  style={{
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.875rem",
+                    color: "hsl(var(--muted-foreground))",
+                  }}
+                >
                   Page {page}
                 </span>
                 <button
@@ -541,7 +678,7 @@ export function AuditPage() {
                     cursor: data.has_more ? "pointer" : "not-allowed",
                     opacity: data.has_more ? 1 : 0.5,
                     fontSize: "0.875rem",
-                    color: "hsl(var(--foreground))"
+                    color: "hsl(var(--foreground))",
                   }}
                 >
                   Next

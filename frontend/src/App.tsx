@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./pages/Dashboard";
@@ -7,62 +13,91 @@ import { AgentsPage } from "./pages/AgentsPage";
 import { PoliciesPage } from "./pages/PoliciesPage";
 import { AuditPage } from "./pages/AuditPage";
 import { LoginPage } from "./pages/LoginPage";
+import { authApi } from "./services/api";
 
 // Wrapper component to handle navigation after login
 function AppContent() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(
+    "checking",
+  );
   const navigate = useNavigate();
 
   // Create a query client inside component so we can clear it
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: true,
-        retry: 1,
-        staleTime: 5000, // 5 seconds - shorter cache to see fresh data
-      },
-    },
-  }));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: true,
+            retry: 1,
+            staleTime: 5000, // 5 seconds - shorter cache to see fresh data
+          },
+        },
+      }),
+  );
 
   const handleLogin = useCallback(() => {
-    setIsAuthenticated(true);
-    // Clear any cached data from previous sessions
     queryClient.clear();
-    // Always redirect to Dashboard after login
+    setAuthState("authenticated");
     navigate("/");
   }, [navigate, queryClient]);
 
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("tokenExpiresAt");
-    localStorage.removeItem("tenantId");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("isAuthenticated");
-    queryClient.clear(); // Clear React Query cache
-    setIsAuthenticated(false);
-    // Navigate to root (will show login)
-    navigate("/");
+  const handleLogout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error("Failed to log out", error);
+    } finally {
+      queryClient.clear();
+      setAuthState("unauthenticated");
+      navigate("/");
+    }
   }, [navigate, queryClient]);
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    const expiresAtRaw = localStorage.getItem("tokenExpiresAt");
-    const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : undefined;
+    let cancelled = false;
 
-    if (!token) {
-      setIsAuthenticated(false);
-      return;
-    }
+    const checkSession = async () => {
+      try {
+        await authApi.session();
+        if (!cancelled) {
+          setAuthState("authenticated");
+        }
+      } catch {
+        if (!cancelled) {
+          setAuthState("unauthenticated");
+        }
+      }
+    };
 
-    if (expiresAt && expiresAt <= Date.now()) {
-      handleLogout();
-      return;
-    }
+    checkSession().catch((error) => {
+      console.error("Failed to verify session", error);
+      setAuthState("unauthenticated");
+    });
 
-    setIsAuthenticated(true);
-  }, [handleLogout]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  if (!isAuthenticated) {
+  if (authState === "checking") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "hsl(var(--muted-foreground))",
+          fontSize: "1rem",
+        }}
+      >
+        Checking session...
+      </div>
+    );
+  }
+
+  if (authState === "unauthenticated") {
     return <LoginPage onLogin={handleLogin} />;
   }
 

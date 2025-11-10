@@ -28,9 +28,9 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
 
     // Clean up certificate - remove leading/trailing whitespace from each line
     const cleanedCert = certificate
-      .split('\n')
-      .map(line => line.trim())
-      .join('\n')
+      .split("\n")
+      .map((line) => line.trim())
+      .join("\n")
       .trim();
 
     try {
@@ -44,7 +44,9 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
       });
       onClose();
     } catch (err: unknown) {
-      const errorMessage = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Failed to create agent";
+      const errorMessage =
+        (err as { response?: { data?: { detail?: string } } }).response?.data
+          ?.detail || "Failed to create agent";
       setError(errorMessage);
     }
   };
@@ -61,37 +63,49 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
   };
 
   return (
-    <div style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-      padding: "1rem"
-    }}>
-      <div style={{
-        backgroundColor: "white",
-        borderRadius: "12px",
-        width: "100%",
-        maxWidth: "32rem",
-        maxHeight: "90vh",
-        overflow: "auto",
-        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
-      }}>
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        padding: "1rem",
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "12px",
+          width: "100%",
+          maxWidth: "32rem",
+          maxHeight: "90vh",
+          overflow: "auto",
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+        }}
+      >
         {/* Header */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "1.5rem",
-          borderBottom: "1px solid hsl(var(--border))"
-        }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "hsl(var(--foreground))" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "1.5rem",
+            borderBottom: "1px solid hsl(var(--border))",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              color: "hsl(var(--foreground))",
+            }}
+          >
             Add New Agent
           </h2>
           <button
@@ -102,7 +116,7 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
               border: "none",
               cursor: "pointer",
               color: "hsl(var(--muted-foreground))",
-              borderRadius: "0.25rem"
+              borderRadius: "0.25rem",
             }}
           >
             <X style={{ height: "1.25rem", width: "1.25rem" }} />
@@ -110,16 +124,26 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            padding: "1.5rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.5rem",
+          }}
+        >
           {/* Agent Name */}
           <div>
-            <label style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--foreground))",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--foreground))",
+                marginBottom: "0.5rem",
+              }}
+            >
               Agent Name *
             </label>
             <input
@@ -135,20 +159,22 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
                 borderRadius: "0.5rem",
                 fontSize: "0.875rem",
                 outline: "none",
-                backgroundColor: "white"
+                backgroundColor: "white",
               }}
             />
           </div>
 
           {/* Certificate */}
           <div>
-            <label style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "hsl(var(--foreground))",
-              marginBottom: "0.5rem"
-            }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "hsl(var(--foreground))",
+                marginBottom: "0.5rem",
+              }}
+            >
               X.509 Certificate (PEM format) *
             </label>
             <textarea
@@ -166,7 +192,7 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
                 fontFamily: "monospace",
                 outline: "none",
                 resize: "vertical",
-                backgroundColor: "white"
+                backgroundColor: "white",
               }}
             />
             <div style={{ marginTop: "0.5rem" }}>
@@ -181,7 +207,7 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
                   fontSize: "0.875rem",
                   cursor: "pointer",
                   backgroundColor: "white",
-                  color: "hsl(var(--foreground))"
+                  color: "hsl(var(--foreground))",
                 }}
               >
                 <Upload style={{ height: "1rem", width: "1rem" }} />
@@ -198,16 +224,25 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
 
           {/* Error Message */}
           {error && (
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-              padding: "0.75rem 1rem",
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.3)",
-              borderRadius: "0.5rem"
-            }}>
-              <AlertCircle style={{ height: "1.25rem", width: "1.25rem", color: "#EF4444", flexShrink: 0 }} />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                padding: "0.75rem 1rem",
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: "0.5rem",
+              }}
+            >
+              <AlertCircle
+                style={{
+                  height: "1.25rem",
+                  width: "1.25rem",
+                  color: "#EF4444",
+                  flexShrink: 0,
+                }}
+              />
               <p style={{ fontSize: "0.875rem", color: "#EF4444", margin: 0 }}>
                 {error}
               </p>
@@ -215,7 +250,15 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
           )}
 
           {/* Actions */}
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", paddingTop: "1rem", borderTop: "1px solid hsl(var(--border))" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              justifyContent: "flex-end",
+              paddingTop: "1rem",
+              borderTop: "1px solid hsl(var(--border))",
+            }}
+          >
             <button
               type="button"
               onClick={onClose}
@@ -227,7 +270,7 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
                 fontWeight: 500,
                 borderRadius: "0.5rem",
                 border: "1px solid hsl(var(--border))",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               Cancel
@@ -244,7 +287,7 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
                 borderRadius: "0.5rem",
                 border: "none",
                 cursor: createAgent.isPending ? "not-allowed" : "pointer",
-                opacity: createAgent.isPending ? 0.7 : 1
+                opacity: createAgent.isPending ? 0.7 : 1,
               }}
             >
               {createAgent.isPending ? "Creating..." : "Create Agent"}

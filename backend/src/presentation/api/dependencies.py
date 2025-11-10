@@ -37,7 +37,7 @@ from core.security import TokenError, decode_token
 from domain.agent.service import AgentService
 from domain.audit.service import AuditService
 from domain.policy.service import PolicyService
-from fastapi import Header, HTTPException, status
+from fastapi import Header, HTTPException, Request, status
 from infrastructure.opa.client import OPAClient
 from infrastructure.opa.policy_compiler import PolicyCompiler
 from infrastructure.persistence.postgres.agent_repository import PostgresAgentRepository
@@ -163,7 +163,7 @@ def _decode_authorization_token(authorization: str | None) -> dict[str, str]:
         )
 
     scheme, _, token = authorization.partition(" ")
-    if token == "":
+    if token == "":  # nosec B105  # False positive: checking empty string, not hardcoded password
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Authorization header format",
@@ -187,12 +187,15 @@ def _decode_authorization_token(authorization: str | None) -> dict[str, str]:
 
 
 async def get_tenant_id(
+    request: Request,
     x_tenant_id: Annotated[str | None, Header()] = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> UUID:
     """Extract tenant ID from the bearer token (and optional header)."""
 
-    payload = _decode_authorization_token(authorization)
+    payload = getattr(request.state, "user", None)
+    if payload is None:
+        payload = _decode_authorization_token(authorization)
     token_tenant_id = payload.get("tenant_id")
 
     if token_tenant_id is None:
@@ -219,12 +222,15 @@ async def get_tenant_id(
 
 
 async def get_user_id(
+    request: Request,
     x_user_id: Annotated[str | None, Header()] = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> UUID:
     """Extract user ID from the bearer token (and optional header)."""
 
-    payload = _decode_authorization_token(authorization)
+    payload = getattr(request.state, "user", None)
+    if payload is None:
+        payload = _decode_authorization_token(authorization)
     token_user_id = payload.get("user_id") or payload.get("sub")
 
     if token_user_id is None:
