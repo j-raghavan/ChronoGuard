@@ -27,6 +27,8 @@ class TestMainApplicationCoverage:
         assert app.description == "Zero-trust proxy for browser automation with temporal controls"
 
     @pytest.mark.asyncio
+    @patch("main.initialize_database")
+    @patch("main.create_engine")
     @patch("main.initialize_telemetry")
     @patch("main.configure_logging")
     @patch("main.configure_container")
@@ -35,6 +37,8 @@ class TestMainApplicationCoverage:
         mock_configure_container: MagicMock,
         mock_configure_logging: MagicMock,
         mock_initialize_telemetry: MagicMock,
+        mock_create_engine: MagicMock,
+        mock_initialize_database: MagicMock,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test application lifespan management."""
@@ -50,7 +54,14 @@ class TestMainApplicationCoverage:
 
         app = FastAPI()
 
-        # Mock the returns to avoid actual telemetry setup
+        # Mock the returns to avoid actual database/telemetry setup
+        from unittest.mock import AsyncMock
+
+        mock_engine = MagicMock()
+        mock_engine.dispose = AsyncMock(return_value=None)
+        mock_create_engine.return_value = mock_engine
+        mock_initialize_database.return_value = None
+
         mock_feature_manager = FeatureManager()
         mock_container = DependencyContainer()
         mock_telemetry = MagicMock()
