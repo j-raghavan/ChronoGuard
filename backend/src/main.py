@@ -36,15 +36,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     )
 
     # Initialize database schema
+    engine = None
     try:
         logger.info("Initializing database schema...")
         engine = create_engine()
         await initialize_database(engine, create_tables=True, create_extensions=True)
         logger.info("Database schema initialized successfully")
-        await engine.dispose()
     except Exception as e:
-        logger.warning(f"Database initialization skipped or failed: {e}")
-        # Continue startup even if DB init fails (tables might already exist)
+        logger.opt(exception=True).error("Database initialization failed")
+        raise
+    finally:
+        if engine is not None:
+            await engine.dispose()
 
     # Initialize telemetry
     telemetry = initialize_telemetry(

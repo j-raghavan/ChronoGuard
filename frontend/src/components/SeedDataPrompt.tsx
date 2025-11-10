@@ -1,22 +1,38 @@
 import { useState } from "react";
-import { Database, X, Loader2 } from "lucide-react";
+import { Database, X, Copy, CheckCircle2 } from "lucide-react";
 
 interface SeedDataPromptProps {
-  onSeed: () => Promise<void>;
+  seedCommand: string;
+  onConfirmSeed: () => Promise<void> | void;
   onDismiss: () => void;
+  docsUrl?: string;
 }
 
-export function SeedDataPrompt({ onSeed, onDismiss }: SeedDataPromptProps) {
-  const [isSeeding, setIsSeeding] = useState(false);
+export function SeedDataPrompt({
+  seedCommand,
+  onConfirmSeed,
+  onDismiss,
+  docsUrl,
+}: SeedDataPromptProps) {
+  const [copied, setCopied] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
-  const handleSeed = async () => {
-    setIsSeeding(true);
+  const handleCopy = async () => {
     try {
-      await onSeed();
+      await navigator.clipboard.writeText(seedCommand);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error("Failed to seed database:", error);
+      console.error("Failed to copy seed command", error);
+    }
+  };
+
+  const handleConfirmSeed = async () => {
+    setIsConfirming(true);
+    try {
+      await onConfirmSeed();
     } finally {
-      setIsSeeding(false);
+      setIsConfirming(false);
     }
   };
 
@@ -98,10 +114,95 @@ export function SeedDataPrompt({ onSeed, onDismiss }: SeedDataPromptProps) {
             ChronoGuard's features.
           </p>
 
+          <div
+            style={{
+              backgroundColor: "#f3f4f6",
+              borderRadius: "0.75rem",
+              border: "1px solid #e5e7eb",
+              padding: "1rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "#4b5563",
+                marginBottom: "0.75rem",
+              }}
+            >
+              Run the following command from the project root to seed local
+              data:
+            </p>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                backgroundColor: "white",
+                borderRadius: "0.5rem",
+                border: "1px dashed #d1d5db",
+                padding: "0.75rem 1rem",
+                fontFamily: "monospace",
+                fontSize: "0.85rem",
+                color: "#111827",
+              }}
+            >
+              <code style={{ flex: 1, whiteSpace: "pre-wrap" }}>
+                {seedCommand}
+              </code>
+              <button
+                onClick={handleCopy}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
+                  border: "none",
+                  backgroundColor: "#eef2ff",
+                  color: "#4f46e5",
+                  padding: "0.4rem 0.75rem",
+                  borderRadius: "0.5rem",
+                  cursor: "pointer",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                }}
+              >
+                {copied ? (
+                  <>
+                    <CheckCircle2 style={{ height: "1rem", width: "1rem" }} />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy style={{ height: "1rem", width: "1rem" }} />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
+            {docsUrl && (
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#6b7280",
+                  marginTop: "0.5rem",
+                }}
+              >
+                Need help?{" "}
+                <a
+                  href={docsUrl}
+                  style={{ color: "#4f46e5", textDecoration: "underline" }}
+                >
+                  Read the seeding guide
+                </a>
+                .
+              </p>
+            )}
+          </div>
+
           <div style={{ display: "flex", gap: "0.75rem" }}>
             <button
-              onClick={handleSeed}
-              disabled={isSeeding}
+              onClick={handleConfirmSeed}
+              disabled={isConfirming}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -113,33 +214,27 @@ export function SeedDataPrompt({ onSeed, onDismiss }: SeedDataPromptProps) {
                 fontWeight: 600,
                 borderRadius: "0.5rem",
                 border: "none",
-                cursor: isSeeding ? "not-allowed" : "pointer",
-                opacity: isSeeding ? 0.7 : 1,
+                cursor: isConfirming ? "not-allowed" : "pointer",
+                opacity: isConfirming ? 0.7 : 1,
                 transition: "opacity 0.2s",
                 boxShadow: "0 2px 4px rgba(102, 126, 234, 0.3)",
               }}
             >
-              {isSeeding ? (
+              {isConfirming ? (
                 <>
-                  <Loader2
-                    style={{
-                      height: "1rem",
-                      width: "1rem",
-                      animation: "spin 1s linear infinite",
-                    }}
-                  />
-                  Seeding database...
+                  <CheckCircle2 style={{ height: "1rem", width: "1rem" }} />
+                  Checking data...
                 </>
               ) : (
                 <>
                   <Database style={{ height: "1rem", width: "1rem" }} />
-                  Load Sample Data
+                  I've seeded the data
                 </>
               )}
             </button>
             <button
               onClick={onDismiss}
-              disabled={isSeeding}
+              disabled={isConfirming}
               style={{
                 padding: "0.625rem 1.25rem",
                 backgroundColor: "transparent",
@@ -148,31 +243,23 @@ export function SeedDataPrompt({ onSeed, onDismiss }: SeedDataPromptProps) {
                 fontWeight: 500,
                 borderRadius: "0.5rem",
                 border: "1px solid #e5e7eb",
-                cursor: isSeeding ? "not-allowed" : "pointer",
-                opacity: isSeeding ? 0.5 : 1,
+                cursor: isConfirming ? "not-allowed" : "pointer",
+                opacity: isConfirming ? 0.5 : 1,
                 transition: "background-color 0.2s",
               }}
               onMouseEnter={(e) =>
-                !isSeeding &&
+                !isConfirming &&
                 (e.currentTarget.style.backgroundColor = "#f9fafb")
               }
               onMouseLeave={(e) =>
                 (e.currentTarget.style.backgroundColor = "transparent")
               }
             >
-              I'll do it later
+              Dismiss
             </button>
           </div>
         </div>
       </div>
-
-      {/* Spinning animation for loader */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

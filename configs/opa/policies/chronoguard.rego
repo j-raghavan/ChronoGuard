@@ -51,9 +51,35 @@ time_window_valid if {
     policy := get_agent_policy(input.attributes.source.principal)
     restrictions := policy.time_restrictions
 
-    # Check if current time is within allowed windows
-    # TODO: Implement time window logic
-    true  # Placeholder for MVP
+    restrictions.enabled
+
+    local_weekday := ((time.weekday(time.now_ns()) + 6) % 7)
+    local_weekday in restrictions.allowed_days
+
+    utc_clock := time.clock(time.now_ns())
+    utc_minutes := (utc_clock[0] * 60) + utc_clock[1]
+    local_minutes := (((utc_minutes + restrictions.timezone_offset_minutes) % 1440) + 1440) % 1440
+
+    some range in restrictions.time_ranges
+    within_time_range(range, local_minutes)
+}
+
+within_time_range(range, minute) if {
+    start_time := (range.start_hour * 60) + range.start_minute
+    end_time := (range.end_hour * 60) + range.end_minute
+    start_time <= end_time
+    minute >= start_time
+    minute <= end_time
+}
+
+within_time_range(range, minute) if {
+    start_time := (range.start_hour * 60) + range.start_minute
+    end_time := (range.end_hour * 60) + range.end_minute
+    start_time > end_time
+    (
+        minute >= start_time
+        or minute <= end_time
+    )
 }
 
 # Check rate limits
@@ -66,9 +92,20 @@ rate_limit_ok if {
 }
 
 rate_limit_ok if {
-    # TODO: Implement rate limit checks with Redis
-    # For MVP, allow if rate_limits exist but checks not implemented
-    true
+    policy := get_agent_policy(input.attributes.source.principal)
+    policy.rate_limits
+    context := object.get(input, "rate_limit_context", null)
+    context != null
+
+    minute_count := object.get(context, "minute_count", 0)
+    hour_count := object.get(context, "hour_count", 0)
+    day_count := object.get(context, "day_count", 0)
+    burst_count := object.get(context, "burst_count", 0)
+
+    minute_count < policy.rate_limits.requests_per_minute
+    hour_count < policy.rate_limits.requests_per_hour
+    day_count < policy.rate_limits.requests_per_day
+    burst_count < policy.rate_limits.burst_limit
 }
 
 # Helper: Get agent policy from data bundle

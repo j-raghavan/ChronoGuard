@@ -243,3 +243,9 @@ export interface LoginResponse {
   user_id: string;
   expires_in: number;
 }
+
+export interface SessionResponse {
+  authenticated: boolean;
+  tenant_id: string;
+  user_id: string;
+}

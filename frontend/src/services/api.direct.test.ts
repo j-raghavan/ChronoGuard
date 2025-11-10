@@ -233,24 +233,9 @@ describe("API Direct Execution Tests", () => {
     expect(result.status).toBe(200);
   });
 
-  it("should add tenantId header via interceptor", async () => {
-    localStorage.setItem("tenantId", "test-tenant-123");
-
+  it("should send credentialed requests", async () => {
     mock.onGet("/api/v1/health/").reply((config) => {
-      // Interceptor should add this header
-      expect(config.headers?.["X-Tenant-ID"]).toBe("test-tenant-123");
-      return [200, { status: "ok" }];
-    });
-
-    const { healthApi } = await import("./api");
-    await healthApi.check();
-  });
-
-  it("should add userId header via interceptor", async () => {
-    localStorage.setItem("userId", "test-user-456");
-
-    mock.onGet("/api/v1/health/").reply((config) => {
-      expect(config.headers?.["X-User-ID"]).toBe("test-user-456");
+      expect(config.withCredentials).toBe(true);
       return [200, { status: "ok" }];
     });
 

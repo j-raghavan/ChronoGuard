@@ -20,6 +20,7 @@ import type {
   MetricsSummaryResponse,
   HealthResponse,
   LoginResponse,
+  SessionResponse,
 } from "@/types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -64,6 +65,8 @@ export const authApi = {
     apiClient.post<LoginResponse>("/api/v1/auth/login", {
       password,
     }),
+  logout: () => apiClient.post<void>("/api/v1/auth/logout", {}),
+  session: () => apiClient.get<SessionResponse>("/api/v1/auth/session"),
 };
 
 // Health Endpoints

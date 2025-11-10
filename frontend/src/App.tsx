@@ -17,9 +17,9 @@ import { authApi } from "./services/api";
 
 // Wrapper component to handle navigation after login
 function AppContent() {
-  const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(
-    "checking",
-  );
+  const [authState, setAuthState] = useState<
+    "checking" | "authenticated" | "unauthenticated"
+  >("checking");
   const navigate = useNavigate();
 
   // Create a query client inside component so we can clear it

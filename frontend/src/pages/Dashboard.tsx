@@ -46,55 +46,19 @@ export function Dashboard() {
     }
   }, [isDatabaseEmpty]);
 
-  const handleSeedDatabase = async () => {
-    try {
-      // Get internal secret from environment (development only)
-      const internalSecret = import.meta.env.VITE_INTERNAL_SECRET;
-
-      if (!internalSecret) {
-        console.error(
-          "VITE_INTERNAL_SECRET not configured - cannot seed database",
-        );
-        alert(
-          "Seeding requires VITE_INTERNAL_SECRET to be set in .env. See .env.example for details.",
-        );
-        return;
-      }
-
-      // Call the backend seed endpoint with internal auth
-      const response = await fetch(
-        "http://localhost:8000/api/v1/internal/seed",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${internalSecret}`,
-          },
-        },
-      );
-
-      if (response.ok) {
-        // Refresh metrics and analytics
-        await refetchMetrics();
-        await refetchAnalytics();
-        setShowSeedPrompt(false);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Failed to seed database:", errorData);
-        alert(
-          `Failed to seed database: ${errorData.detail || "Unknown error"}`,
-        );
-      }
-    } catch (error) {
-      console.error("Error seeding database:", error);
-      alert("Error seeding database. Check console for details.");
-    }
-  };
-
   const handleDismissSeedPrompt = () => {
     localStorage.setItem("seedPromptDismissed", "true");
     setShowSeedPrompt(false);
   };
+
+  const handleSeedConfirmed = async () => {
+    await refetchMetrics();
+    await refetchAnalytics();
+    localStorage.setItem("seedPromptDismissed", "true");
+    setShowSeedPrompt(false);
+  };
+
+  const seedCommand = "poetry run python backend/scripts/seed_sample_data.py";
 
   if (metricsLoading || analyticsLoading) {
     return (
@@ -162,7 +126,8 @@ export function Dashboard() {
       {/* Seed Data Prompt */}
       {showSeedPrompt && (
         <SeedDataPrompt
-          onSeed={handleSeedDatabase}
+          seedCommand={seedCommand}
+          onConfirmSeed={handleSeedConfirmed}
           onDismiss={handleDismissSeedPrompt}
         />
       )}

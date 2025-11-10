@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Shield Background -->
+  <path d="M32 4 L8 14 L8 28 C8 42 18 54 32 60 C46 54 56 42 56 28 L56 14 Z" fill="#6366F1"/>
+
+  <!-- Clock Circle -->
+  <circle cx="32" cy="32" r="14" fill="white" opacity="0.95"/>
+
+  <!-- Clock Center -->
+  <circle cx="32" cy="32" r="2" fill="#6366F1"/>
+
+  <!-- Hour Hand -->
+  <line x1="32" y1="32" x2="32" y2="24" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Minute Hand -->
+  <line x1="32" y1="32" x2="38" y2="32" stroke="#6366F1" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Clock Markers -->
+  <circle cx="32" cy="20" r="1" fill="#6366F1"/>
+  <circle cx="32" cy="44" r="1" fill="#6366F1"/>
+  <circle cx="20" cy="32" r="1" fill="#6366F1"/>
+  <circle cx="44" cy="32" r="1" fill="#6366F1"/>
+</svg>

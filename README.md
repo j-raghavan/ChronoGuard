@@ -60,13 +60,16 @@ ChronoGuard is an open-source zero-trust proxy that provides network-enforced au
 git clone https://github.com/j-raghavan/chronoguard.git
 cd chronoguard
 
-# 2. Configure environment
-cp .env.example .env
-# Edit .env and set secure passwords/secrets
-# At minimum, set:
-# - DB_PASSWORD
-# - SECRET_KEY
+# 2. Generate secure secrets (interactive)
+./scripts/generate_secrets.sh
+
+# OR manually configure environment
+# cp .env.example .env
+# Edit .env and set the 3 REQUIRED variables:
+# - CHRONOGUARD_DB_PASSWORD
+# - CHRONOGUARD_SECURITY_SECRET_KEY
 # - CHRONOGUARD_INTERNAL_SECRET
+# See .env.example for detailed instructions
 
 # 3. Start the complete stack (all 6 services)
 docker compose up -d
@@ -103,6 +106,19 @@ make run-backend
 # Run the frontend dashboard locally (in another terminal)
 make run-frontend
 ```
+
+### Loading Sample Data (Development/Demo Only)
+
+Use the CLI to populate sample data:
+
+```bash
+# Demo mode must be enabled in .env first
+poetry run python backend/scripts/seed_sample_data.py
+```
+
+The command aborts if the database already contains agents to prevent accidental overwrites.
+
+**Security Note:** Sample data seeding requires demo mode to be enabled. See [Deployment Security Guide](docs/DEPLOYMENT_SECURITY.md) for production setup.
 
 ### Running Tests
 

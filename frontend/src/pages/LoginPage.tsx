@@ -2,8 +2,8 @@
  * Demo login page used for local development.
  *
  * This component exchanges the shared demo password for a JWT token issued by
- * the backend `/api/v1/auth/login` endpoint. The resulting token is stored in
- * `localStorage` and attached to all API requests.
+ * the backend `/api/v1/auth/login` endpoint. The resulting token is written to
+ * a secure, HTTP-only cookie that the API middleware reads for subsequent requests.
  *
  * IMPORTANT: The demo password is still a shared secret intended only for
  * development environments. Replace this flow with a production-ready identity
