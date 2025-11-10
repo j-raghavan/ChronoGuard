@@ -5,11 +5,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from loguru import logger
+from pydantic import BaseModel, Field
+
 from domain.audit.entity import AuditEntry
 from domain.audit.repository import AuditRepository
 from infrastructure.persistence.redis.cache_service import CacheService
-from loguru import logger
-from pydantic import BaseModel, Field
 
 
 class TemporalPattern(BaseModel):

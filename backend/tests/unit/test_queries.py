@@ -5,6 +5,13 @@ from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+from cryptography.x509.oid import NameOID
+
 from application.dto import (
     AgentDTO,
     AgentListResponse,
@@ -20,12 +27,6 @@ from application.queries import (
     ListAgentsQuery,
     ListPoliciesQuery,
 )
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from cryptography.x509.oid import NameOID
 from domain.agent.entity import Agent, AgentStatus
 from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
 from domain.common.value_objects import DomainName, X509Certificate

@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
+
 from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
 from domain.audit.service import AccessRequest, AuditService
 from domain.common.time import MockTimeSource, SystemTimeSource

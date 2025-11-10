@@ -5,11 +5,12 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
-from core.security import create_access_token
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from presentation.api.routes.audit import router
 from starlette.testclient import TestClient as StarletteClient
+
+from core.security import create_access_token
+from presentation.api.routes.audit import router
 
 
 @pytest.fixture

@@ -4,6 +4,8 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from main import create_app, lifespan
+
 from infrastructure.observability.telemetry import (
     ChronoGuardMetrics,
     ChronoGuardTelemetry,
@@ -11,7 +13,6 @@ from infrastructure.observability.telemetry import (
     get_telemetry,
     initialize_telemetry,
 )
-from main import create_app, lifespan
 
 
 class TestMainApplicationCoverage:
@@ -36,9 +37,10 @@ class TestMainApplicationCoverage:
         mock_initialize_telemetry: MagicMock,
     ) -> None:
         """Test application lifespan management."""
+        from fastapi import FastAPI
+
         from core.container import DependencyContainer
         from core.features import FeatureManager
-        from fastapi import FastAPI
 
         app = FastAPI()
 

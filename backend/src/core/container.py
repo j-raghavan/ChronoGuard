@@ -8,6 +8,7 @@ from typing import Any, TypeVar
 
 from core.features import FeatureCategory, FeatureManager
 
+
 T = TypeVar("T")
 
 

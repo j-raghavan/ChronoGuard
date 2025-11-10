@@ -64,8 +64,6 @@ httpx = "^0.26.0"
 faker = "^22.0.0"
 freezegun = "^1.4.0"
 ruff = "^0.1.14"
-black = "^24.3.0"  # Fix CVE-2024-21503
-isort = "^5.13.2"
 mypy = "^1.8.0"
 bandit = {extras = ["toml"], version = "^1.7.6"}
 safety = "^3.0.1"
@@ -128,6 +126,13 @@ exclude = [
     ".mypy_cache",
 ]
 
+[tool.ruff.format]
+# Black-compatible formatting
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "ANN", "S", "B", "A", "C4", "DTZ", "T10", "RET", "SIM"]
 ignore = [
@@ -135,8 +140,13 @@ ignore = [
     "ANN101",  # Missing type annotation for self in method
     "ANN102",  # Missing type annotation for cls in classmethod
     "ANN401",  # Allow typing.Any in specific cases
-    "I001",    # Import block un-sorted (handled by isort)
 ]
+
+[tool.ruff.lint.isort]
+# Import sorting configuration (replaces isort)
+known-first-party = ["domain", "application", "infrastructure", "presentation", "core"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+lines-after-imports = 2
 
 [tool.ruff.lint.per-file-ignores]
 "backend/tests/**" = [

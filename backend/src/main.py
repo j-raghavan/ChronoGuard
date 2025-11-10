@@ -3,15 +3,16 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
+
 from core.config import get_settings
 from core.container import configure_container
 from core.database import create_engine, initialize_database
 from core.features import FeatureManager
 from core.logging import configure_logging
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from infrastructure.observability.telemetry import initialize_telemetry
-from loguru import logger
 from presentation.api.middleware.auth import AuthMiddleware
 
 
@@ -42,7 +43,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         engine = create_engine()
         await initialize_database(engine, create_tables=True, create_extensions=True)
         logger.info("Database schema initialized successfully")
-    except Exception as e:
+    except Exception:
         logger.opt(exception=True).error("Database initialization failed")
         raise
     finally:

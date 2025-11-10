@@ -8,10 +8,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from loguru import logger
+
 from domain.agent.service import AgentService
 from domain.audit.entity import AccessDecision
 from domain.audit.service import AccessRequest, AuditService
-from loguru import logger
 
 from ..dto import AgentDTO, AgentMapper, CreateAgentRequest
 

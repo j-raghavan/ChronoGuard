@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 import grpc
 from loguru import logger
 
+
 if TYPE_CHECKING:
     from domain.agent.entity import Agent
     from infrastructure.envoy.config_generator import ConfigGenerator

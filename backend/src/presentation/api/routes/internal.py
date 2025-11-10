@@ -9,14 +9,16 @@ import os
 from typing import Annotated
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from loguru import logger
+from pydantic import BaseModel
+
 from application.dto.opa_dto import OPADecisionBatch, OPADecisionLog
 from application.seed import SeedPreconditionError, seed_sample_data
 from domain.audit.entity import AccessDecision
 from domain.audit.service import AccessRequest, AuditService
-from fastapi import APIRouter, Depends, Header, HTTPException, status
-from loguru import logger
 from presentation.api.dependencies import get_audit_service
-from pydantic import BaseModel
+
 
 router = APIRouter(prefix="/api/v1/internal", tags=["internal"])
 

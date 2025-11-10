@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
+
 from infrastructure.opa.decision_logger import (
     DecisionLogger,
     DecisionMetadata,

@@ -7,6 +7,8 @@ import secrets
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
+
 from core.config import (
     APISettings,
     CelerySettings,
@@ -21,7 +23,6 @@ from core.config import (
     get_settings,
     reload_settings,
 )
-from pydantic import ValidationError
 
 
 class TestDatabaseSettings:

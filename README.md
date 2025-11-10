@@ -340,8 +340,8 @@ ChronoGuard maintains strict code quality standards:
 
 - **95%+ Test Coverage** - All code must have comprehensive test coverage
 - **Type Safety** - Full type hints with mypy validation
-- **Code Formatting** - Black and isort for consistent style
-- **Linting** - Ruff for fast, comprehensive linting
+- **Code Formatting** - Ruff formatter (Black-compatible) for consistent style
+- **Linting** - Ruff for fast, comprehensive linting and import sorting
 - **Security** - Bandit for security issue detection
 
 See [CODING_GUIDELINES.md](CODING_GUIDELINES.md) for detailed standards.
@@ -353,21 +353,19 @@ See [CODING_GUIDELINES.md](CODING_GUIDELINES.md) for detailed standards.
 All code contributions must meet these standards:
 
 ```bash
-# Code formatting (Black + isort)
+# Code formatting and linting (Ruff)
 cd backend
-poetry run black src/ tests/
-poetry run isort src/ tests/
-
-# Linting (Ruff)
-poetry run ruff check src/ tests/
+poetry run ruff check src/ tests/          # Linting + import sorting
+poetry run ruff format src/ tests/         # Code formatting (Black-compatible)
 
 # Type checking (mypy)
 poetry run mypy src/
 
-# Run all quality checks
-poetry run ruff check src/ && \
-  poetry run mypy src/ && \
-  poetry run black --check src/
+# Security scanning (bandit)
+poetry run bandit -r src/ -c pyproject.toml
+
+# Run all quality checks at once
+make quality
 ```
 
 ### Test Coverage Requirements

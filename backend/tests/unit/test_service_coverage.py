@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
+
 from domain.agent.service import AgentService
 from domain.audit.service import AuditService
 from domain.common.exceptions import (

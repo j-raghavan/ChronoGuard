@@ -8,13 +8,14 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from loguru import logger
+
 from application.commands import CreateAgentCommand, UpdateAgentCommand
 from application.dto import AgentDTO, AgentListResponse, CreateAgentRequest, UpdateAgentRequest
 from application.queries import GetAgentQuery, ListAgentsQuery
 from domain.agent.entity import AgentStatus
 from domain.common.exceptions import DuplicateEntityError, EntityNotFoundError
-from fastapi import APIRouter, Depends, HTTPException, status
-from loguru import logger
 from presentation.api.dependencies import (
     get_create_agent_command,
     get_get_agent_query,
@@ -22,6 +23,7 @@ from presentation.api.dependencies import (
     get_tenant_id,
     get_update_agent_command,
 )
+
 
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 

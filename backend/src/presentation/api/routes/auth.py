@@ -6,10 +6,12 @@ import secrets
 from datetime import timedelta
 from uuid import UUID
 
-from core.config import get_settings
-from core.security import create_access_token
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
+
+from core.config import get_settings
+from core.security import create_access_token
+
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 

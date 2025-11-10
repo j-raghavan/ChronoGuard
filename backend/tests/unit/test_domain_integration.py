@@ -3,6 +3,7 @@
 from uuid import UUID, uuid4
 
 import pytest
+
 from core.container import DependencyContainer
 from core.features import FeatureManager
 from domain.agent.entity import Agent, AgentStatus

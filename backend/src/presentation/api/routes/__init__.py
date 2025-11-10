@@ -10,6 +10,7 @@ from .health import router as health_router
 from .internal import router as internal_router
 from .policies import router as policies_router
 
+
 __all__ = [
     "auth_router",
     "agents_router",

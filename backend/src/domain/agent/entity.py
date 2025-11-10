@@ -7,13 +7,14 @@ from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel, Field, field_validator
+
 from domain.common.exceptions import (
     BusinessRuleViolationError,
     InvalidStateTransitionError,
     ValidationError,
 )
 from domain.common.value_objects import X509Certificate
-from pydantic import BaseModel, Field, field_validator
 
 
 class AgentStatus(str, Enum):

@@ -3,8 +3,9 @@
 from uuid import UUID, uuid4
 
 import pytest
-from core.security import create_access_token
 from fastapi import HTTPException
+
+from core.security import create_access_token
 from presentation.api.dependencies import (
     get_create_agent_command,
     get_create_policy_command,

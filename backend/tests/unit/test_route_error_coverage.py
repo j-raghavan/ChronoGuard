@@ -5,11 +5,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from application.dto import AuditListResponse
 from application.queries import GetAuditEntriesQuery
 from core.security import create_access_token
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from presentation.api.routes.audit import router as audit_router
 
 

@@ -4,6 +4,9 @@ import time
 from datetime import UTC, datetime
 from uuid import UUID
 
+from loguru import logger
+from opentelemetry import trace
+
 from domain.agent.repository import AgentRepository
 from domain.common.exceptions import (
     BusinessRuleViolationError,
@@ -19,8 +22,7 @@ from domain.policy.entity import (
     TimeRestriction,
 )
 from domain.policy.repository import PolicyRepository
-from loguru import logger
-from opentelemetry import trace
+
 
 tracer = trace.get_tracer(__name__)
 

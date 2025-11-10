@@ -48,6 +48,7 @@ from domain.policy.entity import (
     TimeRestriction,
 )
 
+
 # Initialize Faker
 fake = Faker()
 Faker.seed(42)  # For reproducible tests

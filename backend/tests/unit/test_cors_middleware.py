@@ -10,12 +10,13 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from core.config import APISettings
 from fastapi import FastAPI, Request
-from presentation.api.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import PlainTextResponse
 from starlette.testclient import TestClient
+
+from core.config import APISettings
+from presentation.api.middleware.cors import CORSMiddleware
 
 
 class TestCORSMiddlewareInitialization:

@@ -16,6 +16,8 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
+from fastapi import Header, HTTPException, Request, status
+
 from application.commands import (
     CreateAgentCommand,
     CreatePolicyCommand,
@@ -37,7 +39,6 @@ from core.security import TokenError, decode_token
 from domain.agent.service import AgentService
 from domain.audit.service import AuditService
 from domain.policy.service import PolicyService
-from fastapi import Header, HTTPException, Request, status
 from infrastructure.opa.client import OPAClient
 from infrastructure.opa.policy_compiler import PolicyCompiler
 from infrastructure.persistence.postgres.agent_repository import PostgresAgentRepository

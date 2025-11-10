@@ -9,9 +9,10 @@ from typing import Any
 from uuid import UUID
 
 import pytest
+from httpx import AsyncClient
+
 from domain.agent.entity import Agent
 from domain.policy.entity import Policy
-from httpx import AsyncClient
 
 
 @pytest.mark.integration
@@ -284,9 +285,10 @@ class TestCompleteProxyFlow:
         """
         import os
 
+        from sqlalchemy import select
+
         from domain.audit.entity import AccessDecision
         from infrastructure.persistence.postgres.models import AuditEntryModel
-        from sqlalchemy import select
 
         # Set internal secret for auth
         os.environ["CHRONOGUARD_INTERNAL_SECRET"] = "test-secret-123"
@@ -378,9 +380,10 @@ class TestCompleteProxyFlow:
         """
         import os
 
+        from sqlalchemy import select
+
         from domain.audit.entity import AccessDecision
         from infrastructure.persistence.postgres.models import AuditEntryModel
-        from sqlalchemy import select
 
         # Set internal secret for auth
         os.environ["CHRONOGUARD_INTERNAL_SECRET"] = "test-secret-123"
@@ -467,9 +470,10 @@ class TestCompleteProxyFlow:
         """
         import os
 
+        from sqlalchemy import select
+
         from domain.audit.entity import AccessDecision
         from infrastructure.persistence.postgres.models import AuditEntryModel
-        from sqlalchemy import select
 
         # Set internal secret for auth
         os.environ["CHRONOGUARD_INTERNAL_SECRET"] = "test-secret-123"
@@ -588,8 +592,9 @@ class TestCompleteProxyFlow:
         """
         import os
 
-        from infrastructure.persistence.postgres.models import AuditEntryModel
         from sqlalchemy import select
+
+        from infrastructure.persistence.postgres.models import AuditEntryModel
 
         # Set internal secret for auth
         os.environ["CHRONOGUARD_INTERNAL_SECRET"] = "test-secret-123"
@@ -693,9 +698,10 @@ class TestCompleteProxyFlow:
         """
         import os
 
+        from sqlalchemy import select
+
         from domain.audit.entity import AccessDecision
         from infrastructure.persistence.postgres.models import AuditEntryModel
-        from sqlalchemy import select
 
         # Set internal secret for auth
         os.environ["CHRONOGUARD_INTERNAL_SECRET"] = "test-secret-123"

@@ -15,9 +15,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
-from domain.policy.exceptions import PolicyCompilationError
 from jinja2 import Environment, FileSystemLoader
 from loguru import logger
+
+from domain.policy.exceptions import PolicyCompilationError
+
 
 if TYPE_CHECKING:
     from domain.policy.entity import Policy, RateLimit, TimeRestriction

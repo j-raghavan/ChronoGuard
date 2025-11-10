@@ -8,10 +8,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from core.config import APISettings, get_settings
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import PlainTextResponse
+
+from core.config import APISettings, get_settings
 
 
 class CORSMiddleware(BaseHTTPMiddleware):

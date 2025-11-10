@@ -10,8 +10,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from presentation.api.dependencies import get_agent_repository, get_policy_repository, get_tenant_id
 from pydantic import BaseModel
+
+from presentation.api.dependencies import get_agent_repository, get_policy_repository, get_tenant_id
+
 
 router = APIRouter(prefix="/api/v1/health", tags=["health"])
 
@@ -66,9 +68,10 @@ async def readiness_check() -> HealthResponse:
     """
     # Test database connectivity
     try:
-        from presentation.api.dependencies import get_database_url
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
+
+        from presentation.api.dependencies import get_database_url
 
         db_url = get_database_url()
         if db_url.startswith("postgresql://"):

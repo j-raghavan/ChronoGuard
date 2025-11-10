@@ -13,6 +13,15 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
+from fastapi import FastAPI, Request
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.testclient import TestClient
+
 from core.config import SecuritySettings
 from core.security import (
     CertificateValidationError,
@@ -20,15 +29,7 @@ from core.security import (
     create_access_token,
     extract_certificate_info,
 )
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.x509.oid import NameOID
-from fastapi import FastAPI, Request
 from presentation.api.middleware.auth import AuthenticationError, AuthMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.testclient import TestClient
 
 
 def create_test_certificate() -> x509.Certificate:

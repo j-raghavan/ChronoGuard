@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
+
 if TYPE_CHECKING:
     from domain.agent.entity import Agent
     from infrastructure.envoy.config_generator import (

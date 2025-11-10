@@ -9,6 +9,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
+
 from core.config import SecuritySettings, get_settings
 from core.security import (
     CertificateValidationError,
@@ -18,9 +22,6 @@ from core.security import (
     load_certificate_from_pem,
     validate_certificate,
 )
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
 
 
 class AuthenticationError(Exception):

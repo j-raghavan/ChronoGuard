@@ -6,9 +6,10 @@ from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel, Field, field_validator
+
 from domain.common.exceptions import ValidationError
 from domain.common.value_objects import DomainName, TimeRange
-from pydantic import BaseModel, Field, field_validator
 
 
 class RuleAction(str, Enum):

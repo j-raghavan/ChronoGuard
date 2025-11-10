@@ -4,6 +4,8 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
+from pydantic import ValidationError
+
 from application.dto import (
     AuditEntryDTO,
     AuditExportRequest,
@@ -13,7 +15,6 @@ from application.dto import (
 )
 from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
 from domain.common.value_objects import DomainName
-from pydantic import ValidationError
 
 
 class TestTimedAccessContextDTO:

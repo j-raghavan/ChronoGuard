@@ -7,10 +7,11 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
-from application.dto.opa_dto import OPADecisionLog, OPAInput, OPAInputAttributes
-from domain.audit.entity import AccessDecision
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+from application.dto.opa_dto import OPADecisionLog, OPAInput, OPAInputAttributes
+from domain.audit.entity import AccessDecision
 from presentation.api.routes import internal_router
 
 

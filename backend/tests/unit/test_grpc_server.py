@@ -13,6 +13,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+
 from domain.agent.entity import Agent, AgentStatus
 from domain.common.value_objects import X509Certificate
 from presentation.grpc.server import (

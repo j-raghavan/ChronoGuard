@@ -4,6 +4,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
+
 from domain.audit.entity import AccessDecision, AuditEntry
 from domain.audit.hasher import AuditHashError, EnhancedAuditHasher
 from domain.common.exceptions import SecurityViolationError

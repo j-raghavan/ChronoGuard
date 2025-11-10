@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
+
 from domain.audit.entity import AccessDecision
 from domain.audit.service import AccessRequest, AuditService
 from domain.policy.service import PolicyService

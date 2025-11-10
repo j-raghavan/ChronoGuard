@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
+
 from infrastructure.security.signer import ECDSASigner, KeyManager, RSASigner, SignerError
 
 

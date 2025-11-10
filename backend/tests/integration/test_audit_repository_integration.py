@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import pytest
+
 from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
 from domain.common.value_objects import DomainName
 from infrastructure.persistence.postgres.audit_repository import PostgresAuditRepository

@@ -36,8 +36,10 @@ from celery.signals import (
     task_retry,
     task_success,
 )
-from core.config import get_settings
 from loguru import logger
+
+from core.config import get_settings
+
 
 # Initialize Celery app
 settings = get_settings()

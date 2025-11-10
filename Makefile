@@ -40,18 +40,17 @@ install-dev: ## Install development dependencies
 
 ##@ Code Quality
 
-lint: ## Run all linters (ruff, black)
-	@echo "$(BLUE)🔍 Running linters...$(RESET)"
+lint: ## Run all linters (ruff check + format)
+	@echo "$(BLUE)🔍 Running ruff linting and import checks...$(RESET)"
 	@poetry run ruff check backend/src/ backend/tests/
+	@echo "$(BLUE)🎨 Running ruff formatting check...$(RESET)"
 	@poetry run ruff format --check backend/src/ backend/tests/
-	@poetry run black --check backend/src/ backend/tests/
 	@echo "$(GREEN)✅ All linters passed$(RESET)"
 
-format: ## Auto-format code (backend: ruff, black, isort; frontend: prettier)
-	@echo "$(BLUE)🎨 Formatting backend code...$(RESET)"
+format: ## Auto-format code (backend: ruff; frontend: prettier)
+	@echo "$(BLUE)🎨 Formatting backend code with ruff...$(RESET)"
+	@poetry run ruff check --select I --fix backend/src/ backend/tests/
 	@poetry run ruff format backend/src/ backend/tests/
-	@poetry run black backend/src/ backend/tests/
-	@poetry run isort backend/src/ backend/tests/
 	@echo "$(GREEN)✅ Backend code formatted$(RESET)"
 	@echo "$(BLUE)🎨 Formatting frontend code...$(RESET)"
 	@cd frontend && npm run format
@@ -150,31 +149,28 @@ test-performance: ## Run performance tests
 
 ##@ Pre-commit and Quality Gates
 
-quality: ## Run comprehensive quality checks (backend: ruff, black, isort, mypy; frontend: eslint, prettier, tsc)
+quality: ## Run comprehensive quality checks (backend: ruff, mypy; frontend: eslint, prettier, tsc)
 	@echo "$(BLUE)🔍 Running comprehensive backend quality checks...$(RESET)"
-	@echo "$(BLUE)  1/8 Running ruff...$(RESET)"
+	@echo "$(BLUE)  1/6 Running ruff linting...$(RESET)"
 	@poetry run ruff check backend/src/ backend/tests/
-	@echo "$(GREEN)    ✅ Ruff passed$(RESET)"
-	@echo "$(BLUE)  2/8 Running black...$(RESET)"
-	@poetry run black --check backend/src/ backend/tests/
-	@echo "$(GREEN)    ✅ Black passed$(RESET)"
-	@echo "$(BLUE)  3/8 Running isort...$(RESET)"
-	@poetry run isort --check-only backend/src/ backend/tests/
-	@echo "$(GREEN)    ✅ Isort passed$(RESET)"
-	@echo "$(BLUE)  4/8 Running mypy...$(RESET)"
+	@echo "$(GREEN)    ✅ Ruff linting passed$(RESET)"
+	@echo "$(BLUE)  2/6 Running ruff formatting...$(RESET)"
+	@poetry run ruff format --check backend/src/ backend/tests/
+	@echo "$(GREEN)    ✅ Ruff format passed$(RESET)"
+	@echo "$(BLUE)  3/6 Running mypy...$(RESET)"
 	@poetry run mypy backend/src/ --show-error-codes --show-error-context
 	@echo "$(GREEN)    ✅ Mypy passed$(RESET)"
 	@echo "$(BLUE)🔍 Running comprehensive frontend quality checks...$(RESET)"
-	@echo "$(BLUE)  5/8 Running ESLint...$(RESET)"
+	@echo "$(BLUE)  4/6 Running ESLint...$(RESET)"
 	@cd frontend && npm run lint
 	@echo "$(GREEN)    ✅ ESLint passed$(RESET)"
-	@echo "$(BLUE)  6/8 Running Prettier check...$(RESET)"
+	@echo "$(BLUE)  5/6 Running Prettier check...$(RESET)"
 	@cd frontend && npm run format:check
 	@echo "$(GREEN)    ✅ Prettier passed$(RESET)"
-	@echo "$(BLUE)  7/8 Running TypeScript check...$(RESET)"
+	@echo "$(BLUE)  6/6 Running TypeScript check...$(RESET)"
 	@cd frontend && npm run type-check
 	@echo "$(GREEN)    ✅ TypeScript passed$(RESET)"
-	@echo "$(BLUE)  8/8 Checking database migrations...$(RESET)"
+	@echo "$(BLUE)  ✓ Checking database migrations...$(RESET)"
 	@if [ -d "backend/alembic/versions" ]; then \
 		echo "$(GREEN)    ✅ Alembic migrations directory exists$(RESET)"; \
 	else \

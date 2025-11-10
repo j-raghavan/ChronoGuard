@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from loguru import logger
+
 from domain.audit.entity import AccessDecision
 from domain.audit.service import AccessRequest, AuditService
 from domain.common.exceptions import EntityNotFoundError
@@ -15,9 +17,9 @@ from domain.policy.entity import PolicyStatus
 from domain.policy.repository import PolicyRepository
 from infrastructure.opa.client import OPAClient
 from infrastructure.opa.policy_compiler import PolicyCompiler
-from loguru import logger
 
 from ..dto import PolicyDTO, PolicyMapper, UpdatePolicyRequest
+
 
 # System agent ID for policy operations
 SYSTEM_AGENT_ID = UUID("00000000-0000-0000-0000-000000000000")

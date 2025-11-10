@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 
 import pytest
+
 from domain.common.exceptions import SecurityViolationError, ValidationError
 from domain.common.value_objects import DomainName, TimeRange, X509Certificate
 

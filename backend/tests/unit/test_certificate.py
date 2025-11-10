@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import NameOID
+
 from domain.common.exceptions import SecurityViolationError, ValidationError
 from domain.common.value_objects.certificate import X509Certificate
 

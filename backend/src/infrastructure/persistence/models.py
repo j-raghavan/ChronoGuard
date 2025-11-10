@@ -4,13 +4,14 @@ This module defines database models with TimescaleDB support for time-series opt
 These models are tested via integration tests with real PostgreSQL/TimescaleDB.
 """
 
-from domain.agent.entity import AgentStatus
-from domain.audit.entity import AccessDecision
-from domain.policy.entity import PolicyStatus
 from sqlalchemy import BigInteger, Column, DateTime, Enum, Float, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase
+
+from domain.agent.entity import AgentStatus
+from domain.audit.entity import AccessDecision
+from domain.policy.entity import PolicyStatus
 
 
 class Base(DeclarativeBase):

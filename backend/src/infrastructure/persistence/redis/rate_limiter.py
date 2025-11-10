@@ -12,8 +12,9 @@ from enum import Enum
 from typing import NamedTuple
 
 import redis.asyncio as redis
-from core.config import RedisSettings
 from loguru import logger
+
+from core.config import RedisSettings
 
 
 class RateLimitAlgorithm(str, Enum):

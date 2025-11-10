@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
+
 from domain.common.exceptions import (
     BusinessRuleViolationError,
     DuplicateEntityError,

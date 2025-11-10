@@ -8,12 +8,13 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from loguru import logger
+
 from domain.agent.repository import AgentRepository
 from domain.audit.entity import AccessDecision
 from domain.audit.service import AccessRequest, AuditService
 from domain.common.exceptions import EntityNotFoundError
 from domain.common.value_objects import X509Certificate
-from loguru import logger
 
 from ..dto import AgentDTO, AgentMapper, UpdateAgentRequest
 

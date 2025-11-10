@@ -3,6 +3,7 @@
 from unittest.mock import Mock
 
 import pytest
+
 from core.container import (
     DependencyContainer,
     FeatureDisabledError,

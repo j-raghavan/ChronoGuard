@@ -8,6 +8,9 @@ from unittest.mock import AsyncMock, patch
 from uuid import UUID, uuid4
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from application.commands import (
     CreateAgentCommand,
     CreatePolicyCommand,
@@ -25,8 +28,6 @@ from application.queries import (
 )
 from core.security import create_access_token
 from domain.common.exceptions import DuplicateEntityError, EntityNotFoundError
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from presentation.api.routes import agents_router, audit_router, health_router, policies_router
 
 

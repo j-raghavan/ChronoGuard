@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from uuid import uuid4
 
 import pytest
+
 from domain.agent.entity import Agent, AgentStatus
 from domain.common.value_objects import X509Certificate
 from infrastructure.envoy.config_generator import (
@@ -18,6 +19,7 @@ from infrastructure.envoy.config_generator import (
     RouteConfig,
 )
 from infrastructure.envoy.xds_server import XDSServer, XDSServerConfig
+
 
 if TYPE_CHECKING:
     from datetime import datetime

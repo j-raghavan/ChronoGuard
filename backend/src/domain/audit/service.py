@@ -4,6 +4,9 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
+from loguru import logger
+from opentelemetry import trace
+
 from domain.audit.entity import (
     AccessDecision,
     AuditEntry,
@@ -15,8 +18,7 @@ from domain.audit.repository import AuditRepository
 from domain.common.exceptions import BusinessRuleViolationError, ValidationError
 from domain.common.time import SystemTimeSource, TimeSource
 from domain.common.value_objects import DomainName
-from loguru import logger
-from opentelemetry import trace
+
 
 tracer = trace.get_tracer(__name__)
 

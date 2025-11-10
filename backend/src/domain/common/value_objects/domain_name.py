@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import re
 
-from domain.common.exceptions import SecurityViolationError, ValidationError
 from pydantic import BaseModel, field_validator
+
+from domain.common.exceptions import SecurityViolationError, ValidationError
 
 
 class DomainName(BaseModel):

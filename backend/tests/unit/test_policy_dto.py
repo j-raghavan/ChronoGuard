@@ -4,6 +4,8 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
+from pydantic import ValidationError
+
 from application.dto import (
     CreatePolicyRequest,
     PolicyDTO,
@@ -12,7 +14,6 @@ from application.dto import (
     UpdatePolicyRequest,
 )
 from domain.policy.entity import Policy, PolicyStatus, RateLimit
-from pydantic import ValidationError
 
 
 class TestPolicyDTO:

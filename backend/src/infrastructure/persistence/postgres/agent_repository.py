@@ -8,14 +8,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from domain.agent.entity import Agent, AgentStatus
 from domain.agent.repository import AgentRepository
 from domain.common.exceptions import ConcurrencyError
 from domain.common.value_objects import X509Certificate
 from infrastructure.persistence.models import AgentModel
-from sqlalchemy import and_, delete, func, or_, select, update
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 class RepositoryError(Exception):

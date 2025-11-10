@@ -9,6 +9,7 @@ from .get_audit import GetAuditEntriesQuery
 from .get_policy import GetPolicyQuery, ListPoliciesQuery
 from .temporal_analytics import TemporalAnalyticsQuery
 
+
 __all__ = [
     # Agent queries
     "GetAgentQuery",

@@ -7,13 +7,15 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from loguru import logger
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 from domain.agent.entity import AgentStatus
 from domain.audit.entity import AccessDecision
 from domain.policy.entity import PolicyStatus
 from infrastructure.persistence.models import AgentModel, AuditEntryModel, PolicyModel
-from loguru import logger
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 
 DEFAULT_TENANT_ID = UUID("550e8400-e29b-41d4-a716-446655440001")
 DEFAULT_USER_ID = UUID("550e8400-e29b-41d4-a716-446655440002")
@@ -125,7 +127,9 @@ async def _seed_agents(session: AsyncSession, now: datetime) -> list[UUID]:
             created_at=now - timedelta(days=secrets.randbelow(30) + 1),
             updated_at=now - timedelta(days=secrets.randbelow(8)),
             last_seen_at=(
-                now - timedelta(hours=secrets.randbelow(25)) if status == AgentStatus.ACTIVE else None
+                now - timedelta(hours=secrets.randbelow(25))
+                if status == AgentStatus.ACTIVE
+                else None
             ),
             agent_metadata={
                 "environment": "production" if index < 3 else "staging",
@@ -282,7 +286,9 @@ async def _seed_audit_entries(
                     policy_id=selected_policy_id,
                     rule_id=None,
                     request_method=secrets.choice(["GET", "POST", "PUT", "DELETE"]),
-                    request_path=f"/api/v1/{secrets.choice(['users', 'products', 'orders', 'analytics'])}",
+                    request_path=(
+                        f"/api/v1/{secrets.choice(['users', 'products', 'orders', 'analytics'])}"
+                    ),
                     user_agent="ChronoGuard-Agent/1.0",
                     source_ip=f"192.168.1.{secrets.randbelow(255) + 1}",
                     response_status=200 if decision == AccessDecision.ALLOW else 403,
