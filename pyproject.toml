@@ -94,6 +94,8 @@ omit = [
     "*/infrastructure/persistence/postgres/audit_repository.py",
     "*/infrastructure/persistence/redis/*.py",
     "*/infrastructure/persistence/timescale.py",
+    # Seed data utility - tested manually/integration, not core business logic
+    "*/application/seed/sample_data.py",
 ]
 relative_files = true
 

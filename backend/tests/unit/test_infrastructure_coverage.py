@@ -35,8 +35,14 @@ class TestMainApplicationCoverage:
         mock_configure_container: MagicMock,
         mock_configure_logging: MagicMock,
         mock_initialize_telemetry: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test application lifespan management."""
+        # Clear any cached settings to avoid test pollution
+        import core.config
+
+        core.config._settings = None
+
         from fastapi import FastAPI
 
         from core.container import DependencyContainer

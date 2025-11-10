@@ -421,8 +421,18 @@ class TestAuthRoutes:
     def client(self, app: FastAPI) -> TestClient:
         return TestClient(app)
 
-    def test_login_success(self, client: TestClient) -> None:
+    @patch("presentation.api.routes.auth.get_settings")
+    def test_login_success(self, mock_get_settings: any, client: TestClient) -> None:
         """Login with correct password returns token."""
+        # Mock settings to enable demo mode
+        from core.config import SecuritySettings, Settings
+
+        mock_settings = Settings()
+        mock_settings.security = SecuritySettings(
+            demo_mode_enabled=True, demo_admin_password="chronoguard-admin-2025"
+        )
+        mock_get_settings.return_value = mock_settings
+
         response = client.post(
             "/api/v1/auth/login",
             json={"password": "chronoguard-admin-2025"},
@@ -433,8 +443,18 @@ class TestAuthRoutes:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
 
-    def test_login_invalid_password(self, client: TestClient) -> None:
+    @patch("presentation.api.routes.auth.get_settings")
+    def test_login_invalid_password(self, mock_get_settings: any, client: TestClient) -> None:
         """Invalid credentials return 401."""
+        # Mock settings to enable demo mode
+        from core.config import SecuritySettings, Settings
+
+        mock_settings = Settings()
+        mock_settings.security = SecuritySettings(
+            demo_mode_enabled=True, demo_admin_password="chronoguard-admin-2025"
+        )
+        mock_get_settings.return_value = mock_settings
+
         response = client.post(
             "/api/v1/auth/login",
             json={"password": "wrong-password"},

@@ -219,10 +219,11 @@ class TestAuthenticateJWT:
 
         request = Mock(spec=Request)
         request.headers = {}
+        request.cookies = {}
 
         import asyncio
 
-        with pytest.raises(AuthenticationError, match="Missing Authorization header"):
+        with pytest.raises(AuthenticationError, match="Missing authentication credentials"):
             asyncio.run(middleware._authenticate_jwt(request))
 
     def test_authenticate_jwt_invalid_format(self) -> None:
@@ -232,10 +233,11 @@ class TestAuthenticateJWT:
 
         request = Mock(spec=Request)
         request.headers = {"Authorization": "InvalidFormat token123"}
+        request.cookies = {}
 
         import asyncio
 
-        with pytest.raises(AuthenticationError, match="Invalid Authorization header format"):
+        with pytest.raises(AuthenticationError, match="Missing authentication credentials"):
             asyncio.run(middleware._authenticate_jwt(request))
 
     def test_authenticate_jwt_invalid_token(self) -> None:
@@ -662,10 +664,11 @@ class TestEdgeCases:
 
         request = Mock(spec=Request)
         request.headers = {"Authorization": ""}
+        request.cookies = {}
 
         import asyncio
 
-        with pytest.raises(AuthenticationError, match="Missing Authorization header"):
+        with pytest.raises(AuthenticationError, match="Missing authentication credentials"):
             asyncio.run(middleware._authenticate_jwt(request))
 
     def test_bearer_without_token(self) -> None:
@@ -675,11 +678,12 @@ class TestEdgeCases:
 
         request = Mock(spec=Request)
         request.headers = {"Authorization": "Bearer "}
+        request.cookies = {}
         request.state = Mock()
 
         import asyncio
 
-        with pytest.raises(AuthenticationError, match="Invalid JWT token"):
+        with pytest.raises(AuthenticationError, match="Missing authentication credentials"):
             asyncio.run(middleware._authenticate_jwt(request))
 
     def test_multiple_exempt_path_prefixes(self) -> None:

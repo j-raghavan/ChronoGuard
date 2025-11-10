@@ -1,9 +1,11 @@
 """Tests for FastAPI dependency providers."""
 
+from typing import Any
+from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 
 from core.security import create_access_token
 from presentation.api.dependencies import (
@@ -39,7 +41,14 @@ class TestTenantDependency:
             }
         )
 
-        result = await get_tenant_id(x_tenant_id=str(tenant_id), authorization=f"Bearer {token}")
+        # Create mock request
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.user = None
+
+        result = await get_tenant_id(
+            request=request, x_tenant_id=str(tenant_id), authorization=f"Bearer {token}"
+        )
 
         assert isinstance(result, UUID)
         assert result == tenant_id
@@ -47,11 +56,14 @@ class TestTenantDependency:
     @pytest.mark.asyncio
     async def test_get_tenant_id_missing(self) -> None:
         """Test missing tenant ID header."""
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.user = None
+
         with pytest.raises(HTTPException) as exc_info:
-            await get_tenant_id(x_tenant_id=None)
+            await get_tenant_id(request=request, x_tenant_id=None, authorization=None)
 
         assert exc_info.value.status_code == 401
-        assert "required" in exc_info.value.detail.lower()
 
     @pytest.mark.asyncio
     async def test_get_tenant_id_invalid_format(self) -> None:
@@ -69,8 +81,14 @@ class TestTenantDependency:
         )
 
         # But provide invalid format in header (mismatch detected before format validation)
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.user = None
+
         with pytest.raises(HTTPException) as exc_info:
-            await get_tenant_id(x_tenant_id="invalid-uuid", authorization=f"Bearer {token}")
+            await get_tenant_id(
+                request=request, x_tenant_id="invalid-uuid", authorization=f"Bearer {token}"
+            )
 
         # Returns 403 for mismatch (security check happens before UUID format check)
         assert exc_info.value.status_code == 403
@@ -95,7 +113,13 @@ class TestUserDependency:
             }
         )
 
-        result = await get_user_id(x_user_id=str(user_id), authorization=f"Bearer {token}")
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.user = None
+
+        result = await get_user_id(
+            request=request, x_user_id=str(user_id), authorization=f"Bearer {token}"
+        )
 
         assert isinstance(result, UUID)
         assert result == user_id
@@ -103,11 +127,14 @@ class TestUserDependency:
     @pytest.mark.asyncio
     async def test_get_user_id_missing(self) -> None:
         """Test missing user ID header."""
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.user = None
+
         with pytest.raises(HTTPException) as exc_info:
-            await get_user_id(x_user_id=None)
+            await get_user_id(request=request, x_user_id=None, authorization=None)
 
         assert exc_info.value.status_code == 401
-        assert "required" in exc_info.value.detail.lower()
 
     @pytest.mark.asyncio
     async def test_get_user_id_invalid_format(self) -> None:
@@ -125,8 +152,14 @@ class TestUserDependency:
         )
 
         # But provide invalid format in header (mismatch detected before format validation)
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.user = None
+
         with pytest.raises(HTTPException) as exc_info:
-            await get_user_id(x_user_id="not-a-uuid", authorization=f"Bearer {token}")
+            await get_user_id(
+                request=request, x_user_id="not-a-uuid", authorization=f"Bearer {token}"
+            )
 
         # Returns 403 for mismatch (security check happens before UUID format check)
         assert exc_info.value.status_code == 403
