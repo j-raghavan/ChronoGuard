@@ -43,8 +43,9 @@ export function AddAgentModal({ onClose }: AddAgentModalProps) {
         },
       });
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to create agent");
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Failed to create agent";
+      setError(errorMessage);
     }
   };
 

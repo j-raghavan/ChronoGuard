@@ -16,14 +16,14 @@ export interface AgentDTO {
   created_at: string;
   updated_at: string;
   last_seen_at: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   version: number;
 }
 
 export interface CreateAgentRequest {
   name: string;
   certificate_pem: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateAgentRequest {
@@ -84,8 +84,8 @@ export interface PolicyDTO {
   name: string;
   description: string;
   rules: PolicyRuleDTO[];
-  time_restrictions: any | null;
-  rate_limits: any | null;
+  time_restrictions: Record<string, unknown> | null;
+  rate_limits: Record<string, unknown> | null;
   priority: number;
   status: "active" | "inactive";
   allowed_domains: string[];
@@ -94,7 +94,7 @@ export interface PolicyDTO {
   updated_at: string;
   created_by: string;
   version: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface CreatePolicyRequest {

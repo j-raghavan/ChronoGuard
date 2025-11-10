@@ -41,8 +41,9 @@ export function AddPolicyModal({ onClose }: AddPolicyModalProps) {
         blocked_domains: blocked,
       });
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to create policy");
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Failed to create policy";
+      setError(errorMessage);
     }
   };
 

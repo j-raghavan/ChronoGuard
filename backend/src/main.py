@@ -107,6 +107,7 @@ def create_app() -> FastAPI:
             "/api/v1/health/",
             "/api/v1/health/ready",
             "/api/v1/auth/login",
+            "/api/v1/internal",  # Internal routes use their own auth
             "/docs",
             "/redoc",
             "/openapi.json",

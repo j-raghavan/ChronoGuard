@@ -93,11 +93,9 @@ const apiClient = createApiClient();
 
 // Auth Endpoints
 export const authApi = {
-  login: (password: string, overrides?: { tenantId?: string; userId?: string }) =>
+  login: (password: string) =>
     apiClient.post<LoginResponse>("/api/v1/auth/login", {
       password,
-      tenant_id: overrides?.tenantId,
-      user_id: overrides?.userId,
     }),
 };
 

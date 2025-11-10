@@ -18,12 +18,6 @@ class LoginRequest(BaseModel):
     """Login request body."""
 
     password: str = Field(..., min_length=8, description="Password for demo admin user")
-    tenant_id: UUID | None = Field(
-        default=None, description="Optional tenant override for the issued token"
-    )
-    user_id: UUID | None = Field(
-        default=None, description="Optional user override for the issued token"
-    )
 
 
 class LoginResponse(BaseModel):
@@ -56,8 +50,9 @@ async def login(request: LoginRequest) -> LoginResponse:
             detail="Invalid credentials",
         )
 
-    tenant_id = request.tenant_id or security_settings.demo_tenant_id
-    user_id = request.user_id or security_settings.demo_user_id
+    # SECURITY: Use only server-configured tenant/user IDs (not client-supplied)
+    tenant_id = security_settings.demo_tenant_id
+    user_id = security_settings.demo_user_id
 
     expires_delta = timedelta(minutes=security_settings.access_token_expire_minutes)
     token_payload = {

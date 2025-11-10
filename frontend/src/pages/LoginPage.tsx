@@ -22,8 +22,6 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const demoPassword =
-    import.meta.env.VITE_DEFAULT_PASSWORD || "chronoguard-admin-2025";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -35,12 +35,21 @@ export function Dashboard() {
 
   const handleSeedDatabase = async () => {
     try {
-      // Call the backend seed endpoint
+      // Get internal secret from environment (development only)
+      const internalSecret = import.meta.env.VITE_INTERNAL_SECRET;
+
+      if (!internalSecret) {
+        console.error("VITE_INTERNAL_SECRET not configured - cannot seed database");
+        alert("Seeding requires VITE_INTERNAL_SECRET to be set in .env. See .env.example for details.");
+        return;
+      }
+
+      // Call the backend seed endpoint with internal auth
       const response = await fetch("http://localhost:8000/api/v1/internal/seed", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Tenant-ID": localStorage.getItem("tenantId") || "",
+          "Authorization": `Bearer ${internalSecret}`,
         },
       });
 
@@ -50,10 +59,13 @@ export function Dashboard() {
         await refetchAnalytics();
         setShowSeedPrompt(false);
       } else {
-        console.error("Failed to seed database");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to seed database:", errorData);
+        alert(`Failed to seed database: ${errorData.detail || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Error seeding database:", error);
+      alert("Error seeding database. Check console for details.");
     }
   };
 

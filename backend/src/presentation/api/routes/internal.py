@@ -14,7 +14,7 @@ from domain.audit.entity import AccessDecision
 from domain.audit.service import AccessRequest, AuditService
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from loguru import logger
-from presentation.api.dependencies import get_audit_service, get_tenant_id
+from presentation.api.dependencies import get_audit_service
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/internal", tags=["internal"])
@@ -184,12 +184,12 @@ async def ingest_opa_decision_batch(
 
 @router.post("/seed", response_model=SeedResponse)
 async def seed_database(
-    tenant_id: Annotated[UUID, Depends(get_tenant_id)],
+    _auth: None = Depends(verify_internal_auth),
 ) -> SeedResponse:
     """Seed database with sample data for development.
 
-    This endpoint directly calls the seeding logic to populate the database
-    with sample agents, policies, and audit entries.
+    This endpoint is protected by internal service authentication only.
+    Requires CHRONOGUARD_INTERNAL_SECRET to be set and provided via Authorization header.
 
     Args:
         tenant_id: Tenant ID from X-Tenant-ID header (uses default tenant)
