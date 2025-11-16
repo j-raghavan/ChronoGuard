@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Optimized for GitHub Codespaces - Quick startup, demo-ready
 # This compose file starts all 6 ChronoGuard services + workspace container
 
@@ -13,7 +11,7 @@ services:
     network_mode: service:chronoguard-proxy
     depends_on:
       - chronoguard-proxy
-      - chronoguard-backend
+      - chronoguard-api
       - chronoguard-dashboard
 
   # 1. Envoy Forward Proxy
