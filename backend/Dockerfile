@@ -22,8 +22,9 @@ RUN groupadd --gid 1000 chronoguard \
 # Set working directory
 WORKDIR /app
 
-# Copy pyproject.toml for dependency installation
-COPY pyproject.toml ./
+# Copy dependency metadata and application source required for packaging
+COPY pyproject.toml README.md poetry.lock ./
+COPY backend ./backend
 
 # Create virtual environment and install dependencies
 RUN python -m venv /opt/venv
