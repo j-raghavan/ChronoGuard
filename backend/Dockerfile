@@ -60,10 +60,13 @@ COPY --from=builder /opt/venv /opt/venv
 # Set working directory
 WORKDIR /app
 
-# Copy application code and metadata with proper ownership
-COPY --chown=chronoguard:chronoguard backend/src/ ./src/
-COPY --chown=chronoguard:chronoguard backend/alembic/ ./alembic/
+# Copy application source tree and metadata for runtime/editable installs
+COPY --chown=chronoguard:chronoguard backend/ ./backend/
 COPY --chown=chronoguard:chronoguard pyproject.toml README.md poetry.lock ./
+
+# Provide legacy top-level paths expected by runtime commands
+RUN ln -s backend/src src \
+    && ln -s backend/alembic alembic
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/data \
