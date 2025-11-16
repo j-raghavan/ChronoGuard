@@ -16,9 +16,9 @@ services:
       - chronoguard
     depends_on:
       chronoguard-proxy:
-        condition: service_healthy
+        condition: service_started
       chronoguard-api:
-        condition: service_healthy
+        condition: service_started
       chronoguard-dashboard:
         condition: service_started
 
