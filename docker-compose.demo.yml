@@ -68,8 +68,8 @@ services:
   # 3. ChronoGuard API (FastAPI)
   chronoguard-api:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: chronoguard-api
     restart: unless-stopped
     ports:

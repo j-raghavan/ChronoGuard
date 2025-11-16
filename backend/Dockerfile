@@ -60,8 +60,8 @@ COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
 
 # Copy application code with proper ownership
-COPY --chown=chronoguard:chronoguard src/ ./src/
-COPY --chown=chronoguard:chronoguard alembic/ ./alembic/
+COPY --chown=chronoguard:chronoguard backend/src/ ./src/
+COPY --chown=chronoguard:chronoguard backend/alembic/ ./alembic/
 COPY --chown=chronoguard:chronoguard pyproject.toml ./
 
 # Create necessary directories
