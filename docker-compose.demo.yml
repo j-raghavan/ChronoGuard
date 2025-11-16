@@ -7,12 +7,20 @@ services:
     image: mcr.microsoft.com/devcontainers/base:ubuntu
     volumes:
       - .:/workspace:cached
-    command: sleep infinity
-    network_mode: service:chronoguard-proxy
+    command: tail -f /dev/null
+    environment:
+      - CHRONOGUARD_API_URL=http://chronoguard-api:8000
+      - CHRONOGUARD_DASHBOARD_URL=http://chronoguard-dashboard:80
+      - CHRONOGUARD_PROXY_URL=http://chronoguard-proxy:8080
+    networks:
+      - chronoguard
     depends_on:
-      - chronoguard-proxy
-      - chronoguard-api
-      - chronoguard-dashboard
+      chronoguard-proxy:
+        condition: service_healthy
+      chronoguard-api:
+        condition: service_healthy
+      chronoguard-dashboard:
+        condition: service_started
 
   # 1. Envoy Forward Proxy
   chronoguard-proxy:

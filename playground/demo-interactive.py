@@ -7,6 +7,7 @@ Live view of audit logs as they're created.
 Shows real-time monitoring of browser automation activity.
 """
 
+import os
 import sys
 import time
 from datetime import datetime, timedelta, UTC
@@ -24,7 +25,7 @@ except ImportError:
     sys.exit(1)
 
 console = Console()
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.getenv("CHRONOGUARD_API_URL", "http://localhost:8000").rstrip("/")
 
 
 def fetch_recent_audit_logs(minutes=5):
@@ -124,7 +125,7 @@ def main():
             sys.exit(1)
     except Exception:
         console.print("[red]❌ Cannot connect to ChronoGuard API![/red]")
-        console.print("Make sure backend is running on http://localhost:8000")
+        console.print(f"Make sure backend is running on {API_BASE_URL}")
         sys.exit(1)
 
     console.print("[green]✅ Connected to ChronoGuard API[/green]\n")

@@ -8,6 +8,38 @@ YELLOW='\033[1;33m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+API_BASE_URL="${CHRONOGUARD_API_URL:-http://localhost:8000}"
+API_BASE_URL="${API_BASE_URL%/}"
+DASHBOARD_BASE_URL="${CHRONOGUARD_DASHBOARD_URL:-http://localhost:3000}"
+DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL%/}"
+PROXY_BASE_URL="${CHRONOGUARD_PROXY_URL:-http://localhost:8080}"
+PROXY_BASE_URL="${PROXY_BASE_URL%/}"
+DEMO_ADMIN_PASSWORD="${CHRONOGUARD_SECURITY_DEMO_ADMIN_PASSWORD:-chronoguard-admin-2025}"
+DEMO_MODE_ENABLED="${CHRONOGUARD_SECURITY_DEMO_MODE_ENABLED:-true}"
+SESSION_COOKIE_SECURE="${CHRONOGUARD_SECURITY_SESSION_COOKIE_SECURE:-false}"
+
+get_env_value() {
+    local key="$1"
+    local file="$2"
+    if [ -f "$file" ]; then
+        grep -E "^${key}=" "$file" | tail -n 1 | cut -d= -f2-
+    fi
+}
+
+set_env_value() {
+    local file="$1"
+    local key="$2"
+    local value="$3"
+    if [ ! -f "$file" ]; then
+        touch "$file"
+    fi
+    if grep -q "^${key}=" "$file"; then
+        sed -i "s|^${key}=.*|${key}=${value}|" "$file"
+    else
+        echo "${key}=${value}" >> "$file"
+    fi
+}
+
 echo -e "${BOLD}${BLUE}"
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║                                                            ║"
@@ -53,6 +85,15 @@ else
     echo -e "${YELLOW}⚠️  .env already exists, skipping${NC}"
 fi
 
+# Ensure demo-related environment variables match repo defaults
+set_env_value ".env" "CHRONOGUARD_SECURITY_DEMO_MODE_ENABLED" "${DEMO_MODE_ENABLED}"
+set_env_value ".env" "CHRONOGUARD_SECURITY_DEMO_ADMIN_PASSWORD" "${DEMO_ADMIN_PASSWORD}"
+set_env_value ".env" "CHRONOGUARD_SECURITY_SESSION_COOKIE_SECURE" "${SESSION_COOKIE_SECURE}"
+
+# Align frontend configuration with backend endpoints/password
+set_env_value "frontend/.env" "VITE_API_URL" "${API_BASE_URL}"
+set_env_value "frontend/.env" "VITE_DEFAULT_PASSWORD" "${DEMO_ADMIN_PASSWORD}"
+
 # 3. Wait for Docker services to be ready
 echo -e "${BLUE}⏳ Waiting for services to start...${NC}"
 echo -e "${YELLOW}   This may take 1-2 minutes...${NC}"
@@ -60,7 +101,7 @@ sleep 20
 
 # Check backend health
 for i in {1..30}; do
-    if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+    if curl -sf "${API_BASE_URL}/health" > /dev/null 2>&1; then
         echo -e "${GREEN}✅ Backend API is healthy${NC}"
         break
     fi
@@ -68,7 +109,7 @@ for i in {1..30}; do
 done
 
 # Check dashboard
-if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+if curl -sf "${DASHBOARD_BASE_URL}" > /dev/null 2>&1; then
     echo -e "${GREEN}✅ Dashboard is ready${NC}"
 else
     echo -e "${YELLOW}⚠️  Dashboard may still be starting...${NC}"
@@ -93,8 +134,8 @@ echo -e "${NC}"
 echo -e "${BOLD}🎯 Quick Start Guide:${NC}"
 echo ""
 echo -e "1️⃣  ${BOLD}View Dashboard:${NC}"
-echo -e "   ${BLUE}http://localhost:3000${NC}"
-echo -e "   Login password: ${YELLOW}chronoguard-admin-2025${NC}"
+echo -e "   ${BLUE}${DASHBOARD_BASE_URL}${NC}"
+echo -e "   Login password: ${YELLOW}${DEMO_ADMIN_PASSWORD}${NC}"
 echo ""
 echo -e "2️⃣  ${BOLD}Run Demo (Blocked Request):${NC}"
 echo -e "   ${GREEN}python playground/demo-blocked.py${NC}"
@@ -106,7 +147,7 @@ echo -e "4️⃣  ${BOLD}Interactive Audit Viewer:${NC}"
 echo -e "   ${GREEN}python playground/demo-interactive.py${NC}"
 echo ""
 echo -e "5️⃣  ${BOLD}API Documentation:${NC}"
-echo -e "   ${BLUE}http://localhost:8000/docs${NC}"
+echo -e "   ${BLUE}${API_BASE_URL}/docs${NC}"
 echo ""
 echo -e "${YELLOW}📚 Full demo guide: ${NC}${BLUE}playground/README.md${NC}"
 echo ""

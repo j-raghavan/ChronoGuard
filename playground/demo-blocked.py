@@ -7,6 +7,7 @@ This demo shows ChronoGuard blocking a request to google.com
 Watch as the proxy denies access and creates an audit log entry.
 """
 
+import os
 import sys
 import time
 
@@ -17,6 +18,10 @@ YELLOW = '\033[93m'
 BLUE = '\033[94m'
 BOLD = '\033[1m'
 RESET = '\033[0m'
+
+API_BASE_URL = os.getenv("CHRONOGUARD_API_URL", "http://localhost:8000").rstrip("/")
+DASHBOARD_URL = os.getenv("CHRONOGUARD_DASHBOARD_URL", "http://localhost:3000").rstrip("/")
+PROXY_URL = os.getenv("CHRONOGUARD_PROXY_URL", "http://localhost:8080").rstrip("/")
 
 
 def print_header():
@@ -68,13 +73,13 @@ def main():
             browser = p.chromium.launch(
                 headless=True,
                 args=[
-                    '--proxy-server=http://localhost:8080',
+                    f'--proxy-server={PROXY_URL}',
                     '--ignore-certificate-errors',  # For demo certs
                 ]
             )
 
             print_success("Browser configured with ChronoGuard proxy")
-            print_info("Proxy: http://localhost:8080")
+            print_info(f"Proxy: {PROXY_URL}")
 
             page = browser.new_page()
 
@@ -121,13 +126,13 @@ def main():
                 print("  8️⃣  FastAPI created audit entry in PostgreSQL")
 
                 print(f"\n{BOLD}View the audit log:{RESET}")
-                print(f"  • Dashboard: {BLUE}http://localhost:3000{RESET} (navigate to Audit Logs)")
-                print(f"  • API: {BLUE}curl http://localhost:8000/api/v1/audit/analytics{RESET}")
+                print(f"  • Dashboard: {BLUE}{DASHBOARD_URL}{RESET} (navigate to Audit Logs)")
+                print(f"  • API: {BLUE}curl {API_BASE_URL}/api/v1/audit/analytics{RESET}")
 
                 print(f"\n{BOLD}Next steps:{RESET}")
                 print(f"  • See an ALLOWED request: {GREEN}python playground/demo-allowed.py{RESET}")
                 print(f"  • View live audit logs: {GREEN}python playground/demo-interactive.py{RESET}")
-                print(f"  • Explore the dashboard: {BLUE}http://localhost:3000{RESET}")
+                print(f"  • Explore the dashboard: {BLUE}{DASHBOARD_URL}{RESET}")
 
                 print(f"\n{BOLD}{GREEN}✨ Demo complete! ChronoGuard is protecting your automation.{RESET}\n")
 
@@ -136,7 +141,7 @@ def main():
         print(f"\n{BOLD}Troubleshooting:{RESET}")
         print("  • Ensure services are running: docker compose ps")
         print("  • Check logs: docker compose logs chronoguard-proxy")
-        print("  • Check backend: curl http://localhost:8000/health")
+        print(f"  • Check backend: curl {API_BASE_URL}/health")
         print("  • Restart services: docker compose restart")
         sys.exit(1)
 
