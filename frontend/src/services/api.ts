@@ -37,7 +37,14 @@ const createApiClient = (): AxiosInstance => {
 
   // Request interceptor to add authentication headers
   client.interceptors.request.use(
-    (config) => config,
+    (config) => {
+      // Get token from localStorage and add to Authorization header
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
     (error) => Promise.reject(error),
   );
 
