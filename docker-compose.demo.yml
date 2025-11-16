@@ -38,11 +38,6 @@ services:
         condition: service_started
     networks:
       - chronoguard
-    healthcheck:
-      test: ["CMD", "/bin/sh", "-c", "curl -fsS http://localhost:9901/ready >/dev/null"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   # 2. OPA Policy Engine
   chronoguard-policy-engine:
