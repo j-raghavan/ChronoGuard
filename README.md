@@ -1,40 +1,43 @@
 <div align="center">
   <img src="frontend/public/assets/icons/chronoguard_icon_128.png" alt="ChronoGuard Icon" width="128" height="128">
 
-  # ChronoGuard
-  **Zero-trust proxy for browser automation with temporal controls**
+# ChronoGuard
 
-  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-  [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-  [![Tests](https://img.shields.io/badge/coverage-95%25+-green.svg)](backend/tests)
+**Zero-trust proxy for browser automation with temporal controls**
 
-  ---
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/coverage-95%25+-green.svg)](backend/tests)
 
-  ## 🎮 Try It Live in 60 Seconds
+---
 
-  **No installation. No configuration. Just click and experience ChronoGuard.**
+## 🎮 Try It Live in 60 Seconds
 
-  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/j-raghavan/ChronoGuard?quickstart=1)
+**No installation. No configuration. Just click and experience ChronoGuard.**
 
-  ### What You'll See:
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/j-raghavan/ChronoGuard?quickstart=1)
 
-  ```bash
-  # 1. Watch a request get BLOCKED ❌
-  python playground/demo-blocked.py
 
-  # 2. Watch a request get ALLOWED ✅
-  python playground/demo-allowed.py
+## What You'll See:
 
-  # 3. View live audit logs 📊
-  python playground/demo-interactive.py
-  ```
+```bash
+# 1. Watch a request get BLOCKED ❌
+python playground/demo-blocked.py
 
-  **Then explore:**
-  - 🎨 Interactive dashboard at `http://localhost:3000` (auto-opens)
-  - 📚 API documentation at `http://localhost:8000/docs`
-  - 📋 Real-time audit logs with cryptographic verification
+# 2. Watch a request get ALLOWED ✅
+python playground/demo-allowed.py
 
-  ---
+# 3. View live audit logs 📊
+python playground/demo-interactive.py
+```
+
+**Then explore:**
+
+- 🎨 Interactive dashboard at `http://localhost:3000` (auto-opens)
+- 📚 API documentation at `http://localhost:8000/docs`
+- 📋 Real-time audit logs with cryptographic verification
+
+---
 
 </div>
 
@@ -42,7 +45,7 @@
 
 ChronoGuard is an open-source zero-trust proxy that provides network-enforced authorization for browser automation through a mandatory forward proxy. It controls all egress traffic from centralized agent infrastructure (CI/CD, Kubernetes, VM fleets) and provides temporal visibility into automation activities.
 
-**Core value proposition:** *"Know not just WHERE your automation goes, but WHEN - with network-enforced controls that can't be bypassed."*
+**Core value proposition:** _"Know not just WHERE your automation goes, but WHEN - with network-enforced controls that can't be bypassed."_
 
 ### Key Features
 
@@ -210,6 +213,7 @@ Agent → Envoy (mTLS) → OPA (ext_authz) → Target Domain
 ```
 
 For detailed architecture documentation, see:
+
 - [Architecture Overview](docs/architecture/architecture-overview.md) - High-level design and patterns
 - [Detailed Architecture](docs/architecture/architecture.md) - In-depth technical specifications
 - [Architecture Diagrams](docs/architecture/architecture-diagrams.md) - Visual representations
@@ -236,36 +240,41 @@ Each agent needs a unique mTLS certificate for authentication:
 #### 2. Configure Browser Agent
 
 **Playwright Example:**
+
 ```javascript
-const { chromium } = require('playwright');
+const { chromium } = require("playwright");
 
 const browser = await chromium.launch({
   proxy: {
-    server: 'https://chronoguard-proxy:8080',
+    server: "https://chronoguard-proxy:8080",
   },
   // mTLS certificate configuration
-  clientCertificates: [{
-    origin: 'https://chronoguard-proxy:8080',
-    certPath: './certs/agent-cert.pem',
-    keyPath: './certs/agent-key.pem',
-  }],
+  clientCertificates: [
+    {
+      origin: "https://chronoguard-proxy:8080",
+      certPath: "./certs/agent-cert.pem",
+      keyPath: "./certs/agent-key.pem",
+    },
+  ],
 });
 ```
 
 **Puppeteer Example:**
+
 ```javascript
-const puppeteer = require('puppeteer');
+const puppeteer = require("puppeteer");
 
 const browser = await puppeteer.launch({
   args: [
-    '--proxy-server=https://chronoguard-proxy:8080',
-    '--client-certificate=./certs/agent-cert.pem',
-    '--client-certificate-key=./certs/agent-key.pem',
+    "--proxy-server=https://chronoguard-proxy:8080",
+    "--client-certificate=./certs/agent-cert.pem",
+    "--client-certificate-key=./certs/agent-key.pem",
   ],
 });
 ```
 
 **Selenium Example (Python):**
+
 ```python
 from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
@@ -502,6 +511,7 @@ ChronoGuard provides comprehensive monitoring capabilities:
 **Problem**: `docker compose up` fails with port conflicts
 
 **Solution**:
+
 ```bash
 # Check if ports are already in use
 lsof -i :8080  # Envoy proxy
@@ -517,6 +527,7 @@ lsof -i :6379  # Redis
 **Problem**: Database connection errors
 
 **Solution**:
+
 ```bash
 # Ensure PostgreSQL is healthy
 docker compose ps postgres
@@ -534,6 +545,7 @@ docker compose up -d
 **Problem**: Agent gets "SSL handshake failed" or "certificate verification failed"
 
 **Solution**:
+
 - Verify agent certificate is valid and not expired
 - Check that certificate was signed by the same CA as the Envoy server certificate
 - Ensure proxy URL uses HTTPS protocol: `https://chronoguard-proxy:8080`
@@ -542,6 +554,7 @@ docker compose up -d
 **Problem**: Agent requests get 403 Forbidden
 
 **Solution**:
+
 ```bash
 # Check OPA policy evaluation
 curl http://localhost:8181/v1/data/chronoguard/authz/allow \
@@ -560,6 +573,7 @@ curl http://localhost:8000/api/v1/audit?agent_id={agent-id}&limit=10
 **Problem**: Policy changes not taking effect
 
 **Solution**:
+
 ```bash
 # Verify policy was deployed to OPA
 curl http://localhost:8181/v1/policies
@@ -575,6 +589,7 @@ docker compose logs chronoguard-policy-engine | grep decision
 **Problem**: OPA returns errors in decision logs
 
 **Solution**:
+
 - Check Rego syntax: `docker run --rm -v $(pwd)/configs/opa/policies:/policies openpolicyagent/opa check /policies/*.rego`
 - Verify policy data is loaded: `curl http://localhost:8181/v1/data/policies`
 - Review OPA logs: `docker compose logs chronoguard-policy-engine`
@@ -584,6 +599,7 @@ docker compose logs chronoguard-policy-engine | grep decision
 **Problem**: Tests fail with "coverage below 95%" error
 
 **Solution**:
+
 ```bash
 # Run coverage report to see missing lines
 make test-coverage
@@ -597,6 +613,7 @@ open htmlcov/index.html
 **Problem**: Integration tests fail with connection errors
 
 **Solution**:
+
 ```bash
 # Ensure test services are running
 docker compose -f backend/tests/integration/docker-compose.test.yml up -d
@@ -616,6 +633,7 @@ docker compose -f backend/tests/integration/docker-compose.test.yml down
 **Problem**: High latency on proxy requests
 
 **Solution**:
+
 - Check OPA policy evaluation time: Look for `evaluation_time_ns` in decision logs
 - Enable OPA caching for frequently evaluated policies
 - Optimize Rego policies to reduce complexity
@@ -624,6 +642,7 @@ docker compose -f backend/tests/integration/docker-compose.test.yml down
 **Problem**: Database query slow
 
 **Solution**:
+
 ```bash
 # Check PostgreSQL performance
 docker compose exec postgres psql -U chronoguard -d chronoguard -c "\
