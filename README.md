@@ -7,6 +7,35 @@
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
   [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
   [![Tests](https://img.shields.io/badge/coverage-95%25+-green.svg)](backend/tests)
+
+  ---
+
+  ## 🎮 Try It Live in 60 Seconds
+
+  **No installation. No configuration. Just click and experience ChronoGuard.**
+
+  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/j-raghavan/ChronoGuard?quickstart=1)
+
+  ### What You'll See:
+
+  ```bash
+  # 1. Watch a request get BLOCKED ❌
+  python playground/demo-blocked.py
+
+  # 2. Watch a request get ALLOWED ✅
+  python playground/demo-allowed.py
+
+  # 3. View live audit logs 📊
+  python playground/demo-interactive.py
+  ```
+
+  **Then explore:**
+  - 🎨 Interactive dashboard at `http://localhost:3000` (auto-opens)
+  - 📚 API documentation at `http://localhost:8000/docs`
+  - 📋 Real-time audit logs with cryptographic verification
+
+  ---
+
 </div>
 
 ## Overview

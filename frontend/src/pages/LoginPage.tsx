@@ -29,7 +29,12 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setIsLoading(true);
 
     try {
-      await authApi.login(password);
+      const response = await authApi.login(password);
+
+      // Save authentication data to localStorage
+      localStorage.setItem("access_token", response.data.access_token);
+      localStorage.setItem("tenant_id", response.data.tenant_id);
+      localStorage.setItem("user_id", response.data.user_id);
 
       setIsLoading(false);
       onLogin();

@@ -370,6 +370,7 @@ dist
 # Gatsby files
 .cache/
 
+
 # Storybook build outputs
 .out
 .storybook-out
@@ -398,6 +399,7 @@ temp/
 # Local development
 .local/
 local/
+.env
 dev/
 
 # Monitoring and observability
