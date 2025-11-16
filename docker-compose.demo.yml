@@ -27,7 +27,7 @@ services:
       - ./playground/demo-certs:/etc/envoy/certs:ro
     depends_on:
       chronoguard-policy-engine:
-        condition: service_healthy
+        condition: service_started
     networks:
       - chronoguard
     healthcheck:
@@ -59,11 +59,6 @@ services:
       - /config/policies
     networks:
       - chronoguard
-    healthcheck:
-      test: ["CMD", "/opa", "eval", "true"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   # 3. ChronoGuard API (FastAPI)
   chronoguard-api:
