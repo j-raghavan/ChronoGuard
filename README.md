@@ -477,10 +477,6 @@ See the [Quick Start](#quick-start) section for local development setup.
 
 ## Documentation
 
-- **[PROJECT_PLAN.md](PROJECT_PLAN.md)** - High-level project plan and roadmap
-- **[DEVPLAN.md](DEVPLAN.md)** - Detailed development plan (internal)
-- **[CLAUDE.md](CLAUDE.md)** - Project instructions for AI assistance
-- **[CODING_GUIDELINES.md](CODING_GUIDELINES.md)** - Code quality standards
 - **[docs/architecture/](docs/architecture/)** - Architecture documentation
 - **[docs/testing/](docs/testing/)** - Testing documentation
 - **[docs/guides/](docs/guides/)** - User guides
