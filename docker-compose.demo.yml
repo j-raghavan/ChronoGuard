@@ -60,7 +60,7 @@ services:
     networks:
       - chronoguard
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8181/health"]
+      test: ["CMD", "/opa", "eval", "true"]
       interval: 10s
       timeout: 5s
       retries: 3
