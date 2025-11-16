@@ -174,7 +174,6 @@ tls/
 /config/certs/
 
 # Configuration files with secrets
-config.yaml
 config.json
 .env.production
 .env.staging
