@@ -95,10 +95,10 @@ def create_app() -> FastAPI:
         "http://localhost:3000",  # Frontend production
         "http://localhost:5173",  # Frontend dev server (Vite)
     ]
-    # In demo mode, also allow GitHub Codespaces domains
+    # In demo mode, also allow GitHub Codespaces domains (*.github.dev)
     # Users can customize CORS origins via CHRONOGUARD_API_CORS_ORIGINS env var
     if settings.security.demo_mode_enabled:
-        cors_origins.append("https://*.app.github.dev")
+        cors_origins.append("https://*.github.dev")
 
     app.add_middleware(
         CORSMiddleware,
@@ -106,7 +106,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
         allow_headers=["*"],
-        allow_origin_regex=r"https://.*\.app\.github\.dev" if settings.security.demo_mode_enabled else None,
+        allow_origin_regex=r"https://.*\.github\.dev" if settings.security.demo_mode_enabled else None,
     )
 
     # Configure Authentication Middleware
