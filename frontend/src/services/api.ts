@@ -23,7 +23,9 @@ import type {
   SessionResponse,
 } from "@/types/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Use relative URL (empty string) for production/Codespaces (nginx proxies /api/* to backend)
+// Use VITE_API_URL only for local development with separate backend
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 // Create axios instance with default configuration
 const createApiClient = (): AxiosInstance => {
