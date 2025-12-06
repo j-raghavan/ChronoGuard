@@ -111,14 +111,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=http://localhost:8000
+      # No VITE_API_URL - frontend uses relative URLs and nginx proxies /api/* to backend
     container_name: chronoguard-dashboard
     restart: unless-stopped
     ports:
       - "3000:80"
-    environment:
-      - VITE_API_URL=http://localhost:8000
     networks:
       - chronoguard
     healthcheck:
