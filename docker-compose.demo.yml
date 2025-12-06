@@ -111,7 +111,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      # No VITE_API_URL - frontend uses relative URLs and nginx proxies /api/* to backend
     container_name: chronoguard-dashboard
     restart: unless-stopped
     ports:
