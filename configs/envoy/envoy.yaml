@@ -44,6 +44,9 @@ static_resources:
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
 
+              # Use V3 transport API (required for Envoy 1.28+)
+              transport_api_version: V3
+
               # Call OPA gRPC endpoint
               grpc_service:
                 envoy_grpc:
