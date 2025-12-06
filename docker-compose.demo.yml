@@ -73,14 +73,24 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://chronoguard:${CHRONOGUARD_DB_PASSWORD:-demo-password}@postgres:5432/chronoguard
-      - REDIS_URL=redis://redis:6379/0
+      # Database settings (using CHRONOGUARD_DB_ prefix as expected by config.py)
+      - CHRONOGUARD_DB_HOST=postgres
+      - CHRONOGUARD_DB_PORT=5432
+      - CHRONOGUARD_DB_USER=chronoguard
+      - CHRONOGUARD_DB_PASSWORD=${CHRONOGUARD_DB_PASSWORD:-demo-password}
+      - CHRONOGUARD_DB_DATABASE=chronoguard
+      # Redis settings
+      - CHRONOGUARD_REDIS_HOST=redis
+      - CHRONOGUARD_REDIS_PORT=6379
+      # OPA settings
       - OPA_URL=http://chronoguard-policy-engine:8181
+      # Security settings
       - CHRONOGUARD_INTERNAL_SECRET=${CHRONOGUARD_INTERNAL_SECRET:-demo-internal-secret}
       - CHRONOGUARD_SECURITY_SECRET_KEY=${CHRONOGUARD_SECURITY_SECRET_KEY:-demo-secret-key-32chars-minimum}
       - CHRONOGUARD_SECURITY_DEMO_MODE_ENABLED=true
       - CHRONOGUARD_SECURITY_DEMO_ADMIN_PASSWORD=${CHRONOGUARD_SECURITY_DEMO_ADMIN_PASSWORD:-chronoguard-admin-2025}
       - CHRONOGUARD_SECURITY_SESSION_COOKIE_SECURE=false
+      # Observability
       - OTEL_SDK_DISABLED=true
       - LOG_LEVEL=INFO
     depends_on:
