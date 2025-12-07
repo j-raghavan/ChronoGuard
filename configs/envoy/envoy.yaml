@@ -24,6 +24,14 @@ static_resources:
           stat_prefix: forward_proxy
           codec_type: AUTO
 
+          # Enable HTTP CONNECT for HTTPS tunneling
+          http_protocol_options:
+            allow_absolute_url: true
+
+          # Support CONNECT method upgrades for HTTPS proxying
+          upgrade_configs:
+          - upgrade_type: CONNECT
+
           # Route configuration
           route_config:
             name: forward_proxy_route
@@ -31,10 +39,18 @@ static_resources:
             - name: forward_proxy
               domains: ["*"]
               routes:
+              # Handle CONNECT requests for HTTPS tunneling
+              - match:
+                  connect_matcher: {}
+                route:
+                  cluster: dynamic_forward_proxy_cluster
+                  upgrade_configs:
+                  - upgrade_type: CONNECT
+                    connect_config: {}
+              # Handle regular HTTP requests
               - match:
                   prefix: "/"
                 route:
-                  # Forward to original destination
                   cluster: dynamic_forward_proxy_cluster
 
           # HTTP filters
