@@ -11,14 +11,81 @@
 
 ---
 
-## 🎮 Try It Live in 60 Seconds
+## 🚀 See Value in 5 Minutes
 
 **No installation. No configuration. Just click and experience ChronoGuard.**
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/j-raghavan/ChronoGuard?quickstart=1)
 
+> **One click** launches a fully configured environment with all 6 services running.
+> The dashboard auto-opens at port 3000 - you're ready to explore immediately.
 
-## What You'll See:
+---
+
+## 📸 What You'll Experience
+
+### 1. Real-Time Dashboard Overview
+
+Get instant visibility into your entire browser automation infrastructure at a glance.
+
+<img src="frontend/public/assets/icons/dashboard.png" alt="ChronoGuard Dashboard" width="100%">
+
+**What you see:**
+- **Total Agents & Policies** - Track registered agents and active policies
+- **Compliance Score** - Real-time compliance monitoring (last 7 days)
+- **Peak Activity** - Identify your busiest automation hours
+- **Recent Anomalies** - Instant alerts for off-hours or weekend activity
+- **Top Accessed Domains** - Know where your agents are going
+
+---
+
+### 2. Agent Management
+
+Register, monitor, and control all your browser automation agents from one place.
+
+<img src="frontend/public/assets/icons/agents.png" alt="Agent Management" width="100%">
+
+**What you see:**
+- **Agent Registry** - All agents with unique identifiers and mTLS certificates
+- **Status Tracking** - Active, Pending, or Suspended states
+- **Certificate Expiry** - Never miss a certificate renewal
+- **Policy Assignment** - See which policies govern each agent
+- **Activity Monitoring** - Last seen timestamps for all agents
+
+---
+
+### 3. Policy Configuration
+
+Create fine-grained access control policies with domain allowlists and time windows.
+
+<img src="frontend/public/assets/icons/policies.png" alt="Policy Management" width="100%">
+
+**What you see:**
+- **Policy Builder** - Create policies with priority-based rule evaluation
+- **Domain Controls** - Allowed and blocked domain counts at a glance
+- **Version Tracking** - Policy versioning for audit compliance
+- **Draft/Active States** - Test policies before deployment
+
+---
+
+### 4. Immutable Audit Logs
+
+Every request is logged with cryptographic verification - know WHERE and WHEN your agents go.
+
+<img src="frontend/public/assets/icons/auditlogs.png" alt="Audit Logs" width="100%">
+
+**What you see:**
+- **Complete Audit Trail** - Every request with timestamp, domain, method, and path
+- **Decision Tracking** - Allow/Deny decisions with reasons
+- **Flexible Filtering** - Search by domain, decision type, or date range
+- **Export Options** - Download as CSV or JSON for compliance reporting
+- **Agent Attribution** - Full traceability to the originating agent
+
+---
+
+## 🎮 Try the Demo
+
+Once your Codespace is ready, run these commands to see ChronoGuard in action:
 
 ```bash
 # 1. Watch a request get BLOCKED ❌
@@ -33,9 +100,9 @@ python playground/demo-interactive.py
 
 **Then explore:**
 
-- 🎨 Interactive dashboard at `http://localhost:3000` (auto-opens)
-- 📚 API documentation at `http://localhost:8000/docs`
-- 📋 Real-time audit logs with cryptographic verification
+- 🎨 **Dashboard** at `http://localhost:3000` (auto-opens)
+- 📚 **API Documentation** at `http://localhost:8000/docs`
+- 📋 **Real-time audit logs** with cryptographic verification
 
 ---
 
