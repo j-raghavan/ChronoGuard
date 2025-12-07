@@ -106,7 +106,9 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
         allow_headers=["*"],
-        allow_origin_regex=r"https://.*\.github\.dev" if settings.security.demo_mode_enabled else None,
+        allow_origin_regex=(
+            r"https://.*\.github\.dev" if settings.security.demo_mode_enabled else None
+        ),
     )
 
     # Configure Authentication Middleware
