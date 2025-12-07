@@ -90,6 +90,15 @@ set_env_value ".env" "CHRONOGUARD_SECURITY_DEMO_MODE_ENABLED" "${DEMO_MODE_ENABL
 set_env_value ".env" "CHRONOGUARD_SECURITY_DEMO_ADMIN_PASSWORD" "${DEMO_ADMIN_PASSWORD}"
 set_env_value ".env" "CHRONOGUARD_SECURITY_SESSION_COOKIE_SECURE" "${SESSION_COOKIE_SECURE}"
 
+# CRITICAL: Override database settings for Docker demo environment
+# The root .env may have local dev settings (localhost:5433) that won't work in Docker
+echo -e "${BLUE}🔧 Configuring database for Docker environment...${NC}"
+set_env_value ".env" "CHRONOGUARD_DB_HOST" "postgres"
+set_env_value ".env" "CHRONOGUARD_DB_PORT" "5432"
+set_env_value ".env" "CHRONOGUARD_DB_DATABASE" "chronoguard"
+set_env_value ".env" "CHRONOGUARD_DB_USER" "chronoguard"
+set_env_value ".env" "CHRONOGUARD_DB_PASSWORD" "demo-password"
+
 # Align frontend configuration with backend endpoints/password
 set_env_value "frontend/.env" "VITE_API_URL" "${API_BASE_URL}"
 set_env_value "frontend/.env" "VITE_DEFAULT_PASSWORD" "${DEMO_ADMIN_PASSWORD}"
