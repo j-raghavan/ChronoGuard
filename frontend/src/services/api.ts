@@ -54,7 +54,10 @@ const createApiClient = (): AxiosInstance => {
   client.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response?.status === 401) {
+      // Don't redirect on 401 for session check or login endpoints
+      // These are expected to return 401 when not authenticated
+      const isAuthEndpoint = error.config?.url?.includes("/api/v1/auth/");
+      if (error.response?.status === 401 && !isAuthEndpoint) {
         // Handle unauthorized - clear auth and redirect to login
         console.error("Unauthorized access - clearing authentication");
         window.location.href = "/";

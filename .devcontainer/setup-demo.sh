@@ -94,10 +94,25 @@ set_env_value ".env" "CHRONOGUARD_SECURITY_SESSION_COOKIE_SECURE" "${SESSION_COO
 set_env_value "frontend/.env" "VITE_API_URL" "${API_BASE_URL}"
 set_env_value "frontend/.env" "VITE_DEFAULT_PASSWORD" "${DEMO_ADMIN_PASSWORD}"
 
-# 3. Wait for Docker services to be ready
-echo -e "${BLUE}⏳ Waiting for services to start...${NC}"
+# 3. Start Docker services (Docker-in-Docker mode in Codespaces)
+echo -e "${BLUE}🐳 Starting Docker services...${NC}"
+echo -e "${YELLOW}   This may take 2-3 minutes on first run...${NC}"
+
+# Check if Docker is available
+if command -v docker &> /dev/null; then
+    # Start all services except workspace (we're already in it)
+    docker compose -f docker-compose.demo.yml up -d postgres redis chronoguard-policy-engine chronoguard-proxy chronoguard-api chronoguard-dashboard 2>/dev/null || \
+    docker-compose -f docker-compose.demo.yml up -d postgres redis chronoguard-policy-engine chronoguard-proxy chronoguard-api chronoguard-dashboard 2>/dev/null || \
+    echo -e "${YELLOW}⚠️  Could not start Docker services automatically${NC}"
+    echo -e "${GREEN}✅ Docker services starting...${NC}"
+else
+    echo -e "${YELLOW}⚠️  Docker not available - services may need manual start${NC}"
+fi
+
+# 4. Wait for Docker services to be ready
+echo -e "${BLUE}⏳ Waiting for services to be healthy...${NC}"
 echo -e "${YELLOW}   This may take 1-2 minutes...${NC}"
-sleep 20
+sleep 30
 
 # Check backend health
 for i in {1..30}; do
@@ -115,7 +130,7 @@ else
     echo -e "${YELLOW}⚠️  Dashboard may still be starting...${NC}"
 fi
 
-# 4. Seed demo data
+# 5. Seed demo data
 echo -e "${BLUE}🌱 Seeding demo data...${NC}"
 cd backend
 PYTHONPATH=src poetry install --quiet 2>/dev/null || true
