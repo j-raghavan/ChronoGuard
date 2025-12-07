@@ -80,6 +80,7 @@ services:
       - CHRONOGUARD_DB_USER=chronoguard
       - CHRONOGUARD_DB_PASSWORD=${CHRONOGUARD_DB_PASSWORD:-demo-password-0fefdfed17e8eaeb}
       - CHRONOGUARD_DB_DATABASE=chronoguard
+      - DATABASE_URL=postgresql://chronoguard:${CHRONOGUARD_DB_PASSWORD:-demo-password}@postgres:5432/chronoguard
       # Redis settings
       - CHRONOGUARD_REDIS_HOST=redis
       - CHRONOGUARD_REDIS_PORT=6379

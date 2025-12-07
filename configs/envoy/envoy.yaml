@@ -120,18 +120,6 @@ static_resources:
               socket_address:
                 address: chronoguard-policy-engine
                 port_value: 9192
-<<<<<<< HEAD
-
-    # Note: No health check - OPA's Envoy plugin doesn't implement gRPC health service
-    # For production, use a sidecar or separate health check mechanism
-=======
-    health_checks:
-    - timeout: 1s
-      interval: 10s
-      unhealthy_threshold: 2
-      healthy_threshold: 2
-      grpc_health_check: {}
->>>>>>> 696c847d1dd47901128c2cb3a400e90cabdf420e
 
   - name: dynamic_forward_proxy_cluster
     lb_policy: CLUSTER_PROVIDED
