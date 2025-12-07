@@ -57,6 +57,7 @@ services:
       - --server
       - --addr=0.0.0.0:8181
       - --set=plugins.envoy_ext_authz_grpc.addr=:9192
+      - --set=plugins.envoy_ext_authz_grpc.path=chronoguard/authz/allow
       - --set=decision_logs.console=true
       - --config-file=/config/config.yaml
       - /config/policies
