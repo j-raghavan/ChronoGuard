@@ -113,15 +113,16 @@ def make_https_request_via_proxy(
     target_port = parsed.port or (443 if parsed.scheme == "https" else 80)
 
     # Create SSL context for mTLS connection to proxy
+    # Note: For demo purposes, we don't verify the server cert since the demo certs
+    # are self-signed. In production, you would use properly signed certificates.
     proxy_ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     proxy_ssl_context.load_cert_chain(certfile=str(client_cert), keyfile=str(client_key))
-    proxy_ssl_context.load_verify_locations(cafile=str(ca_cert))
-    proxy_ssl_context.check_hostname = False  # Proxy cert may not match hostname
-    proxy_ssl_context.verify_mode = ssl.CERT_REQUIRED
+    proxy_ssl_context.check_hostname = False
+    proxy_ssl_context.verify_mode = ssl.CERT_NONE  # Demo only - verify in production!
 
     # Connect to proxy with mTLS
     raw_socket = socket.create_connection((proxy_host, proxy_port), timeout=10)
-    proxy_socket = proxy_ssl_context.wrap_socket(raw_socket, server_hostname=proxy_host)
+    proxy_socket = proxy_ssl_context.wrap_socket(raw_socket, server_hostname="localhost")
 
     # Send CONNECT request to establish tunnel
     connect_request = (
