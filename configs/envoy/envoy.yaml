@@ -8,7 +8,6 @@ admin:
 
 static_resources:
   listeners:
-  # Forward proxy listener - agents connect here
   - name: forward_proxy_listener
     address:
       socket_address:
@@ -17,7 +16,6 @@ static_resources:
 
     filter_chains:
     - filters:
-      # mTLS filter for agent authentication
       - name: envoy.filters.network.http_connection_manager
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
@@ -62,17 +60,11 @@ static_resources:
                 route:
                   cluster: dynamic_forward_proxy_cluster
 
-          # HTTP filters
           http_filters:
-          # External authorization via OPA
           - name: envoy.filters.http.ext_authz
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
-
-              # Use V3 transport API (required for Envoy 1.28+)
               transport_api_version: V3
-
-              # Call OPA gRPC endpoint
               grpc_service:
                 envoy_grpc:
                   cluster_name: opa_cluster
@@ -92,36 +84,26 @@ static_resources:
                 name: dynamic_forward_proxy_cache_config
                 dns_lookup_family: V4_ONLY
 
-          # Router (must be last)
           - name: envoy.filters.http.router
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
-      # TLS configuration for mTLS
       transport_socket:
         name: envoy.transport_sockets.tls
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
-
-          # Require client certificates
           require_client_certificate: true
-
-          # Common TLS context
           common_tls_context:
-            # Server certificate
             tls_certificates:
             - certificate_chain:
                 filename: /etc/envoy/certs/server-cert.pem
               private_key:
                 filename: /etc/envoy/certs/server-key.pem
-
-            # Validation for client certificates
             validation_context:
               trusted_ca:
                 filename: /etc/envoy/certs/ca-cert.pem
 
   clusters:
-  # OPA cluster for ext_authz
   - name: opa_cluster
     type: STRICT_DNS
     typed_extension_protocol_options:
@@ -129,7 +111,6 @@ static_resources:
         "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
         explicit_http_config:
           http2_protocol_options: {}
-
     load_assignment:
       cluster_name: opa_cluster
       endpoints:
@@ -139,11 +120,19 @@ static_resources:
               socket_address:
                 address: chronoguard-policy-engine
                 port_value: 9192
+<<<<<<< HEAD
 
     # Note: No health check - OPA's Envoy plugin doesn't implement gRPC health service
     # For production, use a sidecar or separate health check mechanism
+=======
+    health_checks:
+    - timeout: 1s
+      interval: 10s
+      unhealthy_threshold: 2
+      healthy_threshold: 2
+      grpc_health_check: {}
+>>>>>>> 696c847d1dd47901128c2cb3a400e90cabdf420e
 
-  # Dynamic forward proxy cluster
   - name: dynamic_forward_proxy_cluster
     lb_policy: CLUSTER_PROVIDED
     cluster_type:
