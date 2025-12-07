@@ -14,9 +14,21 @@ agent_authenticated if {
 	get_agent_policy(input.attributes.source.principal)
 }
 
+# Extract hostname from host:port (e.g., "example.com:443" -> "example.com")
+extract_hostname(host) := hostname if {
+	contains(host, ":")
+	parts := split(host, ":")
+	hostname := parts[0]
+}
+
+extract_hostname(host) := host if {
+	not contains(host, ":")
+}
+
 domain_allowed if {
 	policy := get_agent_policy(input.attributes.source.principal)
-	requested_domain := input.attributes.request.http.host
+	requested_host := input.attributes.request.http.host
+	requested_domain := extract_hostname(requested_host)
 	requested_domain in policy.allowed_domains
 	not requested_domain in policy.blocked_domains
 }
@@ -102,12 +114,28 @@ rate_limit_ok if {
 	burst_count < policy.rate_limits.burst_limit
 }
 
+# Extract CN from full DN (e.g., "CN=demo-agent-001,O=ChronoGuard,..." -> "demo-agent-001")
+extract_cn(dn) := cn if {
+	# Split by comma and find CN=
+	parts := split(dn, ",")
+	some part in parts
+	startswith(part, "CN=")
+	cn := substring(part, 3, -1)
+}
+
+# Fallback: if no CN found, return the original string
+extract_cn(dn) := dn if {
+	not contains(dn, "CN=")
+}
+
 get_agent_policy(agent_id) := policy if {
-	policy := data.policies[agent_id]
+	cn := extract_cn(agent_id)
+	policy := data.policies[cn]
 }
 
 get_agent_policy(agent_id) := {} if {
-	not data.policies[agent_id]
+	cn := extract_cn(agent_id)
+	not data.policies[cn]
 }
 
 decision_metadata := {

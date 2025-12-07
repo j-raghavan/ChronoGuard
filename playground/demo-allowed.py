@@ -121,7 +121,7 @@ def make_https_request_via_proxy(
     proxy_ssl_context.verify_mode = ssl.CERT_NONE  # Demo only - verify in production!
 
     # Connect to proxy with mTLS
-    raw_socket = socket.create_connection((proxy_host, proxy_port), timeout=10)
+    raw_socket = socket.create_connection((proxy_host, proxy_port), timeout=30)
     proxy_socket = proxy_ssl_context.wrap_socket(raw_socket, server_hostname="localhost")
 
     # Send CONNECT request to establish tunnel
@@ -147,11 +147,41 @@ def make_https_request_via_proxy(
         proxy_socket.close()
         raise ConnectionError(f"Proxy CONNECT failed: {response_line}")
 
-    # Now wrap the tunnel in SSL for the target connection
+    # The CONNECT tunnel is now established through the mTLS connection.
+    # For HTTPS targets, we need TLS-in-TLS (TLS to target inside mTLS tunnel to proxy).
+    # Use MemoryBIO for proper TLS layering over the existing SSL socket.
     target_ssl_context = ssl.create_default_context()
-    target_socket = target_ssl_context.wrap_socket(proxy_socket, server_hostname=target_host)
 
-    # Send HTTP request to target
+    incoming = ssl.MemoryBIO()
+    outgoing = ssl.MemoryBIO()
+    target_ssl = target_ssl_context.wrap_bio(
+        incoming, outgoing, server_hostname=target_host
+    )
+
+    # Perform TLS handshake with target through the tunnel
+    def do_ssl_io() -> None:
+        """Flush outgoing and read incoming SSL data through the tunnel."""
+        # Send any pending outgoing data
+        out_data = outgoing.read()
+        if out_data:
+            proxy_socket.sendall(out_data)
+
+    # Initial handshake
+    while True:
+        try:
+            target_ssl.do_handshake()
+            do_ssl_io()
+            break
+        except ssl.SSLWantReadError:
+            do_ssl_io()
+            chunk = proxy_socket.recv(16384)
+            if not chunk:
+                raise ConnectionError("Connection closed during TLS handshake")
+            incoming.write(chunk)
+        except ssl.SSLWantWriteError:
+            do_ssl_io()
+
+    # Build and send HTTP request through the TLS tunnel
     http_request = (
         f"GET {parsed.path or '/'} HTTP/1.1\r\n"
         f"Host: {target_host}\r\n"
@@ -160,20 +190,43 @@ def make_https_request_via_proxy(
         f"Connection: close\r\n"
         f"\r\n"
     )
-    target_socket.sendall(http_request.encode())
 
-    # Read response
+    # Write request to TLS layer
+    target_ssl.write(http_request.encode())
+    do_ssl_io()
+
+    # Read response from TLS tunnel
     response = b""
     while True:
-        chunk = target_socket.recv(4096)
-        if not chunk:
+        try:
+            chunk = target_ssl.read(16384)
+            if chunk:
+                response += chunk
+            else:
+                break
+        except ssl.SSLWantReadError:
+            try:
+                encrypted = proxy_socket.recv(16384)
+                if not encrypted:
+                    break
+                incoming.write(encrypted)
+            except (socket.timeout, OSError):
+                break
+        except ssl.SSLZeroReturnError:
             break
-        response += chunk
+        except ssl.SSLError:
+            break
 
-    target_socket.close()
+    proxy_socket.close()
 
-    # Parse response
+    # Parse HTTP response
+    if not response:
+        raise ConnectionError("No response received from target")
+
     header_end = response.find(b"\r\n\r\n")
+    if header_end == -1:
+        raise ConnectionError(f"Invalid HTTP response: {response[:100]}")
+
     header_section = response[:header_end].decode("utf-8", errors="replace")
     body = response[header_end + 4 :].decode("utf-8", errors="replace")
 

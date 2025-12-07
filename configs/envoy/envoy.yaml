@@ -24,6 +24,15 @@ static_resources:
           stat_prefix: forward_proxy
           codec_type: AUTO
 
+          # Forward client certificate details to upstream/authz
+          forward_client_cert_details: SANITIZE_SET
+          set_current_client_cert_details:
+            subject: true
+            cert: false
+            chain: false
+            dns: true
+            uri: true
+
           # Enable HTTP CONNECT for HTTPS tunneling
           http_protocol_options:
             allow_absolute_url: true
@@ -67,19 +76,13 @@ static_resources:
               grpc_service:
                 envoy_grpc:
                   cluster_name: opa_cluster
-                timeout: 1s
+                timeout: 5s
 
-              # Include request metadata
-              with_request_body:
-                max_request_bytes: 8192
-                allow_partial_message: true
+              # Include client certificate in authz request
+              include_peer_certificate: true
 
               # On failure, deny request
               failure_mode_allow: false
-
-              # Include metadata in check request
-              metadata_context_namespaces:
-              - envoy.filters.http.jwt_authn
 
           # Dynamic forward proxy filter
           - name: envoy.filters.http.dynamic_forward_proxy
