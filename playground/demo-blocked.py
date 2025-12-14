@@ -17,6 +17,7 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse
 
+
 # Terminal colors
 RED = "\033[91m"
 GREEN = "\033[92m"
@@ -25,11 +26,32 @@ BLUE = "\033[94m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
+def _detect_proxy_host() -> str:
+    """Auto-detect whether to use Docker hostname or localhost.
+
+    When running inside Docker network, use 'chronoguard-proxy'.
+    When running from host machine (Codespaces terminal), use 'localhost'.
+    """
+    import socket
+
+    # Check if explicitly set via environment
+    if os.getenv("CHRONOGUARD_PROXY_HOST"):
+        return os.environ["CHRONOGUARD_PROXY_HOST"]
+
+    # Try to resolve Docker hostname - if it works, we're in Docker network
+    try:
+        socket.gethostbyname("chronoguard-proxy")
+        return "chronoguard-proxy"
+    except socket.gaierror:
+        # Can't resolve Docker hostname, use localhost
+        return "localhost"
+
+
 API_BASE_URL = os.getenv("CHRONOGUARD_API_URL", "http://chronoguard-api:8000").rstrip("/")
 DASHBOARD_URL = os.getenv("CHRONOGUARD_DASHBOARD_URL", "http://chronoguard-dashboard:80").rstrip(
     "/"
 )
-PROXY_HOST = os.getenv("CHRONOGUARD_PROXY_HOST", "chronoguard-proxy")
+PROXY_HOST = _detect_proxy_host()
 PROXY_PORT = int(os.getenv("CHRONOGUARD_PROXY_PORT", "8080"))
 
 # Certificate paths (relative to playground directory or absolute)
@@ -78,7 +100,9 @@ def check_certificates() -> bool:
         print_error("Missing certificate files:")
         for f in missing:
             print(f"  • {f}")
-        print_info("Run from the workspace root: cd /workspace && python playground/demo-blocked.py")
+        print_info(
+            "Run from the workspace root: cd /workspace && python playground/demo-blocked.py"
+        )
         return False
 
     return True
@@ -139,10 +163,9 @@ def attempt_blocked_request(
         # Check if the request was blocked (403 Forbidden)
         if "403" in response_line:
             return True, "403 Forbidden - Access denied by policy"
-        elif "200" in response_line:
+        if "200" in response_line:
             return False, "200 OK - Request was unexpectedly allowed"
-        else:
-            return True, f"Blocked with: {response_line}"
+        return True, f"Blocked with: {response_line}"
 
     except Exception as e:
         return True, f"Connection blocked: {str(e)}"
@@ -190,7 +213,7 @@ def main() -> None:
         print(f"\n{BOLD}Details:{RESET}")
         print(f"  • Domain: {RED}google.com{RESET}")
         print(f"  • Status: {RED}BLOCKED{RESET}")
-        print(f"  • Reason: Domain not in allowlist")
+        print("  • Reason: Domain not in allowlist")
         print(f"  • Response: {details}")
 
         print(f"\n{BOLD}What just happened:{RESET}")
