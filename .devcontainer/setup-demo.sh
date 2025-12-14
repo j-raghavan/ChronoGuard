@@ -100,7 +100,10 @@ set_env_value ".env" "CHRONOGUARD_DB_USER" "chronoguard"
 set_env_value ".env" "CHRONOGUARD_DB_PASSWORD" "demo-password"
 
 # Align frontend configuration with backend endpoints/password
-set_env_value "frontend/.env" "VITE_API_URL" "${API_BASE_URL}"
+# IMPORTANT: VITE_API_URL must be EMPTY for Docker/Codespaces so nginx proxies /api/* to backend
+# Setting it to a Docker hostname like http://chronoguard-api:8000 would cause Mixed Content errors
+# because the browser can't resolve Docker internal hostnames
+set_env_value "frontend/.env" "VITE_API_URL" ""
 set_env_value "frontend/.env" "VITE_DEFAULT_PASSWORD" "${DEMO_ADMIN_PASSWORD}"
 
 # 3. Start Docker services (Docker-in-Docker mode in Codespaces)
