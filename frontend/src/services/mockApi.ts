@@ -3,7 +3,7 @@
  * Simulates the backend with in-memory data and live traffic generation
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import type {
   AgentDTO,
   AgentListResponse,
@@ -18,7 +18,6 @@ import type {
   AuditQueryRequest,
   TemporalPatternDTO,
   MetricsSummaryResponse,
-
 } from "@/types/api";
 
 // --- Mock Data Store ---
@@ -34,8 +33,8 @@ class MockDataStore {
     this.initializeData();
     // We don't start the interval in the constructor in node/build context as it keeps process alive
     // Ideally this is only called when needed, but for simplicity:
-    if (typeof window !== 'undefined') {
-        this.startTrafficGenerator();
+    if (typeof window !== "undefined") {
+      this.startTrafficGenerator();
     }
   }
 
@@ -51,7 +50,12 @@ class MockDataStore {
       rate_limits: null,
       priority: 100,
       status: "active",
-      allowed_domains: ["google.com", "wikipedia.org", "arxiv.org", "github.com"],
+      allowed_domains: [
+        "google.com",
+        "wikipedia.org",
+        "arxiv.org",
+        "github.com",
+      ],
       blocked_domains: ["facebook.com", "twitter.com"],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -89,7 +93,13 @@ class MockDataStore {
 
   private generateAuditEntry() {
     const isAllowed = Math.random() > 0.2; // 80% allowed
-    const domains = ["google.com", "github.com", "stackoverflow.com", "reddit.com", "malware.site"];
+    const domains = [
+      "google.com",
+      "github.com",
+      "stackoverflow.com",
+      "reddit.com",
+      "malware.site",
+    ];
     const domain = domains[Math.floor(Math.random() * domains.length)];
     const agent = this.agents[0]; // use the first agent
 
@@ -151,7 +161,7 @@ class MockDataStore {
   }
 
   getAgent(id: string): AgentDTO | undefined {
-    return this.agents.find(a => a.agent_id === id);
+    return this.agents.find((a) => a.agent_id === id);
   }
 
   createAgent(data: CreateAgentRequest): AgentDTO {
@@ -160,7 +170,8 @@ class MockDataStore {
       tenant_id: this.tenantId,
       name: data.name,
       status: "pending",
-      certificate_fingerprint: "sha256:mock_generated_" + uuidv4().substring(0, 8),
+      certificate_fingerprint:
+        "sha256:mock_generated_" + uuidv4().substring(0, 8),
       certificate_subject: `CN=${data.name}`,
       certificate_expiry: new Date(Date.now() + 86400000 * 90).toISOString(),
       policy_ids: [],
@@ -175,14 +186,14 @@ class MockDataStore {
   }
 
   updateAgent(id: string, data: UpdateAgentRequest): AgentDTO {
-    const agent = this.agents.find(a => a.agent_id === id);
+    const agent = this.agents.find((a) => a.agent_id === id);
     if (!agent) throw new Error("Agent not found");
 
     if (data.name) agent.name = data.name;
     if (data.status === "active" || data.status === "suspended") {
-        agent.status = data.status;
+      agent.status = data.status;
     } else if (data.status === "pending_activation") {
-        agent.status = "pending";
+      agent.status = "pending";
     }
     // minimal update logic for demo
     agent.updated_at = new Date().toISOString();
@@ -202,7 +213,7 @@ class MockDataStore {
   }
 
   getPolicy(id: string): PolicyDTO | undefined {
-    return this.policies.find(p => p.policy_id === id);
+    return this.policies.find((p) => p.policy_id === id);
   }
 
   createPolicy(data: CreatePolicyRequest): PolicyDTO {
@@ -229,7 +240,7 @@ class MockDataStore {
   }
 
   updatePolicy(id: string, data: UpdatePolicyRequest): PolicyDTO {
-    const policy = this.policies.find(p => p.policy_id === id);
+    const policy = this.policies.find((p) => p.policy_id === id);
     if (!policy) throw new Error("Policy not found");
 
     if (data.name) policy.name = data.name;
@@ -241,16 +252,21 @@ class MockDataStore {
   }
 
   deletePolicy(id: string): void {
-    this.policies = this.policies.filter(p => p.policy_id !== id);
+    this.policies = this.policies.filter((p) => p.policy_id !== id);
   }
 
   getAuditLogs(params: AuditQueryRequest): AuditListResponse {
     let filtered = [...this.auditEntries];
-    if (params.agent_id) filtered = filtered.filter(e => e.agent_id === params.agent_id);
-    if (params.decision) filtered = filtered.filter(e => e.decision === params.decision);
+    if (params.agent_id)
+      filtered = filtered.filter((e) => e.agent_id === params.agent_id);
+    if (params.decision)
+      filtered = filtered.filter((e) => e.decision === params.decision);
 
     // Sort by timestamp desc
-    filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    filtered.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
 
     const page = params.page || 1;
     const pageSize = params.page_size || 50;
@@ -268,130 +284,160 @@ class MockDataStore {
 
   getTemporalAnalytics(startTime: string, endTime: string): TemporalPatternDTO {
     // Generate fake analytics based on audit logs in that range
-     return {
-        tenant_id: this.tenantId,
-        start_time: startTime,
-        end_time: endTime,
-        hourly_distribution: { 9: 10, 10: 20, 11: 15 },
-        daily_distribution: { "2025-01-01": 100 },
-        peak_hours: [10],
-        off_hours_activity_percentage: 5,
-        weekend_activity_percentage: 2,
-        top_domains: [{ domain: "google.com", count: 50 }, { domain: "github.com", count: 30 }],
-        anomalies: [],
-        compliance_score: 98,
-     };
+    return {
+      tenant_id: this.tenantId,
+      start_time: startTime,
+      end_time: endTime,
+      hourly_distribution: { 9: 10, 10: 20, 11: 15 },
+      daily_distribution: { "2025-01-01": 100 },
+      peak_hours: [10],
+      off_hours_activity_percentage: 5,
+      weekend_activity_percentage: 2,
+      top_domains: [
+        { domain: "google.com", count: 50 },
+        { domain: "github.com", count: 30 },
+      ],
+      anomalies: [],
+      compliance_score: 98,
+    };
   }
 
   getMetrics(): MetricsSummaryResponse {
-      return {
-          timestamp: new Date().toISOString(),
-          agents: {
-              total: this.agents.length,
-              active: this.agents.filter(a => a.status === 'active').length,
-              suspended: this.agents.filter(a => a.status === 'suspended').length,
-              pending: this.agents.filter(a => a.status === 'pending').length,
-          },
-          policies: {
-              total: this.policies.length,
-              active: this.policies.filter(p => p.status === 'active').length,
-          },
-          recent_activity: null
-      };
+    return {
+      timestamp: new Date().toISOString(),
+      agents: {
+        total: this.agents.length,
+        active: this.agents.filter((a) => a.status === "active").length,
+        suspended: this.agents.filter((a) => a.status === "suspended").length,
+        pending: this.agents.filter((a) => a.status === "pending").length,
+      },
+      policies: {
+        total: this.policies.length,
+        active: this.policies.filter((p) => p.status === "active").length,
+      },
+      recent_activity: null,
+    };
   }
 }
 
 // Singleton instance
 const store = new MockDataStore();
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Mock API Export
 export const mockApi = {
   auth: {
     login: async () => {
-        await delay(500);
-        return {
-            data: {
-                access_token: "mock_token",
-                token_type: "bearer",
-                tenant_id: "demo-tenant",
-                user_id: "demo-user",
-                expires_in: 3600
-            }
-        };
+      await delay(500);
+      return {
+        data: {
+          access_token: "mock_token",
+          token_type: "bearer",
+          tenant_id: "demo-tenant",
+          user_id: "demo-user",
+          expires_in: 3600,
+        },
+      };
     },
-    logout: async () => { await delay(200); return { data: null }; },
+    logout: async () => {
+      await delay(200);
+      return { data: null };
+    },
     session: async () => {
-        await delay(200);
-        return { data: { authenticated: true, tenant_id: "demo-tenant", user_id: "demo-user" } };
+      await delay(200);
+      return {
+        data: {
+          authenticated: true,
+          tenant_id: "demo-tenant",
+          user_id: "demo-user",
+        },
+      };
     },
   },
   health: {
-    check: async () => ({ data: { status: "ok", timestamp: new Date().toISOString(), service: "chronoguard-mock", version: "1.0.0-demo" } }),
-    ready: async () => ({ data: { status: "ok", timestamp: new Date().toISOString(), service: "chronoguard-mock", version: "1.0.0-demo" } }),
+    check: async () => ({
+      data: {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        service: "chronoguard-mock",
+        version: "1.0.0-demo",
+      },
+    }),
+    ready: async () => ({
+      data: {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        service: "chronoguard-mock",
+        version: "1.0.0-demo",
+      },
+    }),
     metrics: async () => {
-        await delay(300);
-        return { data: store.getMetrics() };
+      await delay(300);
+      return { data: store.getMetrics() };
     },
   },
   agents: {
     list: async (page = 1, pageSize = 50) => {
-        await delay(300);
-        return { data: store.getAgents(page, pageSize) };
+      await delay(300);
+      return { data: store.getAgents(page, pageSize) };
     },
     get: async (id: string) => {
-        await delay(200);
-        const agent = store.getAgent(id);
-        if (!agent) throw { response: { status: 404 } };
-        return { data: agent };
+      await delay(200);
+      const agent = store.getAgent(id);
+      if (!agent) throw { response: { status: 404 } };
+      return { data: agent };
     },
     create: async (data: CreateAgentRequest) => {
-        await delay(500);
-        return { data: store.createAgent(data) };
+      await delay(500);
+      return { data: store.createAgent(data) };
     },
     update: async (id: string, data: UpdateAgentRequest) => {
-        await delay(400);
-        return { data: store.updateAgent(id, data) };
+      await delay(400);
+      return { data: store.updateAgent(id, data) };
     },
   },
   policies: {
     list: async (page = 1, pageSize = 50) => {
-        await delay(300);
-        return { data: store.getPolicies(page, pageSize) };
+      await delay(300);
+      return { data: store.getPolicies(page, pageSize) };
     },
     get: async (id: string) => {
-        await delay(200);
-        const policy = store.getPolicy(id);
-        if (!policy) throw { response: { status: 404 } };
-        return { data: policy };
+      await delay(200);
+      const policy = store.getPolicy(id);
+      if (!policy) throw { response: { status: 404 } };
+      return { data: policy };
     },
     create: async (data: CreatePolicyRequest) => {
-        await delay(500);
-        return { data: store.createPolicy(data) };
+      await delay(500);
+      return { data: store.createPolicy(data) };
     },
     update: async (id: string, data: UpdatePolicyRequest) => {
-        await delay(400);
-        return { data: store.updatePolicy(id, data) };
+      await delay(400);
+      return { data: store.updatePolicy(id, data) };
     },
     delete: async (id: string) => {
-        await delay(300);
-        store.deletePolicy(id);
-        return { data: null };
+      await delay(300);
+      store.deletePolicy(id);
+      return { data: null };
     },
   },
   audit: {
     query: async (params: AuditQueryRequest) => {
-        await delay(400);
-        return { data: store.getAuditLogs(params) };
+      await delay(400);
+      return { data: store.getAuditLogs(params) };
     },
     analytics: async (startTime: string, endTime: string) => {
-        await delay(500);
-        return { data: store.getTemporalAnalytics(startTime, endTime) };
+      await delay(500);
+      return { data: store.getTemporalAnalytics(startTime, endTime) };
     },
     export: async () => {
-        await delay(1000);
-        return { data: new Blob(["entry_id,timestamp,decision\ne1,2025-01-01,allow"], { type: "text/csv" }) };
-    }
-  }
+      await delay(1000);
+      return {
+        data: new Blob(["entry_id,timestamp,decision\ne1,2025-01-01,allow"], {
+          type: "text/csv",
+        }),
+      };
+    },
+  },
 };
