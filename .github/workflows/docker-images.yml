@@ -200,7 +200,7 @@ jobs:
       matrix:
         include:
           - image: proxy
-            description: "🛡️ ChronoGuard Proxy - Envoy forward proxy with TLS termination, dynamic forward proxy (DFP), and OPA external authorization. Provides zero-trust network access control for browser automation with temporal restrictions."
+            description: "🛡️ ChronoGuard Proxy - Envoy forward proxy with TLS termination, dynamic forward proxy (DFP), and OPA external authorization. Provides zero-trust network access control for AI agents with temporal restrictions."
 
           - image: policy-engine
             description: "⏰ ChronoGuard Policy Engine - Open Policy Agent (OPA) with pre-configured temporal access control policies. Evaluates time-based authorization rules for business hours enforcement and domain restrictions."
@@ -215,7 +215,7 @@ jobs:
             description: "🎛️ ChronoGuard Dashboard - Minimal web interface for visualizing temporal access policies, monitoring access denials, and verifying audit chain integrity. Built with React and Next.js."
 
           - image: playwright-runner
-            description: "🎭 ChronoGuard Playwright Runner - Pre-configured Playwright browser automation with ChronoGuard proxy integration. Ready for demo scenarios and automated smoke testing of temporal access controls."
+            description: "🎭 ChronoGuard Playwright Runner - Pre-configured Playwright agent with ChronoGuard proxy integration. Ready for demo scenarios and automated smoke testing of temporal access controls."
 
     steps:
       - name: Update Docker Hub description for ${{ matrix.image }}

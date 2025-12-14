@@ -4,7 +4,7 @@ ChronoGuard Demo: Interactive Audit Log Viewer
 ===============================================
 
 Live view of audit logs as they're created.
-Shows real-time monitoring of browser automation activity.
+Shows real-time monitoring of AI agent activity.
 """
 
 import os

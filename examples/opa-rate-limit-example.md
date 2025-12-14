@@ -353,4 +353,4 @@ redis-cli TTL "rate:agent-550e8400:minute"
 
 ---
 
-**Built with ❤️ for secure browser automation**
+**Built with ❤️ for secure AI agent operations**

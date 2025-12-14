@@ -24,7 +24,7 @@ class TestMainApplicationCoverage:
 
         assert app.title == "ChronoGuard API"
         assert app.version == "1.0.0"
-        assert app.description == "Zero-trust proxy for browser automation with temporal controls"
+        assert app.description == "Agent Identity & Compliance Platform for AI agents"
 
     @pytest.mark.asyncio
     @patch("main.initialize_database")

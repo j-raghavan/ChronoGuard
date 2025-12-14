@@ -91,7 +91,10 @@ services:
       - CHRONOGUARD_SECURITY_SECRET_KEY=${CHRONOGUARD_SECURITY_SECRET_KEY:-demo-secret-key-32chars-minimum}
       - CHRONOGUARD_SECURITY_DEMO_MODE_ENABLED=true
       - CHRONOGUARD_SECURITY_DEMO_ADMIN_PASSWORD=${CHRONOGUARD_SECURITY_DEMO_ADMIN_PASSWORD:-chronoguard-admin-2025}
-      - CHRONOGUARD_SECURITY_SESSION_COOKIE_SECURE=false
+      # Cookie settings for GitHub Codespaces (uses HTTPS with port forwarding)
+      # SameSite=none requires Secure=true, and Codespaces provides HTTPS
+      - CHRONOGUARD_SECURITY_SESSION_COOKIE_SECURE=true
+      - CHRONOGUARD_SECURITY_SESSION_COOKIE_SAME_SITE=none
       # Observability
       - OTEL_SDK_DISABLED=true
       - LOG_LEVEL=INFO

@@ -258,7 +258,7 @@ class APISettings(BaseSettings):
 
     title: str = Field(default="ChronoGuard API", description="API title")
     description: str = Field(
-        default="Zero-trust proxy for browser automation with temporal controls",
+        default="Agent Identity & Compliance Platform for AI agents",
         description="API description",
     )
     version: str = Field(default="1.0.0", description="API version")

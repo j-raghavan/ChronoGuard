@@ -1,4 +1,4 @@
-"""ChronoGuard - Zero-trust proxy for browser automation with temporal controls."""
+"""ChronoGuard - Agent Identity & Compliance Platform for AI agents."""
 
 __version__ = "1.0.0"
 __author__ = "ChronoGuard Team"

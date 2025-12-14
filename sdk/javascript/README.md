@@ -1,6 +1,6 @@
 # ChronoGuard JavaScript/TypeScript SDK
 
-Official TypeScript/JavaScript SDK for ChronoGuard - Temporal Access Control System
+Official TypeScript/JavaScript SDK for ChronoGuard - Agent Identity & Compliance Platform for AI agents
 
 [![npm version](https://badge.fury.io/js/%40chronoguard%2Fsdk.svg)](https://www.npmjs.com/package/@chronoguard/sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)

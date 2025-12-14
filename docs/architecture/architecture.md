@@ -87,7 +87,7 @@ ChronoGuard implements Clean Architecture with Domain-Driven Design principles, 
 ### 2.1 AGENT ENTITY
 **Location**: `/backend/src/domain/agent/entity.py`
 
-**Responsibility**: Represents browser automation agents that connect to ChronoGuard
+**Responsibility**: Represents automation agents that connect to ChronoGuard
 
 **Key Attributes**:
 - `agent_id` (UUID): Unique identifier

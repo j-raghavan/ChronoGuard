@@ -13,8 +13,8 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         CLIENTS & INTERFACES                             │
 ├─────────────┬──────────────────┬────────────────┬──────────────────┤
-│  Web Browser│  Agent ⚠️(gRPC)  │  Envoy Proxy   │  Admin Dashboard  │
-│  (Frontend) │  (browser bots)  │  ✅(mTLS)      │  ✅(React)        │
+│  Dashboard  │  Agent ⚠️(gRPC)  │  Envoy Proxy   │  Admin Dashboard  │
+│  (React)    │  (AI agents)     │  ✅(mTLS)      │  ✅(React)        │
 └──────┬──────┴──────────┬───────┴────────┬───────┴──────────┬────────┘
        │                 │                │                  │
        │ ✅HTTP/REST     │ ⚠️gRPC        │ ⚠️xDS            │ 🔧WebSocket
@@ -314,7 +314,7 @@ RESPONSE to CLIENT
 **Note:** This diagram reflects the actual MVP implementation using Envoy ext_authz → OPA with asynchronous decision logging.
 
 ```
-BROWSER AGENT (Playwright, Puppeteer, Selenium)
+AI AGENT (LangChain, AutoGen, Python scripts)
        │
        │ HTTPS Request to example.com/api/data
        │ (via configured proxy: https://chronoguard-proxy:8080)
@@ -473,7 +473,7 @@ BROWSER AGENT (Playwright, Puppeteer, Selenium)
          │ + Response from example.com (if allowed)
          │
          ↓
-BROWSER AGENT receives response
+AI AGENT receives response
 ```
 
 **Key Implementation Details:**
@@ -683,8 +683,8 @@ Cardinality:
 
 CLIENTS:
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│  Browser         │  │  Agent (gRPC)    │  │  Admin Dashboard │
-│  (React SPA)     │  │  (bot automation)│  │  (monitoring)    │
+│  Dashboard       │  │  Agent (gRPC)    │  │  Admin Dashboard │
+│  (React SPA)     │  │  (AI agents)     │  │  (monitoring)    │
 └──────────────────┘  └──────────────────┘  └──────────────────┘
        ↓                      ↓                      ↓
    https://                gRPC+mTLS            https://

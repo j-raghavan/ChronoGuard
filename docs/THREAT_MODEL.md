@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-ChronoGuard is a zero-trust forward proxy for browser automation agents with temporal access control and comprehensive audit logging. This document identifies potential threats, attack vectors, and mitigation strategies.
+ChronoGuard is a zero-trust Agent Identity & Compliance Platform for AI agents with temporal access control and comprehensive audit logging. This document identifies potential threats, attack vectors, and mitigation strategies.
 
 ---
 

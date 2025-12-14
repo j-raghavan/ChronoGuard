@@ -52,7 +52,7 @@ class CORSMiddleware(BaseHTTPMiddleware):
             allow_methods: Allowed HTTP methods (overrides api_settings)
             allow_headers: Allowed headers (overrides api_settings)
             allow_credentials: Allow credentials flag (overrides api_settings)
-            expose_headers: Headers exposed to browser
+            expose_headers: Headers exposed to clients
             max_age: Preflight cache duration in seconds
         """
         super().__init__(app)

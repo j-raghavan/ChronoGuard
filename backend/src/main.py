@@ -80,7 +80,7 @@ def create_app() -> FastAPI:
     """
     app = FastAPI(
         title="ChronoGuard API",
-        description="Zero-trust proxy for browser automation with temporal controls",
+        description="Agent Identity & Compliance Platform for AI agents",
         version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",

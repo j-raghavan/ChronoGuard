@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chronoguard-sdk"
 version = "1.0.0"
-description = "Python SDK for ChronoGuard - Zero-trust proxy for browser automation with temporal controls"
+description = "Python SDK for ChronoGuard - Agent Identity & Compliance Platform for AI agents"
 authors = [{name = "ChronoGuard Team", email = "team@chronoguard.com"}]
 license = {text = "Apache-2.0"}
 readme = "README.md"
@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Security",
     "Typing :: Typed",
 ]
-keywords = ["chronoguard", "proxy", "browser-automation", "zero-trust", "security"]
+keywords = ["chronoguard", "ai-agents", "agent-security", "zero-trust", "compliance", "identity"]
 
 dependencies = [
     "httpx>=0.26.0",
