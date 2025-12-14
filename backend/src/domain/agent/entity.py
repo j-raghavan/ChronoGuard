@@ -1,4 +1,4 @@
-"""Agent domain entity representing browser automation agents."""
+"""Agent domain entity representing automation agents."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ class AgentStatus(str, Enum):
 
 
 class Agent(BaseModel):
-    """Agent domain entity representing a browser automation agent."""
+    """Agent domain entity representing an automation agent."""
 
     agent_id: UUID = Field(default_factory=uuid4)
     tenant_id: UUID

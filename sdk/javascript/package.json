@@ -1,7 +1,7 @@
 {
   "name": "@chronoguard/sdk",
   "version": "1.0.0",
-  "description": "Official TypeScript/JavaScript SDK for ChronoGuard - Temporal Access Control System",
+  "description": "Official TypeScript/JavaScript SDK for ChronoGuard - Agent Identity & Compliance Platform for AI agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -20,11 +20,12 @@
   },
   "keywords": [
     "chronoguard",
-    "temporal",
-    "access-control",
+    "ai-agents",
+    "agent-security",
+    "zero-trust",
+    "compliance",
+    "identity",
     "audit",
-    "policy",
-    "agent",
     "typescript",
     "sdk"
   ],

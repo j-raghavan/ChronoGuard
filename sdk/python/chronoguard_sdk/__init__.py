@@ -1,7 +1,7 @@
 """ChronoGuard Python SDK.
 
-Official Python SDK for ChronoGuard - Zero-trust proxy for browser automation
-with temporal controls.
+Official Python SDK for ChronoGuard - Agent Identity & Compliance Platform
+for AI agents.
 """
 
 from chronoguard_sdk.client import ChronoGuard, ChronoGuardSync

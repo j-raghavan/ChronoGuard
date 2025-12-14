@@ -3,7 +3,7 @@
 
 # ChronoGuard
 
-**Zero-trust proxy for browser automation with temporal controls**
+**Zero-Trust Open-Source Agent Identity & Compliance Platform for AI Agents**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -36,7 +36,7 @@
 
 ### 1. Real-Time Dashboard Overview
 
-Get instant visibility into your entire browser automation infrastructure at a glance.
+Get instant visibility into your entire AI agent infrastructure at a glance.
 
 <img src="frontend/public/assets/icons/dashboard.png" alt="ChronoGuard Dashboard" width="100%">
 
@@ -51,7 +51,7 @@ Get instant visibility into your entire browser automation infrastructure at a g
 
 ### 2. Agent Management
 
-Register, monitor, and control all your browser automation agents from one place.
+Register, monitor, and control all your AI agents from one place.
 
 <img src="frontend/public/assets/icons/agents.png" alt="Agent Management" width="100%">
 
@@ -120,7 +120,7 @@ python playground/demo-interactive.py
 
 ## Overview
 
-ChronoGuard is an open-source zero-trust proxy that provides network-enforced authorization for browser automation through a mandatory forward proxy. It controls all egress traffic from centralized agent infrastructure (CI/CD, Kubernetes, VM fleets) and provides temporal visibility into automation activities.
+ChronoGuard is a zero-trust open-source Agent Identity & Compliance Platform that provides network-enforced authorization for AI agents through a mandatory forward proxy. It controls all egress traffic from centralized agent infrastructure (CI/CD, Kubernetes, VM fleets) and provides temporal visibility into agent activities.
 
 **Core value proposition:** _"Know not just WHERE your automation goes, but WHEN - with network-enforced controls that can't be bypassed."_
 
@@ -149,11 +149,12 @@ ChronoGuard is an open-source zero-trust proxy that provides network-enforced au
 
 ### Target Use Cases
 
-- E-commerce intelligence and competitive analysis
-- Fintech research and market monitoring
-- Healthcare data operations with compliance requirements
-- Quality assurance and testing providers
-- Any organization running browser agents in controlled infrastructure with compliance obligations
+- **AI Agent Operations** - LangChain, AutoGen, CrewAI agents making external API calls
+- **Fintech & Compliance** - Regulated industries requiring audit trails for autonomous systems
+- **Healthcare AI** - HIPAA-compliant AI agent deployments
+- **E-commerce Intelligence** - Automated research and competitive analysis agents
+- **Quality Assurance** - Testing automation with full audit visibility
+- Any organization running AI agents or automation in controlled infrastructure with compliance obligations
 
 ## Quick Start
 
@@ -257,10 +258,10 @@ ChronoGuard follows **Domain-Driven Design (DDD)** with **Clean Architecture** p
 
 ```
 ┌────────────────────┐     ┌────────────────────┐     ┌────────────────┐
-│  Browser Agents    │────▶│   ChronoGuard      │────▶│   Internet     │
-│  - Playwright      │     │   Proxy (Envoy)    │     │                │
-│  - Puppeteer       │     │   + OPA + Time     │     │                │
-│  - Selenium        │     │   Enforcement      │     │                │
+│    AI Agents       │────▶│   ChronoGuard      │────▶│   Internet     │
+│  - LangChain       │     │   Proxy (Envoy)    │     │                │
+│  - Python/requests │     │   + OPA + Time     │     │                │
+│  - Any HTTP client │     │   Enforcement      │     │                │
 └────────────────────┘     └────────────────────┘     └────────────────┘
                                     │
                             ┌───────▼────────┐
@@ -298,7 +299,7 @@ For detailed architecture documentation, see:
 
 ### How Agents Use the Proxy
 
-Browser automation agents (Playwright, Puppeteer, Selenium, etc.) connect to ChronoGuard's forward proxy to gain zero-trust access control and audit logging capabilities.
+AI agents (LangChain, AutoGen, custom Python scripts, etc.) connect to ChronoGuard's forward proxy to gain zero-trust access control and audit logging capabilities.
 
 #### 1. Agent Certificate Setup
 
@@ -314,58 +315,65 @@ Each agent needs a unique mTLS certificate for authentication:
 # - ca-cert.pem (CA certificate for verification)
 ```
 
-#### 2. Configure Browser Agent
+#### 2. Configure Your Agent
 
-**Playwright Example:**
+**Python Agent Example (Recommended):**
+
+```python
+import requests
+import os
+
+# Configure mTLS certificates
+session = requests.Session()
+session.cert = ("certs/agent-cert.pem", "certs/agent-key.pem")
+session.verify = "certs/ca-cert.pem"
+session.proxies = {
+    "http": "https://chronoguard-proxy:8080",
+    "https": "https://chronoguard-proxy:8080",
+}
+
+# All requests are now routed through ChronoGuard
+response = session.get("https://api.example.com/data")
+```
+
+See [`examples/generic_python_agent.py`](examples/generic_python_agent.py) for a complete example.
+
+**LangChain Agent Example:**
+
+```python
+import httpx
+import ssl
+
+# Create SSL context with mTLS
+ssl_context = ssl.create_default_context()
+ssl_context.load_cert_chain("certs/agent-cert.pem", "certs/agent-key.pem")
+ssl_context.load_verify_locations("certs/ca-cert.pem")
+
+# Configure httpx client for LangChain
+http_client = httpx.Client(
+    proxy="https://chronoguard-proxy:8080",
+    verify=ssl_context,
+)
+
+from langchain_openai import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4", http_client=http_client)
+```
+
+See [`examples/langchain_agent.py`](examples/langchain_agent.py) for a complete example.
+
+**Playwright Example (Browser Automation):**
 
 ```javascript
 const { chromium } = require("playwright");
 
 const browser = await chromium.launch({
-  proxy: {
-    server: "https://chronoguard-proxy:8080",
-  },
-  // mTLS certificate configuration
-  clientCertificates: [
-    {
-      origin: "https://chronoguard-proxy:8080",
-      certPath: "./certs/agent-cert.pem",
-      keyPath: "./certs/agent-key.pem",
-    },
-  ],
+  proxy: { server: "https://chronoguard-proxy:8080" },
+  clientCertificates: [{
+    origin: "https://chronoguard-proxy:8080",
+    certPath: "./certs/agent-cert.pem",
+    keyPath: "./certs/agent-key.pem",
+  }],
 });
-```
-
-**Puppeteer Example:**
-
-```javascript
-const puppeteer = require("puppeteer");
-
-const browser = await puppeteer.launch({
-  args: [
-    "--proxy-server=https://chronoguard-proxy:8080",
-    "--client-certificate=./certs/agent-cert.pem",
-    "--client-certificate-key=./certs/agent-key.pem",
-  ],
-});
-```
-
-**Selenium Example (Python):**
-
-```python
-from selenium import webdriver
-from selenium.webdriver.common.proxy import Proxy, ProxyType
-
-proxy = Proxy()
-proxy.proxy_type = ProxyType.MANUAL
-proxy.http_proxy = "chronoguard-proxy:8080"
-proxy.ssl_proxy = "chronoguard-proxy:8080"
-
-options = webdriver.ChromeOptions()
-options.Proxy = proxy
-options.add_argument(f'--client-certificate=./certs/agent-cert.pem')
-
-driver = webdriver.Chrome(options=options)
 ```
 
 #### 3. Policy Assignment
@@ -819,4 +827,4 @@ ChronoGuard is built with:
 
 ---
 
-**Built with ❤️ for the browser automation community**
+**Built with ❤️ for the AI agent community**

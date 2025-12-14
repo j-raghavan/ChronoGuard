@@ -1,6 +1,6 @@
 # ChronoGuard Playground 🎮
 
-Welcome to the ChronoGuard interactive demo! This playground lets you experience ChronoGuard's zero-trust browser automation control in action.
+Welcome to the ChronoGuard interactive demo! This playground lets you experience ChronoGuard's zero-trust AI agent control in action.
 
 ## 🎯 What You'll Learn
 
@@ -84,7 +84,7 @@ python playground/demo-interactive.py
 ```
 ┌─────────────┐         ┌───────────────┐         ┌─────────────┐
 │  Playwright │────────>│ Envoy Proxy   │────────>│ OPA Policy  │
-│   Browser   │  mTLS   │ (Port 8080)   │  gRPC   │  Engine     │
+│   Agent     │  mTLS   │ (Port 8080)   │  gRPC   │  Engine     │
 └─────────────┘         └───────┬───────┘         └──────┬──────┘
                                 │                         │
                                 │ Decision Log            │ Policy
@@ -241,4 +241,4 @@ Found an issue with the demo? Want to add a new demo scenario?
 
 **Enjoy the demo!** 🎉
 
-If ChronoGuard helps secure your browser automation, please ⭐ **star the repo** on GitHub!
+If ChronoGuard helps secure your AI agents, please ⭐ **star the repo** on GitHub!

@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "chronoguard"
 version = "1.0.0"
-description = "Zero-trust proxy for browser automation with temporal controls"
+description = "Zero-Trust Agent Identity & Compliance Platform for AI Agents"
 authors = ["ChronoGuard Team <team@chronoguard.com>"]
 license = "Apache-2.0"
 readme = "README.md"

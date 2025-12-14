@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document describes the security architecture and design decisions for ChronoGuard, a zero-trust forward proxy for browser automation with temporal access control.
+This document describes the security architecture and design decisions for ChronoGuard, a zero-trust Agent Identity & Compliance Platform for AI agents with temporal access control.
 
 ---
 

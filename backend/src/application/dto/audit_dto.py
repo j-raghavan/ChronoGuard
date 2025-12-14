@@ -128,7 +128,7 @@ class AuditEntryDTO(BaseModel):
                 "policy_id": "550e8400-e29b-41d4-a716-446655440003",
                 "request_method": "GET",
                 "request_path": "/api/data",
-                "user_agent": "Mozilla/5.0 Playwright",
+                "user_agent": "python-requests/2.31.0",
                 "source_ip": "10.0.1.5",
                 "response_status": 200,
                 "processing_time_ms": 12.5,

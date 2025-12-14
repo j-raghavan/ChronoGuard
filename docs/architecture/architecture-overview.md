@@ -1,6 +1,6 @@
 # ChronoGuard Architecture Overview
 
-**Project:** ChronoGuard - Zero-trust Proxy for Browser Automation with Temporal Controls
+**Project:** ChronoGuard - Zero-Trust Agent Identity & Compliance Platform for AI Agents
 **Architecture Pattern:** Domain-Driven Design (DDD) + Clean Architecture + CQRS
 
 ## Table of Contents
@@ -53,7 +53,7 @@ Core Layer (Configuration, Logging, DI Container, Features)
 
 ### Agent
 
-**Represents:** Browser automation agents connecting to ChronoGuard
+**Represents:** Automation agents connecting to ChronoGuard
 
 **Key Attributes:**
 - `agent_id` (UUID) - Unique identifier
