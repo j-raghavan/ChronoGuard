@@ -95,14 +95,22 @@ def create_chronoguard_http_client() -> httpx.Client:
     1. Client -> Proxy (needs mTLS with our certs)
     2. Proxy -> Target (CONNECT tunnel, needs target verification)
 
-    For the demo with self-signed proxy certs, we disable verification.
+    For the demo with self-signed proxy certs, we disable verification
+    and create an SSL context for client cert authentication.
     """
-    # WARNING: verify=False is for demo only. Use proper certs in production!
-    # The mTLS client cert is passed via the cert parameter
+    import ssl
+
+    # Create SSL context with client certificate for mTLS
+    ssl_context = ssl.create_default_context()
+    ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
+    # Disable verification for demo (self-signed certs)
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    # WARNING: This configuration is for demo only!
     return httpx.Client(
         proxy=PROXY_URL,
-        cert=(CERT_FILE, KEY_FILE),
-        verify=False,  # noqa: S501 - Demo only, self-signed proxy certs
+        verify=ssl_context,
         timeout=60.0,
     )
 
