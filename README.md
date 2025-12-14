@@ -11,7 +11,17 @@
 
 ---
 
-## 🚀 See Value in 5 Minutes
+## 🚀 Live Demo
+
+**Experience ChronoGuard instantly - No installation required.**
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Launch-success?style=for-the-badge&logo=rocket)](https://j-raghavan.github.io/ChronoGuard/)
+
+> **Zero-Install Simulation**: This demo runs entirely in your browser using a simulated backend. You can create agents, define policies, and watch live audit traffic generation immediately.
+
+---
+
+## 🚀 See Value in 5 Minutes (Codespaces)
 
 **No installation. No configuration. Just click and experience ChronoGuard.**
 

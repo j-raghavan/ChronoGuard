@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:demo": "VITE_USE_MOCK_API=true vite",
     "build": "tsc -b && vite build",
+    "build:demo": "tsc -b && VITE_USE_MOCK_API=true vite build",
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
@@ -37,6 +39,7 @@
     "@types/node": "^24.10.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.0.4",
     "@vitest/coverage-v8": "^4.0.8",
     "@vitest/ui": "^4.0.8",
@@ -51,6 +54,7 @@
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
+    "uuid": "^13.0.0",
     "vite": "^7.2.2",
     "vitest": "^4.0.8"
   }
