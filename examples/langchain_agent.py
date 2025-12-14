@@ -148,11 +148,14 @@ class ChronoGuardTransport(httpx.BaseTransport):
         # Make the request through the proxy
         resp = self._pool.handle_request(req)
 
-        # Convert httpcore.Response back to httpx.Response
+        # Read the response content and create a proper httpx.Response
+        # httpcore returns an iterable stream, we need to read it for httpx
+        content = b"".join(resp.stream)
+
         return httpx.Response(
             status_code=resp.status,
             headers=resp.headers,
-            stream=resp.stream,
+            content=content,
             extensions=resp.extensions,
         )
 
