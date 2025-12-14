@@ -97,21 +97,20 @@ def main() -> None:
             logger.error("Run: ./scripts/generate-agent-cert.sh my-python-agent")
             sys.exit(1)
 
-    # Create configured session
-    session = create_session()
+    # Create configured session using context manager to avoid resource leaks
+    with create_session() as session:
+        # Example requests - these will be audited by ChronoGuard
+        test_urls = [
+            "https://httpbin.org/ip",
+            "https://httpbin.org/headers",
+            "https://api.github.com/zen",
+        ]
 
-    # Example requests - these will be audited by ChronoGuard
-    test_urls = [
-        "https://httpbin.org/ip",
-        "https://httpbin.org/headers",
-        "https://api.github.com/zen",
-    ]
+        for url in test_urls:
+            make_request(session, url)
+            logger.info("-" * 50)
 
-    for url in test_urls:
-        make_request(session, url)
-        logger.info("-" * 50)
-
-    logger.info("All requests completed. Check ChronoGuard dashboard for audit logs.")
+        logger.info("All requests completed. Check ChronoGuard dashboard for audit logs.")
 
 
 if __name__ == "__main__":

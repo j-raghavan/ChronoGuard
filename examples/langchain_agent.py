@@ -112,51 +112,51 @@ def run_agent_with_custom_tool() -> None:
 
     logger.info("Initializing LangChain agent with ChronoGuard proxy...")
 
-    # Create HTTP clients for ChronoGuard
-    http_client = create_chronoguard_http_client()
-    requests_session = create_chronoguard_requests_session()
+    # Create HTTP clients for ChronoGuard using context managers to avoid resource leaks
+    with create_chronoguard_http_client() as http_client, \
+         create_chronoguard_requests_session() as requests_session:
 
-    # Initialize ChatOpenAI with custom HTTP client
-    # All OpenAI API calls will go through ChronoGuard
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
-        temperature=0,
-        http_client=http_client,
-    )
+        # Initialize ChatOpenAI with custom HTTP client
+        # All OpenAI API calls will go through ChronoGuard
+        llm = ChatOpenAI(
+            model="gpt-3.5-turbo",
+            temperature=0,
+            http_client=http_client,
+        )
 
-    # Create a custom HTTP fetch tool that uses our proxied session
-    def fetch_url(url: str) -> str:
-        """Fetch a URL through ChronoGuard proxy."""
-        try:
-            response = requests_session.get(url, timeout=30)
-            return f"Status: {response.status_code}\nContent: {response.text[:500]}"
-        except Exception as e:
-            return f"Error fetching {url}: {e}"
+        # Create a custom HTTP fetch tool that uses our proxied session
+        def fetch_url(url: str) -> str:
+            """Fetch a URL through ChronoGuard proxy."""
+            try:
+                response = requests_session.get(url, timeout=30)
+                return f"Status: {response.status_code}\nContent: {response.text[:500]}"
+            except requests.exceptions.RequestException as e:
+                return f"Error fetching {url}: {e}"
 
-    # Define the tool
-    fetch_tool = Tool(
-        name="fetch_url",
-        description="Fetch content from a URL. All requests are audited by ChronoGuard.",
-        func=fetch_url,
-    )
+        # Define the tool
+        fetch_tool = Tool(
+            name="fetch_url",
+            description="Fetch content from a URL. All requests are audited by ChronoGuard.",
+            func=fetch_url,
+        )
 
-    # Initialize the agent with our custom tool
-    agent = initialize_agent(
-        [fetch_tool],
-        llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True,
-    )
+        # Initialize the agent with our custom tool
+        agent = initialize_agent(
+            [fetch_tool],
+            llm,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=True,
+        )
 
-    # Run a sample query
-    logger.info("Running agent query...")
-    result = agent.run(
-        "What is my current IP address? "
-        "Use the fetch_url tool to get https://httpbin.org/ip"
-    )
+        # Run a sample query
+        logger.info("Running agent query...")
+        result = agent.run(
+            "What is my current IP address? "
+            "Use the fetch_url tool to get https://httpbin.org/ip"
+        )
 
-    logger.info(f"Agent result: {result}")
-    logger.info("Check ChronoGuard dashboard for audit trail of all HTTP requests.")
+        logger.info(f"Agent result: {result}")
+        logger.info("Check ChronoGuard dashboard for audit trail of all HTTP requests.")
 
 
 def run_simple_llm_call() -> None:
@@ -173,21 +173,20 @@ def run_simple_llm_call() -> None:
 
     logger.info("Making simple LLM call through ChronoGuard proxy...")
 
-    # Create custom HTTP client for ChronoGuard
-    http_client = create_chronoguard_http_client()
+    # Create custom HTTP client for ChronoGuard using context manager to avoid resource leaks
+    with create_chronoguard_http_client() as http_client:
+        # Initialize ChatOpenAI with custom HTTP client
+        llm = ChatOpenAI(
+            model="gpt-3.5-turbo",
+            temperature=0,
+            http_client=http_client,
+        )
 
-    # Initialize ChatOpenAI with custom HTTP client
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
-        temperature=0,
-        http_client=http_client,
-    )
+        # Make a simple call
+        response = llm.invoke("What is 2 + 2? Answer in one word.")
 
-    # Make a simple call
-    response = llm.invoke("What is 2 + 2? Answer in one word.")
-
-    logger.info(f"LLM Response: {response.content}")
-    logger.info("Check ChronoGuard dashboard - you should see the OpenAI API call.")
+        logger.info(f"LLM Response: {response.content}")
+        logger.info("Check ChronoGuard dashboard - you should see the OpenAI API call.")
 
 
 def main() -> None:
