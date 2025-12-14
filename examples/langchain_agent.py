@@ -242,9 +242,10 @@ def run_agent_with_custom_tool() -> None:
     logger.info("Initializing LangChain agent with ChronoGuard proxy...")
 
     # Create HTTP clients for ChronoGuard using context managers to avoid resource leaks
-    with create_chronoguard_http_client() as http_client, \
-         create_chronoguard_requests_session() as requests_session:
-
+    with (
+        create_chronoguard_http_client() as http_client,
+        create_chronoguard_requests_session() as requests_session,
+    ):
         # Initialize ChatOpenAI with custom HTTP client
         # All OpenAI API calls will go through ChronoGuard
         llm = ChatOpenAI(
@@ -280,8 +281,7 @@ def run_agent_with_custom_tool() -> None:
         # Run a sample query
         logger.info("Running agent query...")
         result = agent.run(
-            "What is my current IP address? "
-            "Use the fetch_url tool to get https://httpbin.org/ip"
+            "What is my current IP address? " "Use the fetch_url tool to get https://httpbin.org/ip"
         )
 
         logger.info(f"Agent result: {result}")

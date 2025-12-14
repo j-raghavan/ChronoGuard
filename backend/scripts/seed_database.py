@@ -10,8 +10,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from core.database import get_database_url
 from domain.agent.entity import AgentStatus
@@ -58,20 +57,30 @@ SAMPLE_DOMAINS = [
     "secure.example.com",
 ]
 
-# Sample agent names
+# Sample agent names - demo-agent-001 MUST be first to match demo certificates
 AGENT_NAMES = [
+    "demo-agent-001",  # Primary demo agent - matches playground/demo-certs
+    "demo-agent-002",  # Secondary demo agent with time restrictions
     "qa-agent-prod-01",
-    "qa-agent-prod-02",
     "qa-agent-staging-01",
     "monitoring-agent-01",
     "analytics-agent-01",
-    "test-agent-dev-01",
-    "test-agent-dev-02",
-    "production-scraper-01",
 ]
 
-# Sample policy data
+# Sample policy data - Demo Policy MUST be first to match OPA seed
 POLICIES = [
+    {
+        "name": "Demo Agent Policy",
+        "description": "Demo policy for demo-agent-001",
+        "allowed_domains": [
+            "example.com",
+            "httpbin.org",
+            "api.github.com",
+            "api.openai.com",
+        ],
+        "blocked_domains": [],
+        "priority": 50,
+    },
     {
         "name": "Production Access Policy",
         "description": "Allows access to production domains during business hours",
@@ -89,16 +98,13 @@ POLICIES = [
     {
         "name": "Monitoring Dashboard Policy",
         "description": "Allows access to monitoring and analytics dashboards",
-        "allowed_domains": ["monitoring.example.com", "analytics.example.com", "dashboard.example.com"],
+        "allowed_domains": [
+            "monitoring.example.com",
+            "analytics.example.com",
+            "dashboard.example.com",
+        ],
         "blocked_domains": [],
         "priority": 300,
-    },
-    {
-        "name": "Development Policy",
-        "description": "Open access policy for development environments",
-        "allowed_domains": ["example.com", "test.example.com", "staging.example.com"],
-        "blocked_domains": ["production.example.com"],
-        "priority": 500,
     },
 ]
 
@@ -127,6 +133,11 @@ async def create_sample_agents(session: AsyncSession, tenant_id: UUID, user_id: 
         else:
             status = AgentStatus.SUSPENDED
 
+        # Calculate last_seen_at based on status
+        last_seen = None
+        if status == AgentStatus.ACTIVE:
+            last_seen = now - timedelta(hours=random.randint(0, 24))  # noqa: S311
+
         agent = AgentModel(
             agent_id=agent_id,
             tenant_id=tenant_id,
@@ -134,10 +145,13 @@ async def create_sample_agents(session: AsyncSession, tenant_id: UUID, user_id: 
             certificate_pem=SAMPLE_CERTIFICATE,
             status=status,
             policy_ids=[],
-            created_at=now - timedelta(days=random.randint(1, 30)),
-            updated_at=now - timedelta(days=random.randint(0, 7)),
-            last_seen_at=now - timedelta(hours=random.randint(0, 24)) if status == AgentStatus.ACTIVE else None,
-            agent_metadata={"environment": "production" if i < 3 else "staging", "team": "qa"},
+            created_at=now - timedelta(days=random.randint(1, 30)),  # noqa: S311
+            updated_at=now - timedelta(days=random.randint(0, 7)),  # noqa: S311
+            last_seen_at=last_seen,
+            agent_metadata={
+                "environment": "production" if i < 3 else "staging",
+                "team": "qa",
+            },
             version=1,
         )
         session.add(agent)
@@ -179,8 +193,8 @@ async def create_sample_policies(
             status=PolicyStatus.ACTIVE,
             allowed_domains=policy_data["allowed_domains"],
             blocked_domains=policy_data["blocked_domains"],
-            created_at=now - timedelta(days=random.randint(1, 60)),
-            updated_at=now - timedelta(days=random.randint(0, 14)),
+            created_at=now - timedelta(days=random.randint(1, 60)),  # noqa: S311
+            updated_at=now - timedelta(days=random.randint(0, 14)),  # noqa: S311
             created_by=user_id,
             version=1,
             policy_metadata={"environment": "production"},
@@ -228,19 +242,24 @@ async def create_sample_audit_entries(
         # Generate entries throughout the day (more during business hours)
         for hour in range(24):
             # More activity during business hours (9 AM - 5 PM)
-            if 9 <= hour <= 17:
-                entries_per_hour = random.randint(15, 40)
-            else:
-                entries_per_hour = random.randint(2, 10)
+            entries_per_hour = (
+                random.randint(15, 40)  # noqa: S311
+                if 9 <= hour <= 17
+                else random.randint(2, 10)  # noqa: S311
+            )
 
             for _ in range(entries_per_hour):
-                entry_time = base_time.replace(hour=hour, minute=random.randint(0, 59), second=random.randint(0, 59))
-                agent_id = random.choice(agent_ids)
-                policy_id = random.choice(policy_ids) if random.random() > 0.2 else None
+                minute = random.randint(0, 59)  # noqa: S311
+                second = random.randint(0, 59)  # noqa: S311
+                entry_time = base_time.replace(hour=hour, minute=minute, second=second)
+                agent_id = random.choice(agent_ids)  # noqa: S311
+                has_policy = random.random() > 0.2  # noqa: S311
+                policy_id = random.choice(policy_ids) if has_policy else None  # noqa: S311
 
                 # 90% allow, 10% deny
-                decision = AccessDecision.ALLOW if random.random() > 0.1 else AccessDecision.DENY
-                domain = random.choice(SAMPLE_DOMAINS)
+                is_allowed = random.random() > 0.1  # noqa: S311
+                decision = AccessDecision.ALLOW if is_allowed else AccessDecision.DENY
+                domain = random.choice(SAMPLE_DOMAINS)  # noqa: S311
 
                 # Deny blocked domains
                 if domain in ["admin.example.com"] and decision == AccessDecision.ALLOW:
@@ -262,6 +281,20 @@ async def create_sample_audit_entries(
                     "quarter_of_year": (entry_time.month - 1) // 3 + 1,
                 }
 
+                # Generate random request details
+                method = random.choice(["GET", "POST", "PUT", "DELETE"])  # noqa: S311
+                paths = ["users", "products", "orders", "analytics"]
+                path = random.choice(paths)  # noqa: S311
+                ip_suffix = random.randint(1, 255)  # noqa: S311
+                resp_size = random.randint(100, 10000)  # noqa: S311
+                proc_time = random.uniform(10, 500)  # noqa: S311
+
+                # Determine reason based on decision
+                if decision == AccessDecision.ALLOW:
+                    reason = "Policy rule matched"
+                else:
+                    reason = "Domain blocked"
+
                 entry = AuditEntryModel(
                     entry_id=uuid4(),
                     tenant_id=tenant_id,
@@ -270,16 +303,16 @@ async def create_sample_audit_entries(
                     timestamp_nanos=int(entry_time.timestamp() * 1e9),
                     domain=domain,
                     decision=decision,
-                    reason="Policy rule matched" if decision == AccessDecision.ALLOW else "Domain blocked",
+                    reason=reason,
                     policy_id=policy_id,
                     rule_id=None,
-                    request_method=random.choice(["GET", "POST", "PUT", "DELETE"]),
-                    request_path=f"/api/v1/{random.choice(['users', 'products', 'orders', 'analytics'])}",
+                    request_method=method,
+                    request_path=f"/api/v1/{path}",
                     user_agent="ChronoGuard-Agent/1.0",
-                    source_ip=f"192.168.1.{random.randint(1, 255)}",
+                    source_ip=f"192.168.1.{ip_suffix}",
                     response_status=200 if decision == AccessDecision.ALLOW else 403,
-                    response_size_bytes=random.randint(100, 10000),
-                    processing_time_ms=random.uniform(10, 500),
+                    response_size_bytes=resp_size,
+                    processing_time_ms=proc_time,
                     timed_access_metadata=timed_metadata,
                     previous_hash="",
                     current_hash="",
@@ -305,7 +338,7 @@ async def seed_database() -> None:
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
     engine = create_async_engine(db_url, echo=False)
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
 
     print("🌱 Starting database seeding...")
     print(f"   Tenant ID: {tenant_id}")
@@ -315,7 +348,7 @@ async def seed_database() -> None:
         try:
             # Check if data already exists
             result = await session.execute(text("SELECT COUNT(*) FROM agents"))
-            agent_count = result.scalar()
+            agent_count = result.scalar() or 0
             if agent_count > 0:
                 print(f"⚠️  Database already contains {agent_count} agents. Skipping seed.")
                 print("   To re-seed, clear the database first.")
@@ -328,12 +361,14 @@ async def seed_database() -> None:
             policy_ids = await create_sample_policies(session, tenant_id, user_id, agent_ids)
 
             # Create audit entries
-            await create_sample_audit_entries(session, tenant_id, agent_ids, policy_ids, days_back=7)
+            await create_sample_audit_entries(
+                session, tenant_id, agent_ids, policy_ids, days_back=7
+            )
 
             print("\n✅ Database seeding completed successfully!")
             print(f"   - {len(agent_ids)} agents")
             print(f"   - {len(policy_ids)} policies")
-            print(f"   - ~2000+ audit entries")
+            print("   - ~2000+ audit entries")
             print("\n💡 Make sure to set these IDs in your frontend localStorage:")
             print(f"   localStorage.setItem('tenantId', '{tenant_id}')")
             print(f"   localStorage.setItem('userId', '{user_id}')")

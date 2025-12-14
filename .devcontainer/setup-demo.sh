@@ -142,12 +142,20 @@ else
     echo -e "${YELLOW}⚠️  Dashboard may still be starting...${NC}"
 fi
 
-# 5. Seed demo data
+# 5. Seed demo data (Database + OPA)
 echo -e "${BLUE}🌱 Seeding demo data...${NC}"
+
+# Seed PostgreSQL database with agents, policies, and audit entries
 cd backend
 PYTHONPATH=src poetry install --quiet 2>/dev/null || true
-PYTHONPATH=src poetry run python scripts/seed_database.py 2>/dev/null || echo -e "${YELLOW}⚠️  Seed script failed (may already be seeded)${NC}"
+PYTHONPATH=src poetry run python scripts/seed_database.py 2>/dev/null || echo -e "${YELLOW}⚠️  Database seed failed (may already be seeded)${NC}"
 cd ..
+
+# Seed OPA with policy data (CRITICAL: required for proxy to allow requests)
+# Without this, all requests through the proxy will return 403 Forbidden
+echo -e "${BLUE}🔒 Seeding OPA policy data...${NC}"
+OPA_URL="http://localhost:8181" ./scripts/seed_opa_policies.sh 2>/dev/null || \
+    echo -e "${YELLOW}⚠️  OPA seed failed (OPA may not be ready yet)${NC}"
 
 echo ""
 echo -e "${BOLD}${GREEN}"

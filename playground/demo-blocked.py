@@ -26,6 +26,7 @@ BLUE = "\033[94m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
+
 def _detect_proxy_host() -> str:
     """Auto-detect whether to use Docker hostname or localhost.
 

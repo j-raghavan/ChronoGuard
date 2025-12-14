@@ -35,12 +35,13 @@ if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
 fi
 
 # Seed demo policy data
-# demo-agent-001: Can access example.com and httpbin.org, but NOT google.com
+# demo-agent-001: Can access example.com, httpbin.org, api.github.com, api.openai.com
+# NOTE: This must match backend/scripts/seed_database.py POLICIES for consistency
 curl -sf -X PUT "${OPA_URL}/v1/data/policies" \
     -H "Content-Type: application/json" \
     -d '{
   "demo-agent-001": {
-    "allowed_domains": ["example.com", "httpbin.org", "api.github.com"],
+    "allowed_domains": ["example.com", "httpbin.org", "api.github.com", "api.openai.com"],
     "blocked_domains": [],
     "rate_limits": {
       "requests_per_minute": 60,
@@ -78,7 +79,7 @@ if [ $? -eq 0 ]; then
     echo -e "${GREEN}Demo policy data seeded successfully${NC}"
     echo ""
     echo "Configured agents:"
-    echo "  - demo-agent-001: Allowed domains: example.com, httpbin.org, api.github.com"
+    echo "  - demo-agent-001: Allowed domains: example.com, httpbin.org, api.github.com, api.openai.com"
     echo "  - demo-agent-002: Allowed domains: example.com (business hours only)"
     echo ""
     echo "Blocked by default (not in allowlist):"

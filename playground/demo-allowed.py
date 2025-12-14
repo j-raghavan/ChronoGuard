@@ -26,6 +26,7 @@ BLUE = "\033[94m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
+
 def _detect_proxy_host() -> str:
     """Auto-detect whether to use Docker hostname or localhost.
 
@@ -178,9 +179,7 @@ def make_https_request_via_proxy(
 
     incoming = ssl.MemoryBIO()
     outgoing = ssl.MemoryBIO()
-    target_ssl = target_ssl_context.wrap_bio(
-        incoming, outgoing, server_hostname=target_host
-    )
+    target_ssl = target_ssl_context.wrap_bio(incoming, outgoing, server_hostname=target_host)
 
     # Perform TLS handshake with target through the tunnel
     def do_ssl_io() -> None:
@@ -200,9 +199,7 @@ def make_https_request_via_proxy(
             do_ssl_io()
             chunk = proxy_socket.recv(16384)
             if not chunk:
-                raise ConnectionError(
-                    "Connection closed during TLS handshake"
-                ) from None
+                raise ConnectionError("Connection closed during TLS handshake") from None
             incoming.write(chunk)
         except ssl.SSLWantWriteError:
             do_ssl_io()
