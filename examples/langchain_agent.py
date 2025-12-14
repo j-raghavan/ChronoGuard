@@ -84,33 +84,108 @@ CA_FILE = _find_cert_path(
 PROXY_URL = os.environ.get("CHRONOGUARD_PROXY", "https://localhost:8080")
 
 
+class ChronoGuardTransport(httpx.BaseTransport):
+    """Custom transport for ChronoGuard mTLS proxy with self-signed certificates.
+
+    httpx's high-level API doesn't properly expose httpcore's `proxy_ssl_context`
+    parameter, which is needed when connecting to an HTTPS proxy with:
+    - mTLS client certificates
+    - Self-signed server certificates
+
+    This transport wraps httpcore.HTTPProxy directly to configure both:
+    1. proxy_ssl_context: For mTLS connection TO the proxy (with client certs, no verify)
+    2. ssl_context: For TLS connection through tunnel to TARGET (normal verification)
+    """
+
+    def __init__(
+        self, proxy_url: str, cert_file: str, key_file: str, verify_target: bool = True
+    ) -> None:
+        import ssl
+
+        import httpcore
+
+        # SSL context for connecting TO the proxy (mTLS with self-signed cert)
+        proxy_ssl_context = ssl.create_default_context()
+        proxy_ssl_context.load_cert_chain(certfile=cert_file, keyfile=key_file)
+        # Disable verification for demo (proxy has self-signed cert)
+        proxy_ssl_context.check_hostname = False
+        proxy_ssl_context.verify_mode = ssl.CERT_NONE
+
+        # SSL context for connecting through tunnel TO the target (e.g., api.openai.com)
+        # Use standard verification for real API endpoints
+        if verify_target:
+            target_ssl_context = ssl.create_default_context()
+        else:
+            target_ssl_context = ssl.create_default_context()
+            target_ssl_context.check_hostname = False
+            target_ssl_context.verify_mode = ssl.CERT_NONE
+
+        # Create httpcore HTTPProxy with BOTH SSL contexts properly configured
+        self._pool = httpcore.HTTPProxy(
+            proxy_url=proxy_url,
+            proxy_ssl_context=proxy_ssl_context,
+            ssl_context=target_ssl_context,
+        )
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        """Forward request through the proxy pool."""
+        import httpcore
+
+        # Convert httpx.Request to httpcore format
+        req = httpcore.Request(
+            method=request.method,
+            url=httpcore.URL(
+                scheme=request.url.raw_scheme,
+                host=request.url.raw_host,
+                port=request.url.port,
+                target=request.url.raw_path,
+            ),
+            headers=request.headers.raw,
+            content=request.stream,
+            extensions=request.extensions,
+        )
+
+        # Make the request through the proxy
+        resp = self._pool.handle_request(req)
+
+        # Convert httpcore.Response back to httpx.Response
+        return httpx.Response(
+            status_code=resp.status,
+            headers=resp.headers,
+            stream=resp.stream,
+            extensions=resp.extensions,
+        )
+
+    def close(self) -> None:
+        """Close the connection pool."""
+        self._pool.close()
+
+    def __enter__(self) -> "ChronoGuardTransport":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
+
+
 def create_chronoguard_http_client() -> httpx.Client:
     """Create an httpx client configured for ChronoGuard mTLS proxy.
 
-    Note: For demo/development purposes, SSL verification is disabled.
-    In production, you would use properly signed certificates and
-    configure verification appropriately.
+    This uses a custom transport to properly handle:
+    1. mTLS connection to the proxy (with client certificates)
+    2. Self-signed proxy certificates (verification disabled for demo)
+    3. Standard TLS verification for target APIs (e.g., OpenAI)
 
-    The httpx library with HTTPS proxies creates two TLS connections:
-    1. Client -> Proxy (needs mTLS with our certs)
-    2. Proxy -> Target (CONNECT tunnel, needs target verification)
-
-    For the demo with self-signed proxy certs, we disable verification
-    and create an SSL context for client cert authentication.
+    In production, use properly signed certificates for the proxy.
     """
-    import ssl
+    transport = ChronoGuardTransport(
+        proxy_url=PROXY_URL,
+        cert_file=CERT_FILE,
+        key_file=KEY_FILE,
+        verify_target=True,  # Verify real API endpoints like OpenAI
+    )
 
-    # Create SSL context with client certificate for mTLS
-    ssl_context = ssl.create_default_context()
-    ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
-    # Disable verification for demo (self-signed certs)
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
-
-    # WARNING: This configuration is for demo only!
     return httpx.Client(
-        proxy=PROXY_URL,
-        verify=ssl_context,
+        transport=transport,
         timeout=60.0,
     )
 
