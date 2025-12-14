@@ -6,20 +6,26 @@ to ChronoGuard's Zero Trust Proxy using mTLS authentication.
 
 Prerequisites:
     1. Generate agent certificates: ./scripts/generate-agent-cert.sh my-python-agent
+       Or use demo certs (for Codespaces/Docker demo environment)
     2. Ensure ChronoGuard proxy is running on localhost:8080
-    3. Register the agent in ChronoGuard dashboard
+    3. Register the agent in ChronoGuard dashboard (or use demo-agent-001)
 
-Usage:
+Usage (with generated certs):
+    ./scripts/generate-agent-cert.sh my-python-agent
     export CHRONOGUARD_CERT=certs/my-python-agent-cert.pem
     export CHRONOGUARD_KEY=certs/my-python-agent-key.pem
     export CHRONOGUARD_CA=certs/ca-cert.pem
-    export CHRONOGUARD_PROXY=https://localhost:8080
-    python generic_python_agent.py
+    python examples/generic_python_agent.py
+
+Usage (with demo certs - for Codespaces/Docker demo):
+    # Demo certs are auto-detected if running from workspace root
+    python examples/generic_python_agent.py
 """
 
 import logging
 import os
 import sys
+from pathlib import Path
 
 import requests
 
@@ -30,10 +36,35 @@ logging.basicConfig(
 )
 logger = logging.getLogger("chronoguard-agent")
 
-# Configuration from environment variables
-CERT_FILE = os.environ.get("CHRONOGUARD_CERT", "certs/my-python-agent-cert.pem")
-KEY_FILE = os.environ.get("CHRONOGUARD_KEY", "certs/my-python-agent-key.pem")
-CA_FILE = os.environ.get("CHRONOGUARD_CA", "certs/ca-cert.pem")
+
+def _find_cert_path(env_var: str, default_path: str, demo_path: str) -> str:
+    """Find certificate path, preferring env var, then demo certs, then default."""
+    if os.environ.get(env_var):
+        return os.environ[env_var]
+
+    # Check if demo certs exist (for Codespaces/Docker environments)
+    if Path(demo_path).exists():
+        return demo_path
+
+    return default_path
+
+
+# Configuration from environment variables with fallback to demo certs
+CERT_FILE = _find_cert_path(
+    "CHRONOGUARD_CERT",
+    "certs/my-python-agent-cert.pem",
+    "playground/demo-certs/demo-agent-cert.pem",
+)
+KEY_FILE = _find_cert_path(
+    "CHRONOGUARD_KEY",
+    "certs/my-python-agent-key.pem",
+    "playground/demo-certs/demo-agent-key.pem",
+)
+CA_FILE = _find_cert_path(
+    "CHRONOGUARD_CA",
+    "certs/ca-cert.pem",
+    "playground/demo-certs/ca-cert.pem",
+)
 PROXY_URL = os.environ.get("CHRONOGUARD_PROXY", "https://localhost:8080")
 
 

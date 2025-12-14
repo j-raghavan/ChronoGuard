@@ -7,17 +7,25 @@ ChronoGuard's Zero Trust Proxy for secure, auditable AI agent operations.
 Prerequisites:
     1. pip install langchain langchain-openai httpx
     2. Generate agent certificates: ./scripts/generate-agent-cert.sh langchain-agent
+       Or use demo certs: export CHRONOGUARD_CERT=playground/demo-certs/demo-agent-cert.pem
     3. Ensure ChronoGuard proxy is running on localhost:8080
-    4. Register the agent in ChronoGuard dashboard
+    4. Register the agent in ChronoGuard dashboard (or use demo-agent-001)
     5. Set OPENAI_API_KEY environment variable
 
-Usage:
+Usage (with generated certs):
+    ./scripts/generate-agent-cert.sh langchain-agent
     export CHRONOGUARD_CERT=certs/langchain-agent-cert.pem
     export CHRONOGUARD_KEY=certs/langchain-agent-key.pem
     export CHRONOGUARD_CA=certs/ca-cert.pem
-    export CHRONOGUARD_PROXY=https://localhost:8080
     export OPENAI_API_KEY=your-api-key
-    python langchain_agent.py
+    python examples/langchain_agent.py
+
+Usage (with demo certs - for Codespaces/Docker demo):
+    export CHRONOGUARD_CERT=playground/demo-certs/demo-agent-cert.pem
+    export CHRONOGUARD_KEY=playground/demo-certs/demo-agent-key.pem
+    export CHRONOGUARD_CA=playground/demo-certs/ca-cert.pem
+    export OPENAI_API_KEY=your-api-key
+    python examples/langchain_agent.py
 
 What Gets Routed Through ChronoGuard:
     - OpenAI API calls (via the custom http_client)
@@ -33,6 +41,7 @@ import logging
 import os
 import ssl
 import sys
+from pathlib import Path
 
 import httpx
 import requests
@@ -44,10 +53,35 @@ logging.basicConfig(
 )
 logger = logging.getLogger("chronoguard-langchain")
 
-# Configuration from environment variables
-CERT_FILE = os.environ.get("CHRONOGUARD_CERT", "certs/langchain-agent-cert.pem")
-KEY_FILE = os.environ.get("CHRONOGUARD_KEY", "certs/langchain-agent-key.pem")
-CA_FILE = os.environ.get("CHRONOGUARD_CA", "certs/ca-cert.pem")
+
+def _find_cert_path(env_var: str, default_path: str, demo_path: str) -> str:
+    """Find certificate path, preferring env var, then demo certs, then default."""
+    if os.environ.get(env_var):
+        return os.environ[env_var]
+
+    # Check if demo certs exist (for Codespaces/Docker environments)
+    if Path(demo_path).exists():
+        return demo_path
+
+    return default_path
+
+
+# Configuration from environment variables with fallback to demo certs
+CERT_FILE = _find_cert_path(
+    "CHRONOGUARD_CERT",
+    "certs/langchain-agent-cert.pem",
+    "playground/demo-certs/demo-agent-cert.pem",
+)
+KEY_FILE = _find_cert_path(
+    "CHRONOGUARD_KEY",
+    "certs/langchain-agent-key.pem",
+    "playground/demo-certs/demo-agent-key.pem",
+)
+CA_FILE = _find_cert_path(
+    "CHRONOGUARD_CA",
+    "certs/ca-cert.pem",
+    "playground/demo-certs/ca-cert.pem",
+)
 PROXY_URL = os.environ.get("CHRONOGUARD_PROXY", "https://localhost:8080")
 
 
