@@ -39,7 +39,6 @@ Note:
 
 import logging
 import os
-import ssl
 import sys
 from pathlib import Path
 
@@ -88,22 +87,22 @@ PROXY_URL = os.environ.get("CHRONOGUARD_PROXY", "https://localhost:8080")
 def create_chronoguard_http_client() -> httpx.Client:
     """Create an httpx client configured for ChronoGuard mTLS proxy.
 
-    Note: For demo/development purposes, SSL verification is relaxed.
+    Note: For demo/development purposes, SSL verification is disabled.
     In production, you would use properly signed certificates and
     configure verification appropriately.
+
+    The httpx library with HTTPS proxies creates two TLS connections:
+    1. Client -> Proxy (needs mTLS with our certs)
+    2. Proxy -> Target (CONNECT tunnel, needs target verification)
+
+    For the demo with self-signed proxy certs, we disable verification.
     """
-    # Create SSL context for mTLS client authentication to the proxy
-    ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-    ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
-
-    # For demo environment with self-signed certs, disable hostname verification
-    # WARNING: In production, use properly signed certificates
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
-
+    # WARNING: verify=False is for demo only. Use proper certs in production!
+    # The mTLS client cert is passed via the cert parameter
     return httpx.Client(
         proxy=PROXY_URL,
-        verify=ssl_context,
+        cert=(CERT_FILE, KEY_FILE),
+        verify=False,  # noqa: S501 - Demo only, self-signed proxy certs
         timeout=60.0,
     )
 
