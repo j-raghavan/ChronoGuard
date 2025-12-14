@@ -86,10 +86,20 @@ PROXY_URL = os.environ.get("CHRONOGUARD_PROXY", "https://localhost:8080")
 
 
 def create_chronoguard_http_client() -> httpx.Client:
-    """Create an httpx client configured for ChronoGuard mTLS proxy."""
+    """Create an httpx client configured for ChronoGuard mTLS proxy.
+
+    Note: For demo/development purposes, SSL verification is relaxed.
+    In production, you would use properly signed certificates and
+    configure verification appropriately.
+    """
+    # Create SSL context for mTLS client authentication to the proxy
     ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
     ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
-    ssl_context.load_verify_locations(cafile=CA_FILE)
+
+    # For demo environment with self-signed certs, disable hostname verification
+    # WARNING: In production, use properly signed certificates
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
 
     return httpx.Client(
         proxy=PROXY_URL,
