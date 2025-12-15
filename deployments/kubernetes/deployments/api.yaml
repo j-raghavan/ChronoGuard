@@ -46,6 +46,11 @@ spec:
             secretKeyRef:
               name: chronoguard-db-secret
               key: CHRONOGUARD_DB_PASSWORD
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chronoguard-db-secret
+              key: CHRONOGUARD_DB_PASSWORD
       containers:
       - name: api
         image: <YOUR_REGISTRY>/chronoguard-api:latest  # Replace with your image
