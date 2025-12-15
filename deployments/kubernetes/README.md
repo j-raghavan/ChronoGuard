@@ -37,10 +37,28 @@ kubectl apply -f tls-secrets.yaml
 
 Edit the following files to reference your container registry:
 
-- `deployments/api.yaml` - Line 46, 63: Replace `<YOUR_REGISTRY>/chronoguard-api:latest`
-- `deployments/dashboard.yaml` - Line 18: Replace `<YOUR_REGISTRY>/chronoguard-dashboard:latest`
+- `deployments/api.yaml` - Line 24, 51: Replace `<YOUR_REGISTRY>/chronoguard-api:latest`
+- `deployments/dashboard.yaml` - Line 23: Replace `<YOUR_REGISTRY>/chronoguard-dashboard:latest`
 
-### 3. Deploy with Kustomize (Recommended)
+### 3. Configure Kustomization
+
+After creating secrets, edit `kustomization.yaml`:
+
+1. **Uncomment secrets section** (lines 28-30):
+   ```yaml
+   - secrets/database-secrets.yaml
+   - secrets/app-secrets.yaml
+   - secrets/tls-secrets.yaml
+   ```
+
+2. **Uncomment ingress** (lines 45-46) - choose Nginx or Traefik:
+   ```yaml
+   - ingress/nginx-ingress.yaml
+   # OR
+   - ingress/traefik-ingress.yaml
+   ```
+
+### 4. Deploy with Kustomize (Recommended)
 
 ```bash
 # Deploy all resources at once
@@ -51,7 +69,7 @@ kubectl get pods -n chronoguard
 kubectl get svc -n chronoguard
 ```
 
-### 4. Deploy Manually (Alternative)
+### 5. Deploy Manually (Alternative)
 
 ```bash
 cd deployments/kubernetes/

@@ -47,7 +47,9 @@ kubectl get pods -n ingress-nginx
 **Traefik Ingress:**
 ```bash
 helm repo add traefik https://traefik.github.io/charts
-helm install traefik traefik/traefik -n traefik --create-namespace
+# Pin to specific version for supply-chain security
+# Update version after reviewing release notes and changes
+helm install traefik traefik/traefik --version 28.0.0 -n traefik --create-namespace
 
 # Verify installation
 kubectl get pods -n traefik
@@ -84,16 +86,37 @@ docker push your-registry.com/chronoguard-dashboard:latest
 ### 3. Update Image References
 
 Edit these files to use your images:
-- `deployments/kubernetes/deployments/api.yaml` (lines 46, 63)
-- `deployments/kubernetes/deployments/dashboard.yaml` (line 18)
+- `deployments/kubernetes/deployments/api.yaml` (lines 24, 51)
+- `deployments/kubernetes/deployments/dashboard.yaml` (line 23)
 
-### 4. Deploy with Kustomize
+### 4. Configure Kustomization
+
+After creating secrets, edit `deployments/kubernetes/kustomization.yaml`:
+
+1. **Uncomment secrets section** (lines 28-30):
+   ```yaml
+   # Secrets (you must create these from templates first!)
+   # Uncomment after creating secrets from templates:
+   - secrets/database-secrets.yaml
+   - secrets/app-secrets.yaml
+   - secrets/tls-secrets.yaml
+   ```
+
+2. **Uncomment ingress** (lines 45-46) - choose Nginx or Traefik:
+   ```yaml
+   # Ingress (choose one - nginx or traefik)
+   # Uncomment the one you want to use:
+   - ingress/nginx-ingress.yaml
+   # - ingress/traefik-ingress.yaml
+   ```
+
+### 5. Deploy with Kustomize
 
 ```bash
 kubectl apply -k deployments/kubernetes/
 ```
 
-### 5. Verify Deployment
+### 6. Verify Deployment
 
 ```bash
 # Check pods
@@ -528,7 +551,9 @@ Import pre-built dashboards:
 ```bash
 # Deploy Fluent Bit as DaemonSet
 helm repo add fluent https://fluent.github.io/helm-charts
-helm install fluent-bit fluent/fluent-bit \
+# Pin to specific version for supply-chain security
+# Update version after reviewing release notes and changes
+helm install fluent-bit fluent/fluent-bit --version 0.46.0 \
   --namespace logging --create-namespace
 ```
 
@@ -537,8 +562,10 @@ helm install fluent-bit fluent/fluent-bit \
 ```bash
 # Deploy EFK stack
 helm repo add elastic https://helm.elastic.co
-helm install elasticsearch elastic/elasticsearch -n logging
-helm install kibana elastic/kibana -n logging
+# Pin to specific versions for supply-chain security
+# Update versions after reviewing release notes and changes
+helm install elasticsearch elastic/elasticsearch --version 8.5.1 -n logging
+helm install kibana elastic/kibana --version 8.5.1 -n logging
 ```
 
 ### Distributed Tracing
