@@ -55,9 +55,9 @@ if [ "$has_certs" = "y" ]; then
     read -p "CA certificate path (PEM): " ca_path
 
     if [ -f "$cert_path" ] && [ -f "$key_path" ] && [ -f "$ca_path" ]; then
-        CERT_BASE64=$(cat "$cert_path" | base64 -w 0 2>/dev/null || cat "$cert_path" | base64)
-        KEY_BASE64=$(cat "$key_path" | base64 -w 0 2>/dev/null || cat "$key_path" | base64)
-        CA_BASE64=$(cat "$ca_path" | base64 -w 0 2>/dev/null || cat "$ca_path" | base64)
+        CERT_BASE64=$(cat "$cert_path" | base64 | tr -d '\n')
+        KEY_BASE64=$(cat "$key_path" | base64 | tr -d '\n')
+        CA_BASE64=$(cat "$ca_path" | base64 | tr -d '\n')
         echo "  ✓ Certificates encoded successfully"
         CERTS_PROVIDED=true
     else
