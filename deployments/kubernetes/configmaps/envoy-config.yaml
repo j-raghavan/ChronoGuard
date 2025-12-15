@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-config
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: proxy
+data:
+  envoy.yaml: |
+    # configs/envoy/envoy.yaml
+
+    admin:
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 9901
+
+    static_resources:
+      listeners:
+      - name: forward_proxy_listener
+        address:
+          socket_address:
+            address: 0.0.0.0
+            port_value: 8080
+
+        filter_chains:
+        - filters:
+          - name: envoy.filters.network.http_connection_manager
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+              stat_prefix: forward_proxy
+              codec_type: AUTO
+
+              # Forward client certificate details to upstream/authz
+              forward_client_cert_details: SANITIZE_SET
+              set_current_client_cert_details:
+                subject: true
+                cert: false
+                chain: false
+                dns: true
+                uri: true
+
+              # Enable HTTP CONNECT for HTTPS tunneling
+              http_protocol_options:
+                allow_absolute_url: true
+
+              # Support CONNECT method upgrades for HTTPS proxying
+              upgrade_configs:
+              - upgrade_type: CONNECT
+
+              # Route configuration
+              route_config:
+                name: forward_proxy_route
+                virtual_hosts:
+                - name: forward_proxy
+                  domains: ["*"]
+                  routes:
+                  # Handle CONNECT requests for HTTPS tunneling
+                  - match:
+                      connect_matcher: {}
+                    route:
+                      cluster: dynamic_forward_proxy_cluster
+                      upgrade_configs:
+                      - upgrade_type: CONNECT
+                        connect_config: {}
+                  # Handle regular HTTP requests
+                  - match:
+                      prefix: "/"
+                    route:
+                      cluster: dynamic_forward_proxy_cluster
+
+              http_filters:
+              - name: envoy.filters.http.ext_authz
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                  transport_api_version: V3
+                  grpc_service:
+                    envoy_grpc:
+                      cluster_name: opa_cluster
+                    timeout: 5s
+
+                  # Include client certificate in authz request
+                  include_peer_certificate: true
+
+                  # On failure, deny request
+                  failure_mode_allow: false
+
+              # Dynamic forward proxy filter
+              - name: envoy.filters.http.dynamic_forward_proxy
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_forward_proxy.v3.FilterConfig
+                  dns_cache_config:
+                    name: dynamic_forward_proxy_cache_config
+                    dns_lookup_family: V4_ONLY
+
+              - name: envoy.filters.http.router
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              require_client_certificate: true
+              common_tls_context:
+                tls_certificates:
+                - certificate_chain:
+                    filename: /etc/envoy/certs/server-cert.pem
+                  private_key:
+                    filename: /etc/envoy/certs/server-key.pem
+                validation_context:
+                  trusted_ca:
+                    filename: /etc/envoy/certs/ca-cert.pem
+
+      clusters:
+      - name: opa_cluster
+        type: STRICT_DNS
+        typed_extension_protocol_options:
+          envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+            "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+            explicit_http_config:
+              http2_protocol_options: {}
+        load_assignment:
+          cluster_name: opa_cluster
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: opa-service
+                    port_value: 9192
+
+      - name: dynamic_forward_proxy_cluster
+        lb_policy: CLUSTER_PROVIDED
+        cluster_type:
+          name: envoy.clusters.dynamic_forward_proxy
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.clusters.dynamic_forward_proxy.v3.ClusterConfig
+            dns_cache_config:
+              name: dynamic_forward_proxy_cache_config
+              dns_lookup_family: V4_ONLY

@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: api
+spec:
+  replicas: 2  # Run 2 replicas for HA
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: chronoguard
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: chronoguard
+        app.kubernetes.io/component: api
+    spec:
+      # Init container for database migrations
+      initContainers:
+      - name: db-migrations
+        image: <YOUR_REGISTRY>/chronoguard-api:latest  # Replace with your image
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for database to be ready..."
+          until pg_isready -h postgres-service -U chronoguard; do
+            sleep 2
+          done
+          echo "Running database migrations..."
+          cd /app && alembic upgrade head
+        env:
+        - name: CHRONOGUARD_DB_HOST
+          value: "postgres-service"
+        - name: CHRONOGUARD_DB_PORT
+          value: "5432"
+        - name: CHRONOGUARD_DB_USER
+          value: "chronoguard"
+        - name: CHRONOGUARD_DB_DATABASE
+          value: "chronoguard"
+        - name: CHRONOGUARD_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chronoguard-db-secret
+              key: CHRONOGUARD_DB_PASSWORD
+      containers:
+      - name: api
+        image: <YOUR_REGISTRY>/chronoguard-api:latest  # Replace with your image
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        env:
+        # Database configuration
+        - name: CHRONOGUARD_DB_HOST
+          value: "postgres-service"
+        - name: CHRONOGUARD_DB_PORT
+          value: "5432"
+        - name: CHRONOGUARD_DB_USER
+          value: "chronoguard"
+        - name: CHRONOGUARD_DB_DATABASE
+          value: "chronoguard"
+        - name: CHRONOGUARD_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chronoguard-db-secret
+              key: CHRONOGUARD_DB_PASSWORD
+        # Redis configuration
+        - name: CHRONOGUARD_REDIS_HOST
+          value: "redis-service"
+        - name: CHRONOGUARD_REDIS_PORT
+          value: "6379"
+        # OPA configuration
+        - name: OPA_URL
+          value: "http://opa-service:8181"
+        # Security secrets
+        - name: CHRONOGUARD_SECURITY_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: chronoguard-app-secret
+              key: CHRONOGUARD_SECURITY_SECRET_KEY
+        - name: CHRONOGUARD_INTERNAL_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: chronoguard-app-secret
+              key: CHRONOGUARD_INTERNAL_SECRET
+        # Application configuration
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: CHRONOGUARD_SECURITY_SESSION_COOKIE_SECURE
+          value: "true"
+        - name: CHRONOGUARD_SECURITY_SESSION_COOKIE_SAME_SITE
+          value: "lax"
+        # Optional: Demo mode (remove in production!)
+        # - name: CHRONOGUARD_SECURITY_DEMO_MODE_ENABLED
+        #   value: "false"
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        # Readiness probe
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
