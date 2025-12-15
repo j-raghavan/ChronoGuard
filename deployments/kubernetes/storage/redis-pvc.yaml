@@ -17,4 +17,4 @@ spec:
       storage: 5Gi
   # storageClassName: <your-storage-class>
   # Uncomment and specify your storage class if needed
-  # Examples: gp2 (AWS), pd-standard (GCP), managed-premium (Azure)
+  # Examples: gp3 (AWS), pd-standard (GCP), managed-premium (Azure)
