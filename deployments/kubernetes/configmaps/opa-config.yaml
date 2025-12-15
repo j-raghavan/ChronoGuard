@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opa-config
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: policy-engine
+data:
+  config.yaml: |
+    # configs/opa/config.yaml
+
+    # Decision logging configuration
+    decision_logs:
+      # Log all decisions to FastAPI
+      service: chronoguard_api
+      reporting:
+        min_delay_seconds: 1
+        max_delay_seconds: 5
+        upload_size_limit_bytes: 32768
+
+      # Mask sensitive data in logs
+      mask_decision: /system/  # Don't log internal system decisions
+
+    # Service endpoints
+    services:
+      chronoguard_api:
+        url: ${CHRONOGUARD_API_URL}  # e.g., http://api-service:8000
+        credentials:
+          bearer:
+            token: ${CHRONOGUARD_API_SECRET}
+
+    # NOTE: Bundles removed for MVP
+    # Policies are deployed directly via OPA Policy API (PUT /v1/policies/{id})
+    # by PolicyCompiler when policies are created/updated in FastAPI
+    # This is simpler than managing bundle distribution for single-OPA deployments
+    # If you need bundles for multi-OPA setups, see PLAN_CORRECTIONS.md Issue #4
+
+    # Server configuration
+    server:
+      encoding:
+        gzip:
+          min_length: 1024
+
+    # Distributed tracing (optional - remove if not using Jaeger)
+    # distributed_tracing:
+    #   type: grpc
+    #   address: ${JAEGER_AGENT_HOST}:${JAEGER_AGENT_PORT}
