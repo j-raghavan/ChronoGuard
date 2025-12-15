@@ -1,0 +1,99 @@
+# Traefik Ingress Configuration for ChronoGuard
+# This ingress routes HTTP traffic to the dashboard and API services using Traefik
+#
+# Prerequisites:
+# 1. Install Traefik Ingress Controller:
+#    helm repo add traefik https://traefik.github.io/charts
+#    helm install traefik traefik/traefik -n traefik --create-namespace
+# 2. Create TLS certificate secret (optional but recommended):
+#    kubectl create secret tls chronoguard-traefik-tls --cert=path/to/tls.crt --key=path/to/tls.key -n chronoguard
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chronoguard-ingress-traefik
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: ingress
+  annotations:
+    # Traefik-specific annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+
+    # Enable CORS (if needed)
+    traefik.ingress.kubernetes.io/router.middlewares: chronoguard-cors@kubernetescrd
+
+    # Automatic HTTPS redirect (uncomment if using TLS)
+    # traefik.ingress.kubernetes.io/redirect-scheme: https
+    # traefik.ingress.kubernetes.io/redirect-permanent: "true"
+
+    # Certificate resolver for automatic Let's Encrypt (uncomment if configured)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: traefik
+
+  # TLS configuration (uncomment if using HTTPS)
+  # tls:
+  # - hosts:
+  #   - chronoguard.example.com
+  #   secretName: chronoguard-traefik-tls
+
+  rules:
+  # Replace with your actual domain
+  - host: chronoguard.example.com
+    http:
+      paths:
+      # API backend - all /api/* requests
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8000
+
+      # Dashboard - root path (SPA)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dashboard-service
+            port:
+              number: 80
+
+---
+# Traefik Middleware for CORS (optional)
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: cors
+  namespace: chronoguard
+spec:
+  headers:
+    accessControlAllowMethods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    accessControlAllowOriginList:
+      - "*"
+    accessControlAllowHeaders:
+      - "*"
+    accessControlExposeHeaders:
+      - "*"
+    accessControlMaxAge: 100
+    addVaryHeader: true
+
+---
+# Traefik Middleware for rate limiting (optional)
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: chronoguard
+spec:
+  rateLimit:
+    average: 100
+    burst: 50
+    period: 1m

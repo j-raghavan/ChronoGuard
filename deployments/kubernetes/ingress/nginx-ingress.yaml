@@ -1,0 +1,111 @@
+# Nginx Ingress Controller Configuration for ChronoGuard
+# This ingress routes HTTP traffic to the dashboard and API services
+#
+# Prerequisites:
+# 1. Install Nginx Ingress Controller:
+#    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
+# 2. Create TLS certificate secret (optional but recommended):
+#    kubectl create secret tls chronoguard-ingress-tls --cert=path/to/tls.crt --key=path/to/tls.key -n chronoguard
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chronoguard-ingress
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: ingress
+  annotations:
+    # Nginx-specific annotations
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+
+    # Enable CORS (if needed for API access from external domains)
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+
+    # Increase body size for large uploads (optional)
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+
+    # SSL redirect (uncomment if using TLS)
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # Rate limiting (optional)
+    # nginx.ingress.kubernetes.io/limit-rps: "100"
+spec:
+  ingressClassName: nginx
+
+  # TLS configuration (uncomment if using HTTPS)
+  # tls:
+  # - hosts:
+  #   - chronoguard.example.com
+  #   secretName: chronoguard-ingress-tls
+
+  rules:
+  # Replace with your actual domain
+  - host: chronoguard.example.com
+    http:
+      paths:
+      # API backend - all /api/* requests
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8000
+
+      # Dashboard - all other requests (SPA)
+      - path: /()(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: dashboard-service
+            port:
+              number: 80
+
+---
+# Alternative: Simple ingress without regex rewriting
+# Use this if you encounter issues with the regex version above
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chronoguard-ingress-simple
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: ingress
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+
+  # tls:
+  # - hosts:
+  #   - chronoguard.example.com
+  #   secretName: chronoguard-ingress-tls
+
+  rules:
+  - host: chronoguard.example.com
+    http:
+      paths:
+      # API backend - matches /api and /api/*
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8000
+
+      # Dashboard - root path
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dashboard-service
+            port:
+              number: 80
