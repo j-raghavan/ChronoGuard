@@ -13,6 +13,7 @@ from loguru import logger
 
 from application.commands import CreatePolicyCommand, DeletePolicyCommand, UpdatePolicyCommand
 from application.dto import CreatePolicyRequest, PolicyDTO, PolicyListResponse, UpdatePolicyRequest
+from application.pagination import PaginatedResponse, PaginationParams
 from application.queries import GetPolicyQuery, ListPoliciesQuery
 from domain.common.exceptions import DuplicateEntityError, EntityNotFoundError
 from domain.policy.entity import PolicyStatus
@@ -99,31 +100,29 @@ async def get_policy(
     return result
 
 
-@router.get("/", response_model=PolicyListResponse)
+@router.get("/", response_model=PaginatedResponse[PolicyDTO])
 async def list_policies(
     tenant_id: Annotated[UUID, Depends(get_tenant_id)],
-    page: int = 1,
-    page_size: int = 50,
+    pagination: Annotated[PaginationParams, Depends()],
     status_filter: PolicyStatus | None = None,
     list_query: ListPoliciesQuery = Depends(get_list_policies_query),
-) -> PolicyListResponse:
+) -> PaginatedResponse[PolicyDTO]:
     """List all policies for a tenant.
 
     Args:
         tenant_id: Current tenant ID
-        page: Page number (default: 1)
-        page_size: Items per page (default: 50, max: 1000)
+        pagination: Pagination parameters
         status_filter: Optional status filter
         list_query: Injected list query handler
 
     Returns:
         Paginated list of policies
-
-    Raises:
-        HTTPException: 400 if pagination parameters are invalid
     """
     try:
-        return await list_query.execute(tenant_id, page, page_size, status_filter)
+        result = await list_query.execute(
+            tenant_id, pagination.page, pagination.limit, status_filter
+        )
+        return PaginatedResponse.create(result.policies, result.total_count, pagination)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e

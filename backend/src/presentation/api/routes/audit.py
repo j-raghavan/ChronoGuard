@@ -12,11 +12,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from application.dto import (
+    AuditEntryDTO,
     AuditExportRequest,
     AuditListResponse,
     AuditQueryRequest,
     TemporalPatternDTO,
 )
+from application.pagination import PaginatedResponse, PaginationParams
 from application.queries import GetAuditEntriesQuery
 from application.queries.audit_export import AuditExporter
 from application.queries.temporal_analytics import TemporalAnalyticsQuery
@@ -80,12 +82,12 @@ async def get_temporal_analytics(
         ) from e
 
 
-@router.post("/query", response_model=AuditListResponse)
+@router.post("/query", response_model=PaginatedResponse[AuditEntryDTO])
 async def query_audit_entries(
     request: AuditQueryRequest,
     query: Annotated[GetAuditEntriesQuery, Depends(get_audit_entries_query)],
     tenant_id: Annotated[UUID, Depends(get_tenant_id)],
-) -> AuditListResponse:
+) -> PaginatedResponse[AuditEntryDTO]:
     """Query audit log entries with filtering and pagination.
 
     Args:
@@ -111,7 +113,16 @@ async def query_audit_entries(
         )
 
     try:
-        return await query.execute(request)
+        # Enforce simplified pagination limits
+        if request.page_size > 100:
+             raise ValueError("Limit must be between 1 and 100")
+
+        result = await query.execute(request)
+        
+        # Map to standardized pagination
+        pagination = PaginationParams(page=request.page, limit=request.page_size)
+        return PaginatedResponse.create(result.entries, result.total_count, pagination)
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
