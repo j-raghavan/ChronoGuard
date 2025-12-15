@@ -21,9 +21,10 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
 
     # Enable CORS (if needed for API access from external domains)
+    # WARNING: Replace with your actual domain for production
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://chronoguard.example.com"
 
     # Increase body size for large uploads (optional)
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"

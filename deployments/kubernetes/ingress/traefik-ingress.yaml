@@ -77,7 +77,8 @@ spec:
       - "DELETE"
       - "OPTIONS"
     accessControlAllowOriginList:
-      - "*"
+      # WARNING: Replace with your actual domain for production
+      - "https://chronoguard.example.com"
     accessControlAllowHeaders:
       - "*"
     accessControlExposeHeaders:
