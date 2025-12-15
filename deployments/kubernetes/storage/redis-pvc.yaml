@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # Storage size for Redis cache persistence (optional)
+      # Note: Redis is primarily used as ephemeral cache
+      # You can omit this PVC if you don't need persistent cache
+      storage: 5Gi
+  # storageClassName: <your-storage-class>
+  # Uncomment and specify your storage class if needed
+  # Examples: gp2 (AWS), pd-standard (GCP), managed-premium (Azure)
