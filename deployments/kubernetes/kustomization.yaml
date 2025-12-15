@@ -1,0 +1,93 @@
+# Kustomization file for ChronoGuard Kubernetes deployment
+# This file allows you to deploy all resources with a single command:
+# kubectl apply -k deployments/kubernetes/
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace for all resources
+namespace: chronoguard
+
+# Create namespace
+resources:
+  # Namespace
+  - namespace.yaml
+
+  # Storage
+  - storage/postgres-pvc.yaml
+  - storage/redis-pvc.yaml
+
+  # ConfigMaps
+  - configmaps/envoy-config.yaml
+  - configmaps/opa-config.yaml
+  - configmaps/opa-policies.yaml
+  - configmaps/nginx-config.yaml
+
+  # Secrets (you must create these from templates first!)
+  # Uncomment after creating secrets from templates:
+  # - secrets/database-secrets.yaml
+  # - secrets/app-secrets.yaml
+  # - secrets/tls-secrets.yaml
+
+  # Deployments
+  - deployments/postgres.yaml
+  - deployments/redis.yaml
+  - deployments/opa.yaml
+  - deployments/api.yaml
+  - deployments/envoy.yaml
+  - deployments/dashboard.yaml
+
+  # Services
+  - services/services.yaml
+
+  # Ingress (choose one - nginx or traefik)
+  # Uncomment the one you want to use:
+  # - ingress/nginx-ingress.yaml
+  # - ingress/traefik-ingress.yaml
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: chronoguard
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/version: "0.1.0"
+
+# Image transformation (optional)
+# Uncomment and modify to override image tags
+# images:
+#   - name: <YOUR_REGISTRY>/chronoguard-api
+#     newTag: v0.1.0
+#   - name: <YOUR_REGISTRY>/chronoguard-dashboard
+#     newTag: v0.1.0
+
+# Replica count overrides (optional)
+# Uncomment to scale deployments
+# replicas:
+#   - name: api
+#     count: 3
+#   - name: opa
+#     count: 2
+#   - name: envoy
+#     count: 3
+
+# Configuration customization
+# You can use patches to customize resources for different environments
+
+# Example: Development environment with reduced resources
+# patchesStrategicMerge:
+#   - |-
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     metadata:
+#       name: api
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: api
+#             resources:
+#               requests:
+#                 cpu: "100m"
+#                 memory: "128Mi"
+#               limits:
+#                 cpu: "500m"
+#                 memory: "512Mi"
