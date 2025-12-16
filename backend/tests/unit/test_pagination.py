@@ -61,7 +61,7 @@ class TestPaginatedResponse:
         """Test creating a paginated response."""
         items = ["a", "b", "c"]
         total = 10
-        params = PaginationParams(page=1, limit=5)
+        params = PaginationParams(limit=5)
 
         response = PaginatedResponse.create(items, total, params)
 
@@ -103,7 +103,7 @@ class TestPaginatedResponse:
         total = 10
         params = PaginationParams(limit=5)
         response = PaginatedResponse[int].create(items, total, params)
-        
+
         data = response.model_dump()
         assert data["items"] == [1, 2]
         assert data["total"] == 10

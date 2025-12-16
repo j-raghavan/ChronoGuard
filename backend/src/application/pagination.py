@@ -3,9 +3,8 @@ from __future__ import annotations
 import math
 from typing import Generic, TypeVar
 
-from typing import Generic, TypeVar
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel, Field, field_validator
 
 T = TypeVar("T")
 
@@ -20,14 +19,6 @@ class PaginationParams(BaseModel):
     def offset(self) -> int:
         """Calculate offset for database queries."""
         return (self.page - 1) * self.limit
-
-    @field_validator("limit")
-    @classmethod
-    def validate_limit(cls, v: int) -> int:
-        """Validate limit is within acceptable range."""
-        if not 1 <= v <= 100:
-            raise ValueError("Limit must be between 1 and 100")
-        return v
 
 
 class PaginatedResponse(BaseModel, Generic[T]):

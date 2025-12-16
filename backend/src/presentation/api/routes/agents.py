@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
 
 from application.commands import CreateAgentCommand, UpdateAgentCommand
-from application.dto import AgentDTO, AgentListResponse, CreateAgentRequest, UpdateAgentRequest
+from application.dto import AgentDTO, CreateAgentRequest, UpdateAgentRequest
 from application.pagination import PaginatedResponse, PaginationParams
 from application.queries import GetAgentQuery, ListAgentsQuery
 from domain.agent.entity import AgentStatus

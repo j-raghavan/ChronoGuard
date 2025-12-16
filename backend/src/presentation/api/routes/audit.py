@@ -14,7 +14,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from application.dto import (
     AuditEntryDTO,
     AuditExportRequest,
-    AuditListResponse,
     AuditQueryRequest,
     TemporalPatternDTO,
 )
@@ -115,10 +114,10 @@ async def query_audit_entries(
     try:
         # Enforce simplified pagination limits
         if request.page_size > 100:
-             raise ValueError("Limit must be between 1 and 100")
+            raise ValueError("Limit must be between 1 and 100")
 
         result = await query.execute(request)
-        
+
         # Map to standardized pagination
         pagination = PaginationParams(page=request.page, limit=request.page_size)
         return PaginatedResponse.create(result.entries, result.total_count, pagination)

@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
 
 from application.commands import CreatePolicyCommand, DeletePolicyCommand, UpdatePolicyCommand
-from application.dto import CreatePolicyRequest, PolicyDTO, PolicyListResponse, UpdatePolicyRequest
+from application.dto import CreatePolicyRequest, PolicyDTO, UpdatePolicyRequest
 from application.pagination import PaginatedResponse, PaginationParams
 from application.queries import GetPolicyQuery, ListPoliciesQuery
 from domain.common.exceptions import DuplicateEntityError, EntityNotFoundError

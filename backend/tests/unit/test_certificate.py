@@ -127,7 +127,7 @@ class TestCertificateFixtures:
         """Create a certificate with weak RSA key (1024 bits)."""
         # Generate weak key
         weak_key = rsa.generate_private_key(
-            public_exponent=65537, key_size=1024, backend=default_backend()
+            public_exponent=65537, key_size=1024, backend=default_backend()  # noqa
         )
 
         subject = issuer = x509.Name(

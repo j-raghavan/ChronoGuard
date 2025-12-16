@@ -26,7 +26,7 @@ class LoginResponse(BaseModel):
     """Login response body."""
 
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105
     tenant_id: UUID
     user_id: UUID
     expires_in: int
