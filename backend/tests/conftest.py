@@ -32,21 +32,35 @@ def disable_telemetry_shutdown() -> Generator[None, None, None]:
         yield
 
 
-from core.container import DependencyContainer
-from core.features import FeatureFlags, FeatureManager
-from domain.agent.entity import Agent, AgentStatus
-from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
-from domain.audit.hasher import EnhancedAuditHasher
-from domain.common.value_objects import DomainName, TimeRange, X509Certificate
-from domain.policy.entity import (
-    Policy,
-    PolicyRule,
-    PolicyStatus,
-    RateLimit,
-    RuleAction,
-    RuleCondition,
-    TimeRestriction,
-)
+
+try:
+    
+    try:
+        from core.container import DependencyContainer
+        from core.features import FeatureFlags, FeatureManager
+        from domain.agent.entity import Agent, AgentStatus
+        from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
+        from domain.audit.hasher import EnhancedAuditHasher
+        from domain.common.value_objects import DomainName, TimeRange, X509Certificate
+        from domain.policy.entity import (
+            Policy,
+            PolicyRule,
+            PolicyStatus,
+            RateLimit,
+            RuleAction,
+            RuleCondition,
+            TimeRestriction,
+        )
+    except ImportError:
+        # If modules are not found (e.g. detailed dependency missing), we might be running
+        # in a restricted environment. Some fixtures might fail if used.
+        # We define dummy placeholders or just pass, letting the specific tests fail if they need them.
+        pass
+except ImportError:
+    # If modules are not found (e.g. detailed dependency missing), we might be running
+    # in a restricted environment. Some fixtures might fail if used.
+    # We define dummy placeholders or just pass, letting the specific tests fail if they need them.
+    pass
 
 
 # Initialize Faker
