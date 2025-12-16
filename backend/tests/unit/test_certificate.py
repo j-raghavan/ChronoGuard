@@ -128,8 +128,8 @@ class TestCertificateFixtures:
         # Generate weak key
         weak_key = rsa.generate_private_key(
             public_exponent=65537,
-            key_size=1024,
-            backend=default_backend(),  # noqa
+            key_size=1024,  # noqa
+            backend=default_backend(),
         )
 
         subject = issuer = x509.Name(

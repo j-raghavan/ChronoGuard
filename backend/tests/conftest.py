@@ -11,56 +11,24 @@ import pytest
 from faker import Faker
 
 
-# Global patch to prevent OpenTelemetry shutdown issues during tests
-@pytest.fixture(autouse=True)
-def disable_telemetry_shutdown() -> Generator[None, None, None]:
-    """Prevent OpenTelemetry initialization that causes shutdown errors."""
-    with (
-        patch("infrastructure.observability.telemetry.TracerProvider") as mock_tracer_provider,
-        patch("infrastructure.observability.telemetry.MeterProvider") as mock_meter_provider,
-        patch("infrastructure.observability.telemetry.trace.set_tracer_provider"),
-        patch("infrastructure.observability.telemetry.metrics.set_meter_provider"),
-        patch("infrastructure.observability.telemetry.BatchSpanProcessor"),
-        patch("infrastructure.observability.telemetry.ConsoleSpanExporter"),
-        patch("infrastructure.observability.telemetry.OTLPSpanExporter"),
-        patch("infrastructure.observability.telemetry.PrometheusMetricReader"),
-        patch("infrastructure.observability.telemetry.PeriodicExportingMetricReader"),
-    ):
-        # Mock the providers to return objects that won't cause shutdown issues
-        mock_tracer_provider.return_value = None
-        mock_meter_provider.return_value = None
-        yield
 
 
 
-try:
-    
-    try:
-        from core.container import DependencyContainer
-        from core.features import FeatureFlags, FeatureManager
-        from domain.agent.entity import Agent, AgentStatus
-        from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
-        from domain.audit.hasher import EnhancedAuditHasher
-        from domain.common.value_objects import DomainName, TimeRange, X509Certificate
-        from domain.policy.entity import (
-            Policy,
-            PolicyRule,
-            PolicyStatus,
-            RateLimit,
-            RuleAction,
-            RuleCondition,
-            TimeRestriction,
-        )
-    except ImportError:
-        # If modules are not found (e.g. detailed dependency missing), we might be running
-        # in a restricted environment. Some fixtures might fail if used.
-        # We define dummy placeholders or just pass, letting the specific tests fail if they need them.
-        pass
-except ImportError:
-    # If modules are not found (e.g. detailed dependency missing), we might be running
-    # in a restricted environment. Some fixtures might fail if used.
-    # We define dummy placeholders or just pass, letting the specific tests fail if they need them.
-    pass
+from core.container import DependencyContainer
+from core.features import FeatureFlags, FeatureManager
+from domain.agent.entity import Agent, AgentStatus
+from domain.audit.entity import AccessDecision, AuditEntry, TimedAccessContext
+from domain.audit.hasher import EnhancedAuditHasher
+from domain.common.value_objects import DomainName, TimeRange, X509Certificate
+from domain.policy.entity import (
+    Policy,
+    PolicyRule,
+    PolicyStatus,
+    RateLimit,
+    RuleAction,
+    RuleCondition,
+    TimeRestriction,
+)
 
 
 # Initialize Faker
