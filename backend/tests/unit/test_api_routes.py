@@ -292,8 +292,8 @@ class TestAgentRoutes:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data["agents"]) == 1
-        assert data["total_count"] == 1
+        assert len(data["items"]) == 1
+        assert data["total"] == 1
 
     def test_update_agent_success(
         self, app: FastAPI, client: TestClient, agent_dto: AgentDTO, auth_headers_factory
