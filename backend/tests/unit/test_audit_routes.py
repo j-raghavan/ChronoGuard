@@ -278,7 +278,7 @@ class TestAuditSuccessPaths:
             )
 
             assert response.status_code == 200
-            assert response.json()["total_count"] == 0
+            assert response.json()["total"] == 0
         finally:
             app.dependency_overrides.clear()
 

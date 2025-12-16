@@ -126,8 +126,7 @@ class WebSocketManager:
         del self._connections[client_id]
 
         logger.info(
-            f"Unregistered client '{client_id}' "
-            f"(remaining connections: {len(self._connections)})"
+            f"Unregistered client '{client_id}' (remaining connections: {len(self._connections)})"
         )
 
     async def subscribe(self, client_id: str, topic: str) -> None:

@@ -686,8 +686,7 @@ class AuditService:
             signed_entry = AuditEntry(**entry_dict)
 
             logger.debug(
-                f"Signed audit entry {entry.entry_id} "
-                f"with {len(signature_bytes)} byte signature"
+                f"Signed audit entry {entry.entry_id} with {len(signature_bytes)} byte signature"
             )
 
             return signed_entry

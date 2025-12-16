@@ -217,8 +217,7 @@ class OPAClient:
                 ) as response:
                     if response.status in (200, 201):
                         logger.info(
-                            f"Successfully updated policy '{policy_name}' in OPA, "
-                            f"attempt={attempt}"
+                            f"Successfully updated policy '{policy_name}' in OPA, attempt={attempt}"
                         )
                         return
 
