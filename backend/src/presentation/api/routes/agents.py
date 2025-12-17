@@ -12,7 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
 
 from application.commands import CreateAgentCommand, UpdateAgentCommand
-from application.dto import AgentDTO, AgentListResponse, CreateAgentRequest, UpdateAgentRequest
+from application.dto import AgentDTO, CreateAgentRequest, UpdateAgentRequest
+from application.pagination import PaginatedResponse, PaginationParams
 from application.queries import GetAgentQuery, ListAgentsQuery
 from domain.agent.entity import AgentStatus
 from domain.common.exceptions import DuplicateEntityError, EntityNotFoundError
@@ -95,31 +96,29 @@ async def get_agent(
     return result
 
 
-@router.get("/", response_model=AgentListResponse)
+@router.get("/", response_model=PaginatedResponse[AgentDTO])
 async def list_agents(
     tenant_id: Annotated[UUID, Depends(get_tenant_id)],
-    page: int = 1,
-    page_size: int = 50,
+    pagination: Annotated[PaginationParams, Depends()],
     status_filter: AgentStatus | None = None,
     list_query: ListAgentsQuery = Depends(get_list_agents_query),
-) -> AgentListResponse:
+) -> PaginatedResponse[AgentDTO]:
     """List all agents for a tenant.
 
     Args:
         tenant_id: Current tenant ID
-        page: Page number (default: 1)
-        page_size: Items per page (default: 50, max: 1000)
+        pagination: Pagination parameters
         status_filter: Optional status filter
         list_query: Injected list query handler
 
     Returns:
         Paginated list of agents
-
-    Raises:
-        HTTPException: 400 if pagination parameters are invalid
     """
     try:
-        return await list_query.execute(tenant_id, page, page_size, status_filter)
+        result = await list_query.execute(
+            tenant_id, pagination.page, pagination.limit, status_filter
+        )
+        return PaginatedResponse.create(result.agents, result.total_count, pagination)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e

@@ -190,7 +190,7 @@ class TemporalAnalyticsQuery:
                 {
                     "type": "high_denial_rate",
                     "severity": "high",
-                    "description": f"{len(denied_entries)/len(entries)*100:.1f}% denial rate",
+                    "description": f"{len(denied_entries) / len(entries) * 100:.1f}% denial rate",
                     "denied_count": str(len(denied_entries)),
                 }
             )

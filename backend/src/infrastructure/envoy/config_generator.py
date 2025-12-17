@@ -305,8 +305,7 @@ class ConfigGenerator:
         routes.append(route_config)
 
         logger.debug(
-            f"Generated {len(routes)} route configurations "
-            f"with {len(virtual_hosts)} virtual hosts"
+            f"Generated {len(routes)} route configurations with {len(virtual_hosts)} virtual hosts"
         )
         return routes
 
