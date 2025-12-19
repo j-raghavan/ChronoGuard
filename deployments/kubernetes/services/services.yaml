@@ -1,0 +1,149 @@
+# PostgreSQL Service (ClusterIP - internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: database
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+    protocol: TCP
+
+---
+# Redis Service (ClusterIP - internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: cache
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: cache
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+    protocol: TCP
+
+---
+# OPA Service (ClusterIP - internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: opa-service
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: policy-engine
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: policy-engine
+  ports:
+  - name: http
+    port: 8181
+    targetPort: 8181
+    protocol: TCP
+  - name: grpc
+    port: 9192
+    targetPort: 9192
+    protocol: TCP
+
+---
+# FastAPI Service (ClusterIP - internal only, exposed via Ingress)
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: api
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+
+---
+# Dashboard Service (ClusterIP - internal only, exposed via Ingress)
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-service
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: dashboard
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: dashboard
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+
+---
+# Envoy Proxy Service (LoadBalancer - external access for agents)
+# Note: Change to NodePort if LoadBalancer is not available in your cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy-service
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: proxy
+  annotations:
+    # AWS ELB annotations (uncomment if using AWS)
+    # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    # service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+    # GCP Load Balancer annotations (uncomment if using GCP)
+    # cloud.google.com/load-balancer-type: "Internal"
+
+    # Azure Load Balancer annotations (uncomment if using Azure)
+    # service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+spec:
+  type: LoadBalancer
+  # For NodePort instead of LoadBalancer, uncomment:
+  # type: NodePort
+  selector:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: proxy
+  ports:
+  - name: proxy
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+    # For NodePort, uncomment and specify:
+    # nodePort: 30080
+  - name: admin
+    port: 9901
+    targetPort: 9901
+    protocol: TCP
+    # For NodePort, uncomment and specify:
+    # nodePort: 30901

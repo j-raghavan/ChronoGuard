@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: database
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: chronoguard
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: chronoguard
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+      - name: postgres
+        image: timescale/timescaledb:latest-pg15
+        ports:
+        - name: postgres
+          containerPort: 5432
+          protocol: TCP
+        env:
+        - name: POSTGRES_DB
+          value: "chronoguard"
+        - name: POSTGRES_USER
+          value: "chronoguard"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chronoguard-db-secret
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+        # Startup probe - give database time to initialize
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U chronoguard -d chronoguard
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30  # Allow up to 5 minutes for initial startup
+        # Readiness probe - check if ready to accept connections
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U chronoguard -d chronoguard
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        # Liveness probe - check if container is healthy
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U chronoguard -d chronoguard
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+      # Use the PVC created separately
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-data-pvc

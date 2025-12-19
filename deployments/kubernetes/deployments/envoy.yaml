@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envoy
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: proxy
+spec:
+  replicas: 2  # Run 2 replicas for load balancing
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: chronoguard
+      app.kubernetes.io/component: proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: chronoguard
+        app.kubernetes.io/component: proxy
+    spec:
+      containers:
+      - name: envoy
+        image: envoyproxy/envoy:v1.28-latest
+        ports:
+        - name: proxy
+          containerPort: 8080
+          protocol: TCP
+        - name: admin
+          containerPort: 9901
+          protocol: TCP
+        volumeMounts:
+        - name: envoy-config
+          mountPath: /etc/envoy/envoy.yaml
+          subPath: envoy.yaml
+          readOnly: true
+        - name: envoy-certs
+          mountPath: /etc/envoy/certs
+          readOnly: true
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "128Mi"
+          limits:
+            cpu: "1000m"
+            memory: "512Mi"
+        # Readiness probe - check admin interface
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 9901
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        # Liveness probe - check admin interface
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 9901
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: envoy-config
+        configMap:
+          name: envoy-config
+      - name: envoy-certs
+        secret:
+          secretName: chronoguard-tls-secret

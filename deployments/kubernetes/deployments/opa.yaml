@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opa
+  namespace: chronoguard
+  labels:
+    app.kubernetes.io/name: chronoguard
+    app.kubernetes.io/component: policy-engine
+spec:
+  replicas: 2  # Run 2 replicas for HA
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: chronoguard
+      app.kubernetes.io/component: policy-engine
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: chronoguard
+        app.kubernetes.io/component: policy-engine
+    spec:
+      containers:
+      - name: opa
+        image: openpolicyagent/opa:latest-envoy
+        command:
+        - /opa
+        - run
+        - --server
+        - --addr=0.0.0.0:8181
+        - --set=plugins.envoy_ext_authz_grpc.addr=:9192
+        - --config-file=/config/config.yaml
+        - /config/policies
+        ports:
+        - name: http
+          containerPort: 8181
+          protocol: TCP
+        - name: grpc
+          containerPort: 9192
+          protocol: TCP
+        env:
+        - name: CHRONOGUARD_API_URL
+          value: "http://api-service:8000"
+        - name: CHRONOGUARD_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: chronoguard-app-secret
+              key: CHRONOGUARD_INTERNAL_SECRET
+        volumeMounts:
+        - name: opa-config
+          mountPath: /config/config.yaml
+          subPath: config.yaml
+          readOnly: true
+        - name: opa-policies
+          mountPath: /config/policies
+          readOnly: true
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        # Readiness probe - HTTP API
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8181
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        # Liveness probe - HTTP API
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8181
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: opa-config
+        configMap:
+          name: opa-config
+      - name: opa-policies
+        configMap:
+          name: opa-policies
