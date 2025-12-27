@@ -565,6 +565,7 @@ See the [Quick Start](#quick-start) section for local development setup.
 - **[docs/architecture/](docs/architecture/)** - Architecture documentation
 - **[docs/testing/](docs/testing/)** - Testing documentation
 - **[docs/guides/](docs/guides/)** - User guides
+  - **[Environment Variables Guide](docs/guides/environment-variables.md)** - Complete reference for all ChronoGuard configuration options
 
 ## API Documentation
 
