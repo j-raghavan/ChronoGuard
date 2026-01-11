@@ -46,25 +46,36 @@ class ConnectionInfo:
 
 
 class WebSocketManager:
-    """Manages WebSocket connections and pub/sub functionality.
 
-    This manager maintains a registry of active WebSocket connections,
-    handles subscription management, and provides broadcast capabilities
-    for real-time event delivery.
-
-    Features:
-    - Connection registration and lifecycle management
-    - Topic-based subscription system
-    - Targeted and broadcast message delivery
-    - Connection metadata tracking
-
-    Example:
-        >>> manager = WebSocketManager()
-        >>> await manager.register(websocket, "client-1", {})
-        >>> await manager.subscribe("client-1", "agent-events")
-        >>> await manager.broadcast("agent-events", {"event": "agent_created"})
-        >>> await manager.unregister("client-1")
     """
+Manages WebSocket connections and pub/sub functionality in ChronoGuard.
+
+This class keeps track of all active WebSocket clients, handles topic-based
+subscriptions, and ensures messages are delivered to the right subscribers
+in real-time. It is designed to make WebSocket management simple and
+maintainable.
+
+Key Attributes:
+- _connections: Dictionary mapping client_id to ConnectionInfo objects.
+- _topic_subscribers: Dictionary mapping topic names to sets of client_ids.
+- Each ConnectionInfo contains:
+    - websocket: the active WebSocket connection
+    - subscriptions: set of topics the client is subscribed to
+    - metadata: optional additional information (e.g., user ID, tenant ID)
+
+Typical Usage:
+    >>> manager = WebSocketManager()
+    >>> await manager.register(websocket, "client1", {})
+    >>> await manager.subscribe("client1", "topic1")
+    >>> await manager.broadcast("topic1", {"event": "test"})
+    >>> await manager.unregister("client1")
+
+Edge Cases / Notes:
+- Broadcasting to a topic with no subscribers does nothing.
+- Unregistering a client automatically removes all subscriptions.
+- Metadata can be used for authentication, logging, or filtering messages.
+"""
+
 
     def __init__(self) -> None:
         """Initialize the WebSocket manager."""
