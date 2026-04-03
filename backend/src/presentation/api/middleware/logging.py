@@ -8,6 +8,7 @@ from time import perf_counter
 from uuid import uuid4
 
 from loguru import logger
+from starlette.responses import PlainTextResponse
 from starlette.datastructures import Headers, MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -77,7 +78,11 @@ class RequestLoggingMiddleware:
             request_logger.bind(latency_ms=latency_ms).opt(exception=True).error(
                 "HTTP request failed"
             )
-            raise
+            if response_status is not None:
+                raise
+
+            await self._send_internal_server_error(scope, receive, send, correlation_id)
+            request_logger.bind(status=500, latency_ms=latency_ms).info("HTTP request completed")
         finally:
             self._reset_correlation_context(context_token)
 
@@ -101,3 +106,19 @@ class RequestLoggingMiddleware:
         """Return elapsed time in milliseconds."""
 
         return round((perf_counter() - start_time) * 1000, 3)
+
+    async def _send_internal_server_error(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+        correlation_id: str,
+    ) -> None:
+        """Send a fallback 500 response that preserves correlation metadata."""
+
+        response = PlainTextResponse(
+            "Internal Server Error",
+            status_code=500,
+            headers={CORRELATION_ID_HEADER: correlation_id},
+        )
+        await response(scope, receive, send)

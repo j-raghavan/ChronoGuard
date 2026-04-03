@@ -1,7 +1,7 @@
 """API middleware exports."""
 
-from presentation.api.middleware.auth import AuthMiddleware
-from presentation.api.middleware.logging import (
+from .auth import AuthMiddleware
+from .logging import (
     CORRELATION_ID_HEADER,
     RequestLoggingMiddleware,
     get_correlation_id,

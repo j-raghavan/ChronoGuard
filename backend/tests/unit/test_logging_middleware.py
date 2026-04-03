@@ -97,10 +97,18 @@ class TestRequestLoggingMiddleware:
             response = client.get("/boom")
 
         assert response.status_code == 500
+        correlation_id = response.headers[CORRELATION_ID_HEADER]
+        assert correlation_id
         bound_logger.info.assert_called_once_with("HTTP request started")
+
+        bind_kwargs = mock_logger.bind.call_args.kwargs
+        assert bind_kwargs["correlation_id"] == correlation_id
+        assert bind_kwargs["method"] == "GET"
+        assert bind_kwargs["path"] == "/boom"
 
         error_bind_kwargs = bound_logger.bind.call_args.kwargs
         assert error_bind_kwargs["latency_ms"] >= 0
+        assert error_bind_kwargs["status"] == 500
         error_logger.opt.assert_called_once_with(exception=True)
         opt_logger.error.assert_called_once_with("HTTP request failed")
 
