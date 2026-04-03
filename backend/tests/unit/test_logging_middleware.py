@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from starlette.testclient import TestClient
 
 from main import create_app
+from presentation.api.middleware.auth import AuthMiddleware
 from presentation.api.middleware.logging import CORRELATION_ID_HEADER, RequestLoggingMiddleware
 
 
@@ -123,3 +124,17 @@ class TestMainApplicationLoggingMiddleware:
         middleware_classes = [middleware.cls for middleware in app.user_middleware]
 
         assert RequestLoggingMiddleware in middleware_classes
+        assert middleware_classes.index(RequestLoggingMiddleware) < middleware_classes.index(
+            AuthMiddleware
+        )
+
+    def test_create_app_unauthorized_response_includes_correlation_id(self) -> None:
+        """Test logging middleware wraps unauthorized responses from auth middleware."""
+        app = create_app()
+        client = TestClient(app)
+
+        response = client.get("/api/v1/auth/session")
+
+        assert response.status_code == 401
+        assert CORRELATION_ID_HEADER in response.headers
+        assert response.headers[CORRELATION_ID_HEADER]

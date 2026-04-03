@@ -112,8 +112,6 @@ def create_app() -> FastAPI:
         ),
     )
 
-    app.add_middleware(RequestLoggingMiddleware)
-
     # Configure Authentication Middleware
     app.add_middleware(
         AuthMiddleware,
@@ -134,6 +132,8 @@ def create_app() -> FastAPI:
         enable_api_key=False,
         security_settings=settings.security,
     )
+
+    app.add_middleware(RequestLoggingMiddleware)
 
     # Include API routers
     from presentation.api.routes import (
