@@ -14,6 +14,7 @@ from core.features import FeatureManager
 from core.logging import configure_logging
 from infrastructure.observability.telemetry import initialize_telemetry
 from presentation.api.middleware.auth import AuthMiddleware
+from presentation.api.middleware.logging import RequestLoggingMiddleware
 
 
 @asynccontextmanager
@@ -131,6 +132,8 @@ def create_app() -> FastAPI:
         enable_api_key=False,
         security_settings=settings.security,
     )
+
+    app.add_middleware(RequestLoggingMiddleware)
 
     # Include API routers
     from presentation.api.routes import (
