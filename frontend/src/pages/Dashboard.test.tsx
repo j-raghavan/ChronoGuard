@@ -109,7 +109,7 @@ describe("Dashboard", () => {
     });
   });
 
-  it.skip("should display compliance score", async () => {
+  it("should display compliance score", async () => {
     // TODO: Fix multiple elements with same text issue
     const mockAnalytics = {
       tenant_id: "123",
